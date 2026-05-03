@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
@@ -11,6 +12,20 @@ import '../../search/screens/search_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../reports/screens/reports_screen.dart';
 import '../../orders/screens/create_order_screen.dart';
+
+// ── Shared target store (simple in-memory — replace with provider/db) ─────────
+class TargetStore {
+  static final Map<String, double> targets = {
+    'Raj Sharma':  5000000,
+    'Amit Patel':  4000000,
+    'Priya Mehta': 3500000,
+  };
+  static final Map<String, double> achieved = {
+    'Raj Sharma':  3100000,
+    'Amit Patel':  2800000,
+    'Priya Mehta': 1900000,
+  };
+}
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -85,7 +100,9 @@ class _AdminHomeState extends State<_AdminHome> {
     setState(() { _processing = true; _processingId = id; });
     await Future.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
-    setState(() { _processing = false; _processingId = null; _pending.removeAt(index); });
+    setState(() {
+      _processing = false; _processingId = null; _pending.removeAt(index);
+    });
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Row(children: [
         Icon(approve ? Icons.check_circle_outline : Icons.cancel_outlined,
@@ -106,12 +123,11 @@ class _AdminHomeState extends State<_AdminHome> {
     return Stack(children: [
       Scaffold(
         appBar: ShccAppBar(
-            logoAsset: 'assets/images/logo.png',
+          logoAsset: 'assets/images/logo.png',
           userInitials: 'AD',
           onProfileTap: () => Navigator.push(context,
             MaterialPageRoute(builder: (_) => const ProfileScreen())),
           actions: [
-            // Admin can create orders directly from top bar
             IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(6),
@@ -150,19 +166,22 @@ class _AdminHomeState extends State<_AdminHome> {
                   icon: Icons.people_rounded, color: AppColors.info),
               ],
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
 
-            // Quick action for admin to create order
+            // ── Create order banner ───────────────────────────────
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary.withValues(alpha: 0.15),
-                    AppColors.primary.withValues(alpha: 0.04)],
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.15),
+                    AppColors.primary.withValues(alpha: 0.04),
+                  ],
                   begin: Alignment.topLeft, end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.3)),
               ),
               child: Row(children: [
                 Container(
@@ -175,20 +194,28 @@ class _AdminHomeState extends State<_AdminHome> {
                     color: Colors.white, size: 22),
                 ),
                 const SizedBox(width: 14),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Create New Order', style: AppTextStyles.bodyMedium),
-                  Text('Admin order entry', style: AppTextStyles.caption),
-                ])),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Create New Order', style: AppTextStyles.bodyMedium),
+                    Text('Admin order entry', style: AppTextStyles.caption),
+                  ],
+                )),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10)),
                   onPressed: () => Navigator.push(context, MaterialPageRoute(
                     builder: (_) => const CreateOrderScreen(isAdmin: true))),
                   child: const Text('Create'),
                 ),
               ]),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
+
+            // ── Sales Target Management ───────────────────────────
+            const _SalesTargetCard(),
+            const SizedBox(height: 24),
 
             SectionHeader(
               title: 'Pending Approvals',
@@ -200,7 +227,8 @@ class _AdminHomeState extends State<_AdminHome> {
               Container(
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
-                  color: AppColors.bgCard, borderRadius: BorderRadius.circular(16),
+                  color: AppColors.bgCard,
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
                 ),
                 child: Column(children: [
@@ -231,6 +259,184 @@ class _AdminHomeState extends State<_AdminHome> {
   }
 }
 
+// ── Sales Target Card ─────────────────────────────────────────────────────────
+class _SalesTargetCard extends StatefulWidget {
+  const _SalesTargetCard();
+  @override
+  State<_SalesTargetCard> createState() => _SalesTargetCardState();
+}
+
+class _SalesTargetCardState extends State<_SalesTargetCard> {
+  final _salesPersons = ['Raj Sharma', 'Amit Patel', 'Priya Mehta'];
+  String? _selected;
+  final _targetCtrl = TextEditingController();
+  bool _saved = false;
+
+  @override
+  void dispose() { _targetCtrl.dispose(); super.dispose(); }
+
+  void _save() {
+    final v = double.tryParse(_targetCtrl.text);
+    if (_selected == null || v == null || v <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Select a salesperson and enter a valid target'),
+        backgroundColor: AppColors.error,
+      ));
+      return;
+    }
+    setState(() {
+      TargetStore.targets[_selected!] = v;
+      _saved = true;
+    });
+    Future.delayed(const Duration(seconds: 2),
+      () { if (mounted) setState(() => _saved = false); });
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(children: [
+        const Icon(Icons.check_circle_outline,
+          color: AppColors.success, size: 18),
+        const SizedBox(width: 10),
+        Text('Target updated for $_selected',
+          style: AppTextStyles.body),
+      ]),
+      backgroundColor: AppColors.bgCard,
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+  }
+
+  String _fmt(double v) {
+    if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
+    if (v >= 100000)   return '₹${(v / 100000).toStringAsFixed(2)} L';
+    return '₹${v.toStringAsFixed(0)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            width: 28, height: 28,
+            decoration: BoxDecoration(
+              color: AppColors.infoMuted,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.track_changes_rounded,
+              size: 15, color: AppColors.info),
+          ),
+          const SizedBox(width: 10),
+          Text('Sales Targets', style: AppTextStyles.heading3),
+        ]),
+        const SizedBox(height: 16),
+
+        // Current targets overview
+        ...TargetStore.targets.entries.map((e) {
+          final achieved = TargetStore.achieved[e.key] ?? 0;
+          final pct = e.value == 0 ? 0.0 : (achieved / e.value).clamp(0.0, 1.0);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(e.key, style: AppTextStyles.bodyMedium),
+                Text('${(pct * 100).toStringAsFixed(0)}%',
+                  style: AppTextStyles.caption.copyWith(
+                    color: pct >= 1 ? AppColors.success : AppColors.primary)),
+              ]),
+              const SizedBox(height: 4),
+              Row(children: [
+                Expanded(child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: pct, minHeight: 6,
+                    backgroundColor: AppColors.bgBase,
+                    valueColor: AlwaysStoppedAnimation(
+                      pct >= 1 ? AppColors.success : AppColors.primary),
+                  ),
+                )),
+                const SizedBox(width: 8),
+                Text('${_fmt(achieved)} / ${_fmt(e.value)}',
+                  style: AppTextStyles.caption),
+              ]),
+            ]),
+          );
+        }),
+        const Divider(color: AppColors.border, height: 24),
+
+        // Assign/update target
+        Text('Assign / Update Target',
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.textSecondary, letterSpacing: 0.6)),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          value: _selected,
+          dropdownColor: AppColors.bgCard,
+          style: AppTextStyles.body,
+          hint: Text('Select sales person', style: AppTextStyles.caption),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded,
+            color: AppColors.textMuted),
+          decoration: const InputDecoration(
+            labelText: 'Sales Person',
+            prefixIcon: Icon(Icons.person_outline_rounded,
+              size: 18, color: AppColors.textMuted),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16, vertical: 12),
+          ),
+          items: _salesPersons.map((p) => DropdownMenuItem(
+            value: p,
+            child: Text(p, style: AppTextStyles.body),
+          )).toList(),
+          onChanged: (v) => setState(() {
+            _selected = v;
+            if (v != null && TargetStore.targets.containsKey(v)) {
+              _targetCtrl.text =
+                TargetStore.targets[v]!.toStringAsFixed(0);
+            } else {
+              _targetCtrl.clear();
+            }
+          }),
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _targetCtrl,
+          style: AppTextStyles.body,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: const InputDecoration(
+            labelText: 'Monthly Target (₹)',
+            prefixIcon: Icon(Icons.currency_rupee_rounded,
+              size: 18, color: AppColors.textMuted),
+            prefixText: '₹ ',
+            prefixStyle: TextStyle(
+              color: AppColors.textSecondary, fontSize: 14),
+          ),
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            icon: Icon(_saved
+              ? Icons.check_rounded : Icons.save_rounded, size: 16),
+            label: Text(_saved ? 'Saved!' : 'Save Target'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _saved ? AppColors.success : AppColors.primary,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            onPressed: _save,
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+// ── Approval card ─────────────────────────────────────────────────────────────
 class _ApprovalCard extends StatefulWidget {
   final Map<String, dynamic> order;
   final bool isProcessing;
@@ -267,12 +473,11 @@ class _ApprovalCardState extends State<_ApprovalCard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgCard, borderRadius: BorderRadius.circular(16),
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
-        // Header
         Row(children: [
           Container(
             width: 38, height: 38,
@@ -284,18 +489,19 @@ class _ApprovalCardState extends State<_ApprovalCard> {
                 fontWeight: FontWeight.w700, fontSize: 15))),
           ),
           const SizedBox(width: 10),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(o['salesman'] as String, style: AppTextStyles.bodyMedium),
-            Text(o['time'] as String, style: AppTextStyles.caption),
-          ])),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(o['salesman'] as String, style: AppTextStyles.bodyMedium),
+              Text(o['time'] as String, style: AppTextStyles.caption),
+            ],
+          )),
           Text(o['id'] as String,
             style: AppTextStyles.label.copyWith(color: AppColors.primary)),
         ]),
         const SizedBox(height: 12),
         const Divider(color: AppColors.border, height: 1),
         const SizedBox(height: 12),
-
-        // Summary
         Text(o['buyer_name'] as String, style: AppTextStyles.heading3),
         const SizedBox(height: 4),
         Text('${o['product_type']}  ·  ${o['quality']}  ·  ${o['quantity']} MT',
@@ -304,25 +510,23 @@ class _ApprovalCardState extends State<_ApprovalCard> {
         Text('${o['type_of_sale']}  ·  ${o['port_name']}  ·  ${o['payment_terms']}',
           style: AppTextStyles.caption),
         const SizedBox(height: 10),
-
-        // Total highlight
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.primaryMuted, borderRadius: BorderRadius.circular(8)),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Total Amount', style: AppTextStyles.caption),
-            Text(_totalStr, style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.primary, fontWeight: FontWeight.w700)),
-          ]),
+            color: AppColors.primaryMuted,
+            borderRadius: BorderRadius.circular(8)),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Total Amount', style: AppTextStyles.caption),
+              Text(_totalStr, style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.primary, fontWeight: FontWeight.w700)),
+            ]),
         ),
-
-        // Comment field
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           child: _showComment
             ? Padding(
-                key: const ValueKey('c'),
+                key: const ValueKey('comment'),
                 padding: const EdgeInsets.only(top: 12),
                 child: TextField(
                   controller: _commentCtrl,
@@ -332,11 +536,9 @@ class _ApprovalCardState extends State<_ApprovalCard> {
                     labelText: 'Comment (optional)'),
                 ),
               )
-            : const SizedBox(key: ValueKey('n')),
+            : const SizedBox(key: ValueKey('none')),
         ),
         const SizedBox(height: 14),
-
-        // Actions
         Row(children: [
           Expanded(child: OutlinedButton.icon(
             icon: const Icon(Icons.close_rounded, size: 16),
@@ -346,7 +548,9 @@ class _ApprovalCardState extends State<_ApprovalCard> {
               side: const BorderSide(color: AppColors.error),
               padding: const EdgeInsets.symmetric(vertical: 12)),
             onPressed: widget.isProcessing ? null : () {
-              if (!_showComment) { setState(() => _showComment = true); return; }
+              if (!_showComment) {
+                setState(() => _showComment = true); return;
+              }
               widget.onReject();
             },
           )),
