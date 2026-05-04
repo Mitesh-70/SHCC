@@ -19,31 +19,31 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final _ctrl = TextEditingController();
   String _query  = '';
+  // ── Confirmed removed from filter options ─────────────────────────
   String _filter = 'All';
 
   static const _orders = [
     {
       'id': 'ORD-2024-048', 'buyer_name': 'JSW Steel Ltd',
-      'sales_person_name': 'Raj Sharma',
-      'product_type': 'Indonesian Coal',
+      'sales_person_name': 'Raj Sharma', 'product_type': 'Indonesian Coal',
       'base_rate': 6200.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 200.0,
       'type_of_sale': 'Spot', 'quality': '5000 GAR',
       'port_name': 'Mundra', 'payment_terms': 'Advance',
-      'status': 'confirmed', 'date': '28 Apr 2024',
+      'status': 'processed', 'date': '28 Apr 2024',
     },
     {
       'id': 'ORD-2024-047', 'buyer_name': 'Ultratech Cement',
-      'sales_person_name': 'Raj Sharma',
-      'product_type': 'South African Coal',
+      'sales_person_name': 'Raj Sharma', 'product_type': 'South African Coal',
       'base_rate': 6100.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 150.0,
       'type_of_sale': 'F.O.R.', 'quality': '4200 GAR',
       'port_name': 'Kandla', 'payment_terms': 'Credit Line',
       'status': 'pending', 'date': '27 Apr 2024',
+      'rejected': true,
+      'admin_comment': 'Quantity too high for this port. Reduce to 100 MT.',
     },
     {
       'id': 'ORD-2024-046', 'buyer_name': 'Tata Steel',
-      'sales_person_name': 'Amit Patel',
-      'product_type': 'Russian Coal',
+      'sales_person_name': 'Amit Patel', 'product_type': 'Russian Coal',
       'base_rate': 5600.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 500.0,
       'type_of_sale': 'Spot', 'quality': '4800 GAR',
       'port_name': 'Hazira', 'payment_terms': 'On Delivery',
@@ -51,8 +51,7 @@ class _SearchScreenState extends State<SearchScreen> {
     },
     {
       'id': 'ORD-2024-045', 'buyer_name': 'JSW Steel Ltd',
-      'sales_person_name': 'Raj Sharma',
-      'product_type': 'US Coal',
+      'sales_person_name': 'Raj Sharma', 'product_type': 'US Coal',
       'base_rate': 3500.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 100.0,
       'type_of_sale': 'F.O.R.', 'quality': '3800 GAR',
       'port_name': 'Magdalla', 'payment_terms': 'Advance',
@@ -60,8 +59,7 @@ class _SearchScreenState extends State<SearchScreen> {
     },
     {
       'id': 'ORD-2024-044', 'buyer_name': 'ACC Cement',
-      'sales_person_name': 'Priya Mehta',
-      'product_type': 'Indonesian Coal',
+      'sales_person_name': 'Priya Mehta', 'product_type': 'Indonesian Coal',
       'base_rate': 8200.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 300.0,
       'type_of_sale': 'Spot', 'quality': '4500 GAR',
       'port_name': 'Navlakhi', 'payment_terms': 'LC',
@@ -69,68 +67,54 @@ class _SearchScreenState extends State<SearchScreen> {
     },
   ];
 
-  // ── Multi-field search: buyer, order ID, salesman, port, coal type ─────────
-  List<Map<String, dynamic>> get _filtered {
+  List<Map<String, dynamic>> get _filtered => _orders.where((o) {
     final q = _query.toLowerCase().trim();
-    return _orders.where((o) {
-      // Status filter
-      final matchStatus = _filter == 'All' ||
-        (o['status'] as String).toLowerCase() == _filter.toLowerCase();
-      if (!matchStatus) return false;
-
-      // If no query, pass through
-      if (q.isEmpty) return true;
-
-      // Check all searchable fields
-      final fields = [
-        o['buyer_name']        as String,
-        o['id']                as String,
-        o['sales_person_name'] as String,
-        o['port_name']         as String,
-        o['product_type']      as String,
-      ];
-      return fields.any((f) => f.toLowerCase().contains(q));
-    }).toList();
-  }
+    final matchStatus = _filter == 'All' ||
+      (o['status'] as String).toLowerCase() == _filter.toLowerCase();
+    if (!matchStatus) return false;
+    if (q.isEmpty) return true;
+    return [
+      o['buyer_name']        as String,
+      o['id']                as String,
+      o['sales_person_name'] as String,
+      o['port_name']         as String,
+      o['product_type']      as String,
+    ].any((f) => f.toLowerCase().contains(q));
+  }).toList();
 
   bool get _isGrouped => _query.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
-
     return Scaffold(
       appBar: ShccAppBar(
-          logoAsset: 'assets/images/logo.png',
+        logoAsset: 'assets/images/logo.png',
         onProfileTap: () {},
         userInitials: widget.isAdmin ? 'AD' : 'RS',
       ),
       body: Column(children: [
-
-        // ── Search bar ─────────────────────────────────────────────
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Row(children: [
-            Expanded(
-              child: TextField(
-                controller: _ctrl,
-                style: AppTextStyles.body,
-                onChanged: (v) => setState(() => _query = v),
-                decoration: InputDecoration(
-                  hintText: 'Buyer, order ID, salesman, port, coal type…',
-                  prefixIcon: const Icon(Icons.search_rounded,
-                    size: 20, color: AppColors.textMuted),
-                  suffixIcon: _query.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.close_rounded,
-                          size: 18, color: AppColors.textMuted),
-                        onPressed: () => setState(() {
-                          _query = ''; _ctrl.clear();
-                        }))
-                    : null,
-                ),
+            Expanded(child: TextField(
+              controller: _ctrl,
+              style: AppTextStyles.body,
+              onChanged: (v) => setState(() => _query = v),
+              decoration: InputDecoration(
+                hintText: 'Buyer, order ID, salesman, port, coal type…',
+                prefixIcon: const Icon(Icons.search_rounded,
+                  size: 20, color: AppColors.textMuted),
+                suffixIcon: _query.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.close_rounded,
+                        size: 18, color: AppColors.textMuted),
+                      onPressed: () => setState(() {
+                        _query = ''; _ctrl.clear();
+                      }))
+                  : null,
               ),
-            ),
+            )),
             const SizedBox(width: 10),
             _FilterBtn(
               isActive: _filter != 'All',
@@ -139,13 +123,14 @@ class _SearchScreenState extends State<SearchScreen> {
           ]),
         ),
 
-        // ── Filter chips ───────────────────────────────────────────
+        // ── Filter chips — Confirmed removed ─────────────────────
         SizedBox(
           height: 52,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            children: ['All', 'Pending', 'Processed', 'Completed', 'Confirmed']
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16, vertical: 8),
+            children: ['All', 'Pending', 'Processed', 'Completed']
               .map((f) => Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: _FChip(
@@ -157,30 +142,27 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
 
-        // ── Result count + group indicator ─────────────────────────
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
           child: Row(children: [
-            Text(
-              '${filtered.length} result${filtered.length == 1 ? '' : 's'}',
-              style: AppTextStyles.caption,
-            ),
+            Text('${filtered.length} result${filtered.length == 1 ? '' : 's'}',
+              style: AppTextStyles.caption),
             if (_isGrouped) ...[
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.primaryMuted,
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                  borderRadius: BorderRadius.circular(10)),
                 child: Text('Grouped by buyer',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.primary)),
               ),
             ],
           ]),
         ),
 
-        // ── Results ────────────────────────────────────────────────
         Expanded(
           child: filtered.isEmpty
             ? const EmptyState(
@@ -188,8 +170,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 title: AppStrings.noResults,
                 subtitle: AppStrings.noResultsSub)
             : _isGrouped
-              ? _GroupedList(orders: filtered, isAdmin: widget.isAdmin)
-              : _FlatList(orders: filtered, isAdmin: widget.isAdmin),
+              ? _GroupedList(
+                  orders: filtered, isAdmin: widget.isAdmin)
+              : _FlatList(
+                  orders: filtered, isAdmin: widget.isAdmin),
         ),
       ]),
     );
@@ -198,7 +182,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void _showFilter(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => Padding(
@@ -209,8 +193,8 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             Text('Filter by Status', style: AppTextStyles.heading3),
             const SizedBox(height: 16),
-            ...['All', 'Pending', 'Processed', 'Completed', 'Confirmed']
-              .map((f) => ListTile(
+            ...['All', 'Pending', 'Processed', 'Completed'].map((f) =>
+              ListTile(
                 contentPadding: EdgeInsets.zero, dense: true,
                 title: Text(f, style: AppTextStyles.body),
                 trailing: _filter == f
@@ -229,8 +213,6 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-// ── Flat list ─────────────────────────────────────────────────────────────────
-
 class _FlatList extends StatelessWidget {
   final List<Map<String, dynamic>> orders;
   final bool isAdmin;
@@ -242,12 +224,11 @@ class _FlatList extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       itemCount: orders.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => _OrderCard(order: orders[i], isAdmin: isAdmin),
+      itemBuilder: (_, i) =>
+        _OrderCard(order: orders[i], isAdmin: isAdmin),
     );
   }
 }
-
-// ── Grouped list ──────────────────────────────────────────────────────────────
 
 class _GroupedList extends StatefulWidget {
   final List<Map<String, dynamic>> orders;
@@ -267,20 +248,21 @@ class _GroupedListState extends State<_GroupedList> {
     for (final o in widget.orders) {
       grouped.putIfAbsent(o['buyer_name'] as String, () => []).add(o);
     }
-
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       children: [
         for (final e in grouped.entries) ...[
           GestureDetector(
-            onTap: () => setState(() => _collapsed.contains(e.key)
-              ? _collapsed.remove(e.key)
-              : _collapsed.add(e.key)),
+            onTap: () => setState(() =>
+              _collapsed.contains(e.key)
+                ? _collapsed.remove(e.key)
+                : _collapsed.add(e.key)),
             child: Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.bgCard,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),
               ),
@@ -289,8 +271,7 @@ class _GroupedListState extends State<_GroupedList> {
                   width: 34, height: 34,
                   decoration: BoxDecoration(
                     color: AppColors.primaryMuted,
-                    borderRadius: BorderRadius.circular(9),
-                  ),
+                    borderRadius: BorderRadius.circular(9)),
                   child: const Icon(Icons.business_rounded,
                     size: 17, color: AppColors.primary),
                 ),
@@ -307,22 +288,21 @@ class _GroupedListState extends State<_GroupedList> {
                   _collapsed.contains(e.key)
                     ? Icons.keyboard_arrow_down_rounded
                     : Icons.keyboard_arrow_up_rounded,
-                  color: AppColors.textMuted,
-                ),
+                  color: AppColors.textMuted),
               ]),
             ),
           ),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
             child: _collapsed.contains(e.key)
-              ? const SizedBox(key: ValueKey('h'))
+              ? const SizedBox(key: ValueKey('hidden'))
               : Column(
                   key: const ValueKey('shown'),
                   children: e.value.map((o) => Padding(
                     padding: const EdgeInsets.only(left: 12, bottom: 8),
-                    child: _OrderCard(order: o, isAdmin: widget.isAdmin),
-                  )).toList(),
-                ),
+                    child: _OrderCard(
+                      order: o, isAdmin: widget.isAdmin),
+                  )).toList()),
           ),
           const SizedBox(height: 4),
         ],
@@ -331,14 +311,24 @@ class _GroupedListState extends State<_GroupedList> {
   }
 }
 
-// ── Order card ────────────────────────────────────────────────────────────────
-
 class _OrderCard extends StatelessWidget {
   final Map<String, dynamic> order;
   final bool isAdmin;
   const _OrderCard({required this.order, required this.isAdmin});
 
-  bool get _locked => (order['status'] as String) == 'confirmed';
+  // ── Edit allowed ONLY when status == pending ──────────────────────
+  bool get _canEdit => (order['status'] as String) == 'pending';
+
+  // ── Rejected = pending + rejected flag ────────────────────────────
+  bool get _isRejected =>
+    order['rejected'] == true &&
+    (order['status'] as String) == 'pending';
+
+  // ── Delivery tracking for processed/completed ─────────────────────
+  bool get _showTracking {
+    final s = order['status'] as String;
+    return s == 'processed' || s == 'completed';
+  }
 
   double get _total {
     final b = (order['base_rate'] as num).toDouble()
@@ -349,86 +339,147 @@ class _OrderCard extends StatelessWidget {
   }
 
   String get _totalStr {
-    if (_total >= 10000000) return '₹${(_total / 10000000).toStringAsFixed(2)} Cr';
-    if (_total >= 100000)   return '₹${(_total / 100000).toStringAsFixed(2)} L';
+    if (_total >= 10000000)
+      return '₹${(_total / 10000000).toStringAsFixed(2)} Cr';
+    if (_total >= 100000)
+      return '₹${(_total / 100000).toStringAsFixed(2)} L';
     return '₹${_total.toStringAsFixed(0)}';
   }
 
   @override
   Widget build(BuildContext context) {
+    // Rejected card gets a subtle red/orange highlight
+    final borderColor = _isRejected
+      ? AppColors.error.withValues(alpha: 0.45)
+      : AppColors.border;
+    final bgColor = _isRejected
+      ? AppColors.error.withValues(alpha: 0.04)
+      : Theme.of(context).cardColor;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: bgColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: _locked
-            ? const Color(0x409B59B6)
-            : AppColors.border,
-        ),
+        border: Border.all(color: borderColor),
       ),
-      child: Row(children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Text(order['id'] as String,
-                style: AppTextStyles.label.copyWith(color: AppColors.primary)),
-              const SizedBox(width: 8),
-              StatusBadge.fromString(order['status'] as String),
-            ]),
-            const SizedBox(height: 7),
-            Text(order['buyer_name'] as String, style: AppTextStyles.bodyMedium),
-            const SizedBox(height: 3),
-            Text(
-              '${order['quantity']} MT  ·  ${order['product_type']}  ·  ${order['port_name']}',
-              style: AppTextStyles.caption,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Text(order['id'] as String,
+                  style: AppTextStyles.label.copyWith(
+                    color: AppColors.primary)),
+                const SizedBox(width: 8),
+                StatusBadge.fromString(order['status'] as String),
+                if (_isRejected) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.35)),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.error_outline_rounded,
+                        size: 10, color: AppColors.error),
+                      const SizedBox(width: 3),
+                      Text('Rejected',
+                        style: AppTextStyles.badge.copyWith(
+                          color: AppColors.error)),
+                    ]),
+                  ),
+                ],
+              ]),
+              const SizedBox(height: 7),
+              Text(order['buyer_name'] as String,
+                style: AppTextStyles.bodyMedium),
+              const SizedBox(height: 3),
+              Text(
+                '${order['quantity']} MT  ·  ${order['product_type']}  ·  ${order['port_name']}',
+                style: AppTextStyles.caption),
+              const SizedBox(height: 7),
+              Row(children: [
+                Text(_totalStr,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700)),
+                const SizedBox(width: 8),
+                Text(order['date'] as String,
+                  style: AppTextStyles.caption),
+              ]),
+            ],
+          )),
+          const SizedBox(width: 8),
+          Column(children: [
+            _ABtn(
+              icon: Icons.info_outline_rounded,
+              onTap: () => _showDetail(context),
             ),
-            const SizedBox(height: 7),
-            Row(children: [
-              Text(_totalStr,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.primary, fontWeight: FontWeight.w700)),
-              const SizedBox(width: 8),
-              Text(order['date'] as String, style: AppTextStyles.caption),
-            ]),
-            if (_locked)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Row(children: [
-                  const Icon(Icons.lock_rounded,
-                    size: 11, color: Color(0xFF9B59B6)),
-                  const SizedBox(width: 4),
-                  Text('Confirmed — editing locked',
-                    style: AppTextStyles.caption.copyWith(
-                      color: const Color(0xFF9B59B6))),
-                ]),
+            const SizedBox(height: 8),
+            if (_showTracking)
+              _ABtn(
+                icon: Icons.local_shipping_outlined,
+                color: AppColors.primary,
+                onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => OrderTrackingScreen(
+                    order: order, isAdmin: isAdmin))),
+              )
+            else
+              _ABtn(
+                icon: Icons.edit_outlined,
+                // Greyed out when not editable
+                color: _canEdit
+                  ? AppColors.primary : AppColors.textMuted,
+                onTap: _canEdit
+                  ? () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) =>
+                        CreateOrderScreen(
+                          prefill: order, isAdmin: isAdmin)))
+                  : null,
               ),
           ]),
-        ),
-        const SizedBox(width: 8),
-        Column(children: [
-          _ABtn(
-            icon: Icons.info_outline_rounded,
-            onTap: () => _showDetail(context),
-          ),
-          const SizedBox(height: 8),
-          if (_locked)
-            _ABtn(
-              icon: Icons.local_shipping_outlined,
-              color: AppColors.primary,
-              onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => OrderTrackingScreen(
-                  order: order, isAdmin: isAdmin))),
-            )
-          else
-            _ABtn(
-              icon: Icons.edit_outlined,
-              color: AppColors.primary,
-              onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => CreateOrderScreen(
-                  prefill: order, isAdmin: isAdmin))),
-            ),
         ]),
+
+        // ── Admin comment for rejected orders ─────────────────────
+        if (_isRejected && order['admin_comment'] != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.07),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: AppColors.error.withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.admin_panel_settings_outlined,
+                  size: 14, color: AppColors.error),
+                const SizedBox(width: 8),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Admin Comment',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 3),
+                    Text(order['admin_comment'] as String,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary)),
+                  ],
+                )),
+              ],
+            ),
+          ),
+        ],
       ]),
     );
   }
@@ -439,7 +490,6 @@ class _OrderCard extends StatelessWidget {
     final gstAmt = b * ((order['gst'] as num) / 100);
     final tcsAmt = b * ((order['tcs'] as num) / 100);
     final total  = b + gstAmt + tcsAmt;
-
     String fmt(double v) {
       if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
       if (v >= 100000)   return '₹${(v / 100000).toStringAsFixed(2)} L';
@@ -449,7 +499,7 @@ class _OrderCard extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => DraggableScrollableSheet(
@@ -469,17 +519,38 @@ class _OrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Order Detail', style: AppTextStyles.heading2),
-                  const SizedBox(height: 6),
-                  StatusBadge.fromString(order['status'] as String),
-                ]),
+                Column(crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Order Detail', style: AppTextStyles.heading2),
+                    const SizedBox(height: 6),
+                    Row(children: [
+                      StatusBadge.fromString(order['status'] as String),
+                      if (_isRejected) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.error.withValues(
+                                alpha: 0.35)),
+                          ),
+                          child: Text('Rejected',
+                            style: AppTextStyles.badge.copyWith(
+                              color: AppColors.error)),
+                        ),
+                      ],
+                    ]),
+                  ]),
                 Row(children: [
-                  if (_locked)
+                  if (_showTracking)
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: OutlinedButton.icon(
-                        icon: const Icon(Icons.local_shipping_outlined, size: 15),
+                        icon: const Icon(
+                          Icons.local_shipping_outlined, size: 15),
                         label: const Text('Track'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
@@ -503,13 +574,48 @@ class _OrderCard extends StatelessWidget {
                 ]),
               ],
             ),
-            const SizedBox(height: 24),
+
+            // Admin comment in detail view
+            if (_isRejected && order['admin_comment'] != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.admin_panel_settings_outlined,
+                      size: 16, color: AppColors.error),
+                    const SizedBox(width: 10),
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Admin Comment',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.error)),
+                        const SizedBox(height: 4),
+                        Text(order['admin_comment'] as String,
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.textSecondary)),
+                      ],
+                    )),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 20),
             _DSection('Order Info', [
               ('Order ID',     order['id'] as String),
               ('Date',         order['date'] as String),
               ('Sales Person', order['sales_person_name'] as String),
             ]),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             _DSection('Product Details', [
               ('Product',      order['product_type'] as String),
               ('Quality',      order['quality'] as String),
@@ -517,14 +623,14 @@ class _OrderCard extends StatelessWidget {
               ('Port',         order['port_name'] as String),
               ('Quantity',     '${order['quantity']} MT'),
             ]),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             _DSection('Pricing', [
               ('Base Rate', '₹${order['base_rate']}/MT'),
               ('GST',       '${order['gst']}%  →  ${fmt(gstAmt)}'),
               ('TCS',       '${order['tcs']}%  →  ${fmt(tcsAmt)}'),
               ('Total',     fmt(total)),
             ]),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             _DSection('Buyer Info', [
               ('Buyer',          order['buyer_name'] as String),
               ('Payment Terms',  order['payment_terms'] as String),
@@ -536,8 +642,6 @@ class _OrderCard extends StatelessWidget {
   }
 }
 
-// ── Detail section ────────────────────────────────────────────────────────────
-
 class _DSection extends StatelessWidget {
   final String title;
   final List<(String, String)> rows;
@@ -546,7 +650,8 @@ class _DSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: AppTextStyles.label.copyWith(letterSpacing: 0.8)),
+      Text(title,
+        style: AppTextStyles.label.copyWith(letterSpacing: 0.8)),
       const SizedBox(height: 10),
       Container(
         decoration: BoxDecoration(
@@ -557,11 +662,13 @@ class _DSection extends StatelessWidget {
         child: Column(
           children: rows.asMap().entries.map((e) => Column(children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 11),
               child: Row(children: [
                 SizedBox(width: 110,
                   child: Text(e.value.$1, style: AppTextStyles.caption)),
-                Expanded(child: Text(e.value.$2, style: AppTextStyles.bodyMedium)),
+                Expanded(child: Text(e.value.$2,
+                  style: AppTextStyles.bodyMedium)),
               ]),
             ),
             if (e.key < rows.length - 1)
@@ -573,8 +680,6 @@ class _DSection extends StatelessWidget {
   }
 }
 
-// ── Action button ─────────────────────────────────────────────────────────────
-
 class _ABtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
@@ -583,25 +688,21 @@ class _ABtn extends StatelessWidget {
     this.color = AppColors.textSecondary});
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36, height: 36,
-        decoration: BoxDecoration(
-          color: AppColors.bgBase,
-          borderRadius: BorderRadius.circular(9),
-          border: Border.all(
-            color: onTap == null ? AppColors.bgBase : AppColors.border),
-        ),
-        child: Icon(icon, size: 17,
-          color: onTap == null ? AppColors.textMuted : color),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 36, height: 36,
+      decoration: BoxDecoration(
+        color: AppColors.bgBase,
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(
+          color: onTap == null ? AppColors.bgBase : AppColors.border),
       ),
-    );
-  }
+      child: Icon(icon, size: 17,
+        color: onTap == null ? AppColors.textMuted : color),
+    ),
+  );
 }
-
-// ── Filter button ─────────────────────────────────────────────────────────────
 
 class _FilterBtn extends StatelessWidget {
   final bool isActive;
@@ -609,52 +710,46 @@ class _FilterBtn extends StatelessWidget {
   const _FilterBtn({required this.isActive, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 46, height: 48,
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primaryMuted : AppColors.bgCard,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isActive ? AppColors.primary : AppColors.border),
-        ),
-        child: Icon(Icons.tune_rounded,
-          color: isActive ? AppColors.primary : AppColors.textSecondary,
-          size: 20),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 46, height: 48,
+      decoration: BoxDecoration(
+        color: isActive ? AppColors.primaryMuted : Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isActive ? AppColors.primary : AppColors.border),
       ),
-    );
-  }
+      child: Icon(Icons.tune_rounded,
+        color: isActive ? AppColors.primary : AppColors.textSecondary,
+        size: 20),
+    ),
+  );
 }
-
-// ── Filter chip ───────────────────────────────────────────────────────────────
 
 class _FChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _FChip({required this.label, required this.selected, required this.onTap});
+  const _FChip({required this.label, required this.selected,
+    required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primaryMuted : AppColors.bgCard,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border),
-        ),
-        child: Text(label,
-          style: AppTextStyles.caption.copyWith(
-            color: selected ? AppColors.primary : AppColors.textSecondary,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          )),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: selected ? AppColors.primaryMuted : Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: selected ? AppColors.primary : AppColors.border),
       ),
-    );
-  }
+      child: Text(label, style: AppTextStyles.caption.copyWith(
+        color: selected ? AppColors.primary : AppColors.textSecondary,
+        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+      )),
+    ),
+  );
 }

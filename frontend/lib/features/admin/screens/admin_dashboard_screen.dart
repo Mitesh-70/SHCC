@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
@@ -12,8 +11,9 @@ import '../../search/screens/search_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../reports/screens/reports_screen.dart';
 import '../../orders/screens/create_order_screen.dart';
+import '../../notifications/notifications_screen.dart';
 
-// ── Shared target store (simple in-memory — replace with provider/db) ─────────
+// ── Shared target store ───────────────────────────────────────────────────────
 class TargetStore {
   static final Map<String, double> targets = {
     'Raj Sharma':  5000000,
@@ -45,7 +45,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       const SearchScreen(isAdmin: true),
       const ReportsScreen(),
       const CatalogueScreen(isAdmin: true),
-      const ProfileScreen(),
+      const ProfileScreen(isAdmin: true),
     ];
   }
 
@@ -73,48 +73,67 @@ class _AdminHomeState extends State<_AdminHome> {
 
   final List<Map<String, dynamic>> _pending = [
     {
-      'id': 'ORD-2024-049', 'salesman': 'Raj Sharma', 'buyer_name': 'Birla Cement',
-      'product_type': 'Indonesian Coal', 'base_rate': 7100.0,
-      'gst': 18.0, 'tcs': 0.1, 'quantity': 300.0,
+      'id': 'ORD-2024-049', 'salesman': 'Raj Sharma',
+      'buyer_name': 'Birla Cement', 'product_type': 'Indonesian Coal',
+      'base_rate': 7100.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 300.0,
       'type_of_sale': 'F.O.R.', 'quality': '4000 GAR',
       'port_name': 'Mundra', 'payment_terms': 'Advance', 'time': '10 min ago',
     },
     {
-      'id': 'ORD-2024-050', 'salesman': 'Amit Patel', 'buyer_name': 'Essar Steel',
-      'product_type': 'South African Coal', 'base_rate': 6200.0,
-      'gst': 18.0, 'tcs': 0.1, 'quantity': 450.0,
+      'id': 'ORD-2024-050', 'salesman': 'Amit Patel',
+      'buyer_name': 'Essar Steel', 'product_type': 'South African Coal',
+      'base_rate': 6200.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 450.0,
       'type_of_sale': 'Spot', 'quality': '5000 GAR',
       'port_name': 'Hazira', 'payment_terms': 'LC', 'time': '25 min ago',
     },
     {
-      'id': 'ORD-2024-051', 'salesman': 'Priya Mehta', 'buyer_name': 'ACC Cement',
-      'product_type': 'Russian Coal', 'base_rate': 4800.0,
-      'gst': 18.0, 'tcs': 0.1, 'quantity': 200.0,
+      'id': 'ORD-2024-051', 'salesman': 'Priya Mehta',
+      'buyer_name': 'ACC Cement', 'product_type': 'Russian Coal',
+      'base_rate': 4800.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 200.0,
       'type_of_sale': 'Spot', 'quality': '4200 GAR',
-      'port_name': 'Kandla', 'payment_terms': 'On Delivery', 'time': '1 hr ago',
+      'port_name': 'Kandla', 'payment_terms': 'On Delivery',
+      'time': '1 hr ago',
     },
   ];
 
-  Future<void> _act(int index, bool approve) async {
-    final id = _pending[index]['id'] as String;
+  Future<void> _act(int index, bool approve, {String? comment}) async {
+    final id       = _pending[index]['id'] as String;
+    final salesman = _pending[index]['salesman'] as String;
     setState(() { _processing = true; _processingId = id; });
     await Future.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
     setState(() {
-      _processing = false; _processingId = null; _pending.removeAt(index);
+      _processing = false; _processingId = null;
+      _pending.removeAt(index);
     });
+
+    // ── Trigger notification to salesperson ───────────────────────
+    NotificationStore.add(
+      person: salesman,
+      title: approve ? 'Order Approved' : 'Order Rejected',
+      description: approve
+        ? 'Your order $id has been approved by Admin.'
+        : 'Your order $id was rejected.${comment != null && comment.isNotEmpty ? ' Comment: $comment' : ''}',
+      type: approve
+        ? NotifType.orderConfirmed : NotifType.orderRejected,
+    );
+
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Row(children: [
-        Icon(approve ? Icons.check_circle_outline : Icons.cancel_outlined,
-          color: approve ? AppColors.success : AppColors.error, size: 18),
+        Icon(approve
+          ? Icons.check_circle_outline : Icons.cancel_outlined,
+          color: approve ? AppColors.success : AppColors.error,
+          size: 18),
         const SizedBox(width: 10),
-        Text('Order ${approve ? 'approved & confirmed' : 'rejected'}',
+        Text('Order ${approve ? 'approved' : 'rejected'}',
           style: AppTextStyles.body),
       ]),
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: Theme.of(context).cardColor,
       behavior: SnackBarBehavior.floating,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12)),
     ));
   }
 
@@ -126,7 +145,8 @@ class _AdminHomeState extends State<_AdminHome> {
           logoAsset: 'assets/images/logo.png',
           userInitials: 'AD',
           onProfileTap: () => Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const ProfileScreen())),
+            MaterialPageRoute(
+              builder: (_) => const ProfileScreen(isAdmin: true))),
           actions: [
             IconButton(
               icon: Container(
@@ -154,31 +174,36 @@ class _AdminHomeState extends State<_AdminHome> {
             GridView.count(
               crossAxisCount: 2, shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.4,
+              crossAxisSpacing: 12, mainAxisSpacing: 12,
+              childAspectRatio: 1.4,
               children: [
                 const KpiCard(label: 'Total Orders', value: '142',
-                  icon: Icons.receipt_long_rounded, color: AppColors.primary),
+                  icon: Icons.receipt_long_rounded,
+                  color: AppColors.primary),
                 const KpiCard(label: 'Revenue MTD', value: '₹3.2 Cr',
-                  icon: Icons.currency_rupee_rounded, color: AppColors.success),
-                KpiCard(label: 'Awaiting Approval', value: '${_pending.length}',
-                  icon: Icons.pending_actions_rounded, color: AppColors.warning),
+                  icon: Icons.currency_rupee_rounded,
+                  color: AppColors.success),
+                KpiCard(
+                  label: 'Awaiting Approval',
+                  value: '${_pending.length}',
+                  icon: Icons.pending_actions_rounded,
+                  color: AppColors.warning),
                 const KpiCard(label: 'Active Salesmen', value: '8',
-                  icon: Icons.people_rounded, color: AppColors.info),
+                  icon: Icons.people_rounded,
+                  color: AppColors.info),
               ],
             ),
             const SizedBox(height: 24),
 
-            // ── Create order banner ───────────────────────────────
+            // Create order banner
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.15),
-                    AppColors.primary.withValues(alpha: 0.04),
-                  ],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
-                ),
+                gradient: LinearGradient(colors: [
+                  AppColors.primary.withValues(alpha: 0.15),
+                  AppColors.primary.withValues(alpha: 0.04),
+                ], begin: Alignment.topLeft,
+                   end: Alignment.bottomRight),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: AppColors.primary.withValues(alpha: 0.3)),
@@ -197,24 +222,23 @@ class _AdminHomeState extends State<_AdminHome> {
                 Expanded(child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Create New Order', style: AppTextStyles.bodyMedium),
-                    Text('Admin order entry', style: AppTextStyles.caption),
+                    Text('Create New Order',
+                      style: AppTextStyles.bodyMedium),
+                    Text('Admin order entry',
+                      style: AppTextStyles.caption),
                   ],
                 )),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 10)),
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => const CreateOrderScreen(isAdmin: true))),
+                  onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) =>
+                      const CreateOrderScreen(isAdmin: true))),
                   child: const Text('Create'),
                 ),
               ]),
             ),
-            const SizedBox(height: 24),
-
-            // ── Sales Target Management ───────────────────────────
-            const _SalesTargetCard(),
             const SizedBox(height: 24),
 
             SectionHeader(
@@ -227,7 +251,7 @@ class _AdminHomeState extends State<_AdminHome> {
               Container(
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
-                  color: AppColors.bgCard,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
                 ),
@@ -248,7 +272,7 @@ class _AdminHomeState extends State<_AdminHome> {
                   order: _pending[i],
                   isProcessing: _processingId == _pending[i]['id'],
                   onApprove: () => _act(i, true),
-                  onReject:  () => _act(i, false),
+                  onReject: (comment) => _act(i, false, comment: comment),
                 ),
               )),
           ],
@@ -259,192 +283,17 @@ class _AdminHomeState extends State<_AdminHome> {
   }
 }
 
-// ── Sales Target Card ─────────────────────────────────────────────────────────
-class _SalesTargetCard extends StatefulWidget {
-  const _SalesTargetCard();
-  @override
-  State<_SalesTargetCard> createState() => _SalesTargetCardState();
-}
-
-class _SalesTargetCardState extends State<_SalesTargetCard> {
-  final _salesPersons = ['Raj Sharma', 'Amit Patel', 'Priya Mehta'];
-  String? _selected;
-  final _targetCtrl = TextEditingController();
-  bool _saved = false;
-
-  @override
-  void dispose() { _targetCtrl.dispose(); super.dispose(); }
-
-  void _save() {
-    final v = double.tryParse(_targetCtrl.text);
-    if (_selected == null || v == null || v <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Select a salesperson and enter a valid target'),
-        backgroundColor: AppColors.error,
-      ));
-      return;
-    }
-    setState(() {
-      TargetStore.targets[_selected!] = v;
-      _saved = true;
-    });
-    Future.delayed(const Duration(seconds: 2),
-      () { if (mounted) setState(() => _saved = false); });
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [
-        const Icon(Icons.check_circle_outline,
-          color: AppColors.success, size: 18),
-        const SizedBox(width: 10),
-        Text('Target updated for $_selected',
-          style: AppTextStyles.body),
-      ]),
-      backgroundColor: AppColors.bgCard,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
-  }
-
-  String _fmt(double v) {
-    if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
-    if (v >= 100000)   return '₹${(v / 100000).toStringAsFixed(2)} L';
-    return '₹${v.toStringAsFixed(0)}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            width: 28, height: 28,
-            decoration: BoxDecoration(
-              color: AppColors.infoMuted,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.track_changes_rounded,
-              size: 15, color: AppColors.info),
-          ),
-          const SizedBox(width: 10),
-          Text('Sales Targets', style: AppTextStyles.heading3),
-        ]),
-        const SizedBox(height: 16),
-
-        // Current targets overview
-        ...TargetStore.targets.entries.map((e) {
-          final achieved = TargetStore.achieved[e.key] ?? 0;
-          final pct = e.value == 0 ? 0.0 : (achieved / e.value).clamp(0.0, 1.0);
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text(e.key, style: AppTextStyles.bodyMedium),
-                Text('${(pct * 100).toStringAsFixed(0)}%',
-                  style: AppTextStyles.caption.copyWith(
-                    color: pct >= 1 ? AppColors.success : AppColors.primary)),
-              ]),
-              const SizedBox(height: 4),
-              Row(children: [
-                Expanded(child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: pct, minHeight: 6,
-                    backgroundColor: AppColors.bgBase,
-                    valueColor: AlwaysStoppedAnimation(
-                      pct >= 1 ? AppColors.success : AppColors.primary),
-                  ),
-                )),
-                const SizedBox(width: 8),
-                Text('${_fmt(achieved)} / ${_fmt(e.value)}',
-                  style: AppTextStyles.caption),
-              ]),
-            ]),
-          );
-        }),
-        const Divider(color: AppColors.border, height: 24),
-
-        // Assign/update target
-        Text('Assign / Update Target',
-          style: AppTextStyles.caption.copyWith(
-            color: AppColors.textSecondary, letterSpacing: 0.6)),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          value: _selected,
-          dropdownColor: AppColors.bgCard,
-          style: AppTextStyles.body,
-          hint: Text('Select sales person', style: AppTextStyles.caption),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded,
-            color: AppColors.textMuted),
-          decoration: const InputDecoration(
-            labelText: 'Sales Person',
-            prefixIcon: Icon(Icons.person_outline_rounded,
-              size: 18, color: AppColors.textMuted),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 16, vertical: 12),
-          ),
-          items: _salesPersons.map((p) => DropdownMenuItem(
-            value: p,
-            child: Text(p, style: AppTextStyles.body),
-          )).toList(),
-          onChanged: (v) => setState(() {
-            _selected = v;
-            if (v != null && TargetStore.targets.containsKey(v)) {
-              _targetCtrl.text =
-                TargetStore.targets[v]!.toStringAsFixed(0);
-            } else {
-              _targetCtrl.clear();
-            }
-          }),
-        ),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: _targetCtrl,
-          style: AppTextStyles.body,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(
-            labelText: 'Monthly Target (₹)',
-            prefixIcon: Icon(Icons.currency_rupee_rounded,
-              size: 18, color: AppColors.textMuted),
-            prefixText: '₹ ',
-            prefixStyle: TextStyle(
-              color: AppColors.textSecondary, fontSize: 14),
-          ),
-        ),
-        const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            icon: Icon(_saved
-              ? Icons.check_rounded : Icons.save_rounded, size: 16),
-            label: Text(_saved ? 'Saved!' : 'Save Target'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _saved ? AppColors.success : AppColors.primary,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-            onPressed: _save,
-          ),
-        ),
-      ]),
-    );
-  }
-}
-
-// ── Approval card ─────────────────────────────────────────────────────────────
 class _ApprovalCard extends StatefulWidget {
   final Map<String, dynamic> order;
   final bool isProcessing;
-  final VoidCallback onApprove, onReject;
+  final VoidCallback onApprove;
+  final void Function(String?) onReject;
+
   const _ApprovalCard({
     required this.order, required this.isProcessing,
     required this.onApprove, required this.onReject,
   });
+
   @override
   State<_ApprovalCard> createState() => _ApprovalCardState();
 }
@@ -462,8 +311,10 @@ class _ApprovalCardState extends State<_ApprovalCard> {
 
   String get _totalStr {
     final v = _total;
-    if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
-    if (v >= 100000)   return '₹${(v / 100000).toStringAsFixed(2)} L';
+    if (v >= 10000000)
+      return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
+    if (v >= 100000)
+      return '₹${(v / 100000).toStringAsFixed(2)} L';
     return '₹${v.toStringAsFixed(0)}';
   }
 
@@ -473,11 +324,12 @@ class _ApprovalCardState extends State<_ApprovalCard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         Row(children: [
           Container(
             width: 38, height: 38,
@@ -492,35 +344,41 @@ class _ApprovalCardState extends State<_ApprovalCard> {
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(o['salesman'] as String, style: AppTextStyles.bodyMedium),
+              Text(o['salesman'] as String,
+                style: AppTextStyles.bodyMedium),
               Text(o['time'] as String, style: AppTextStyles.caption),
             ],
           )),
           Text(o['id'] as String,
-            style: AppTextStyles.label.copyWith(color: AppColors.primary)),
+            style: AppTextStyles.label.copyWith(
+              color: AppColors.primary)),
         ]),
         const SizedBox(height: 12),
         const Divider(color: AppColors.border, height: 1),
         const SizedBox(height: 12),
         Text(o['buyer_name'] as String, style: AppTextStyles.heading3),
         const SizedBox(height: 4),
-        Text('${o['product_type']}  ·  ${o['quality']}  ·  ${o['quantity']} MT',
+        Text(
+          '${o['product_type']}  ·  ${o['quality']}  ·  ${o['quantity']} MT',
           style: AppTextStyles.caption),
         const SizedBox(height: 2),
-        Text('${o['type_of_sale']}  ·  ${o['port_name']}  ·  ${o['payment_terms']}',
+        Text(
+          '${o['type_of_sale']}  ·  ${o['port_name']}  ·  ${o['payment_terms']}',
           style: AppTextStyles.caption),
         const SizedBox(height: 10),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: AppColors.primaryMuted,
             borderRadius: BorderRadius.circular(8)),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Total Amount', style: AppTextStyles.caption),
-              Text(_totalStr, style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.primary, fontWeight: FontWeight.w700)),
-            ]),
+            Text('Total Amount', style: AppTextStyles.caption),
+            Text(_totalStr, style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w700)),
+          ]),
         ),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
@@ -532,8 +390,8 @@ class _ApprovalCardState extends State<_ApprovalCard> {
                   controller: _commentCtrl,
                   style: AppTextStyles.body, maxLines: 2,
                   decoration: const InputDecoration(
-                    hintText: 'Add a note before rejecting…',
-                    labelText: 'Comment (optional)'),
+                    hintText: 'Add a note (will be shown to salesperson)…',
+                    labelText: 'Rejection Comment'),
                 ),
               )
             : const SizedBox(key: ValueKey('none')),
@@ -551,7 +409,7 @@ class _ApprovalCardState extends State<_ApprovalCard> {
               if (!_showComment) {
                 setState(() => _showComment = true); return;
               }
-              widget.onReject();
+              widget.onReject(_commentCtrl.text.trim());
             },
           )),
           const SizedBox(width: 10),

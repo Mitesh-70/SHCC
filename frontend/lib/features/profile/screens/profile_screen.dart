@@ -3,22 +3,24 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../admin/screens/admin_dashboard_screen.dart';
+import '../../settings/settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final bool isAdmin;
+  const ProfileScreen({super.key, this.isAdmin = false});
 
   @override
   Widget build(BuildContext context) {
-    // Simulated logged-in user — replace with auth provider
-    const name      = 'Raj Sharma';
-    const empId     = 'SHCC-2024-042';
-    const role      = 'Sales Staff';
-    const region    = 'Surat & South Gujarat';
-    const initials  = 'RS';
+    const name     = 'Raj Sharma';
+    const empId    = 'SHCC-2024-042';
+    const role     = 'Sales Staff';
+    const region   = 'Surat & South Gujarat';
+    const initials = 'RS';
 
-    final target   = TargetStore.targets[name]   ?? 0;
-    final achieved = TargetStore.achieved[name]  ?? 0;
-    final pct      = target == 0 ? 0.0 : (achieved / target).clamp(0.0, 1.0);
+    final target   = TargetStore.targets[name]  ?? 0;
+    final achieved = TargetStore.achieved[name] ?? 0;
+    final pct = target == 0
+      ? 0.0 : (achieved / target).clamp(0.0, 1.0);
 
     String fmt(double v) {
       if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
@@ -35,6 +37,24 @@ class ProfileScreen extends StatelessWidget {
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
               onPressed: () => Navigator.pop(context))
           : null,
+        actions: [
+          IconButton(
+            tooltip: 'Settings',
+            icon: Container(
+              width: 34, height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.bgCard,
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Icon(Icons.settings_outlined,
+                size: 17, color: AppColors.textSecondary),
+            ),
+            onPressed: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) =>
+                SettingsScreen(isAdmin: isAdmin))),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 40),
@@ -57,7 +77,8 @@ class ProfileScreen extends StatelessWidget {
             Text(name, style: AppTextStyles.heading2),
             const SizedBox(height: 4),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: AppColors.primaryMuted,
                 borderRadius: BorderRadius.circular(20)),
@@ -69,7 +90,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 28),
 
           // Info card
-          _InfoCard(items: [
+          _InfoCard(items: const [
             ('Employee ID', empId),
             ('Region',      region),
             ('Email',       'raj.sharma@shcc.com'),
@@ -82,11 +103,12 @@ class ProfileScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: AppColors.bgCard,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.border),
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -94,11 +116,13 @@ class ProfileScreen extends StatelessWidget {
                       const Icon(Icons.track_changes_rounded,
                         size: 16, color: AppColors.primary),
                       const SizedBox(width: 8),
-                      Text('Monthly Target', style: AppTextStyles.heading3),
+                      Text('Monthly Target',
+                        style: AppTextStyles.heading3),
                     ]),
                     Text('${(pct * 100).toStringAsFixed(0)}%',
                       style: AppTextStyles.heading3.copyWith(
-                        color: pct >= 1 ? AppColors.success : AppColors.primary)),
+                        color: pct >= 1
+                          ? AppColors.success : AppColors.primary)),
                   ]),
                 const SizedBox(height: 12),
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -125,7 +149,47 @@ class ProfileScreen extends StatelessWidget {
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textMuted)),
                 ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Settings shortcut card
+          GestureDetector(
+            onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) =>
+                SettingsScreen(isAdmin: isAdmin))),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(children: [
+                Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryMuted,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.settings_outlined,
+                    size: 18, color: AppColors.primary),
+                ),
+                const SizedBox(width: 14),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Settings', style: AppTextStyles.bodyMedium),
+                    Text('Password, theme, targets',
+                      style: AppTextStyles.caption),
+                  ],
+                )),
+                const Icon(Icons.chevron_right_rounded,
+                  color: AppColors.textMuted),
               ]),
+            ),
           ),
           const SizedBox(height: 32),
 
@@ -154,7 +218,7 @@ class _InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -165,7 +229,8 @@ class _InfoCard extends StatelessWidget {
               horizontal: 16, vertical: 13),
             child: Row(children: [
               SizedBox(width: 110,
-                child: Text(e.value.$1, style: AppTextStyles.caption)),
+                child: Text(e.value.$1,
+                  style: AppTextStyles.caption)),
               Expanded(child: Text(e.value.$2,
                 style: AppTextStyles.bodyMedium)),
             ]),

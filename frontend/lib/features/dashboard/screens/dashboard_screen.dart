@@ -10,6 +10,7 @@ import '../../orders/screens/create_order_screen.dart';
 import '../../search/screens/search_screen.dart';
 import '../../catalogue/screens/catalogue_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../notifications/notifications_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -29,7 +30,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const SearchScreen(isAdmin: false),
       const CreateOrderScreen(),
       const CatalogueScreen(isAdmin: false),
-      const ProfileScreen(),
+      const ProfileScreen(isAdmin: false),
     ];
 
     return Scaffold(
@@ -42,8 +43,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// ── Nav index map: 0=Home 1=Search 2=Order 3=Catalogue 4=Profile ─────────────
-
 class _SalesHome extends StatelessWidget {
   final void Function(int) onNavTap;
   const _SalesHome({required this.onNavTap});
@@ -53,19 +52,21 @@ class _SalesHome extends StatelessWidget {
       'id': 'ORD-2024-048', 'buyer_name': 'JSW Steel Ltd',
       'base_rate': 6200.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 200.0,
       'type_of_sale': 'Spot', 'product_type': 'Indonesian Coal',
-      'port_name': 'Mundra', 'status': 'confirmed', 'date': '28 Apr',
+      'port_name': 'Mundra', 'status': 'processed', 'date': '28 Apr',
     },
     {
       'id': 'ORD-2024-047', 'buyer_name': 'Ultratech Cement',
       'base_rate': 6100.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 150.0,
       'type_of_sale': 'F.O.R.', 'product_type': 'South African Coal',
       'port_name': 'Kandla', 'status': 'pending', 'date': '27 Apr',
+      'rejected': true,
+      'admin_comment': 'Quantity too high for this port. Please reduce to 100 MT.',
     },
     {
       'id': 'ORD-2024-046', 'buyer_name': 'Tata Steel',
       'base_rate': 5600.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 500.0,
       'type_of_sale': 'Spot', 'product_type': 'Russian Coal',
-      'port_name': 'Hazira', 'status': 'processed', 'date': '26 Apr',
+      'port_name': 'Hazira', 'status': 'completed', 'date': '26 Apr',
     },
   ];
 
@@ -73,15 +74,19 @@ class _SalesHome extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: ShccAppBar(
-          logoAsset: 'assets/images/logo.png',
+        logoAsset: 'assets/images/logo.png',
         onProfileTap: () => Navigator.push(
-          context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+          context, MaterialPageRoute(
+            builder: (_) => const ProfileScreen(isAdmin: false))),
         userInitials: 'RS',
+        actions: const [
+          NotificationBell(person: 'Raj Sharma'),
+          SizedBox(width: 4),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
-          // Welcome
           Text('Good morning,', style: AppTextStyles.bodySecondary),
           const SizedBox(height: 2),
           const Text('Raj Sharma', style: AppTextStyles.heading1),
@@ -89,12 +94,10 @@ class _SalesHome extends StatelessWidget {
           Text('Sales Staff  ·  Surat Region', style: AppTextStyles.caption),
           const SizedBox(height: 24),
 
-          // KPI grid
           GridView.count(
             crossAxisCount: 2, shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12, mainAxisSpacing: 12,
-            childAspectRatio: 1.4,
+            crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.4,
             children: const [
               KpiCard(label: 'Total Orders', value: '48',
                 icon: Icons.receipt_long_rounded, color: AppColors.primary),
@@ -109,39 +112,35 @@ class _SalesHome extends StatelessWidget {
           ),
           const SizedBox(height: 28),
 
-          // Quick Actions — wired to onNavTap
           const SectionHeader(title: 'Quick Actions'),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(child: _QuickAction(
               icon: Icons.add_shopping_cart_rounded,
-              label: 'New Order',
-              color: AppColors.primary,
+              label: 'New Order', color: AppColors.primary,
               onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const CreateOrderScreen())),
+                MaterialPageRoute(
+                  builder: (_) => const CreateOrderScreen())),
             )),
             const SizedBox(width: 10),
             Expanded(child: _QuickAction(
               icon: Icons.search_rounded,
-              label: 'Search',
-              color: AppColors.info,
-              onTap: () => onNavTap(1),   // switches bottom nav to Search tab
+              label: 'Search', color: AppColors.info,
+              onTap: () => onNavTap(1),
             )),
             const SizedBox(width: 10),
             Expanded(child: _QuickAction(
               icon: Icons.inventory_2_rounded,
-              label: 'Catalogue',
-              color: AppColors.success,
-              onTap: () => onNavTap(3),   // switches bottom nav to Catalogue tab
+              label: 'Catalogue', color: AppColors.success,
+              onTap: () => onNavTap(3),
             )),
           ]),
           const SizedBox(height: 28),
 
-          // Recent orders
           SectionHeader(
             title: 'Recent Orders',
             actionLabel: 'View All',
-            onAction: () => onNavTap(1), // View All goes to Search/Orders list
+            onAction: () => onNavTap(1),
           ),
           const SizedBox(height: 14),
           ..._recentOrders.map((o) => Padding(
@@ -154,8 +153,6 @@ class _SalesHome extends StatelessWidget {
   }
 }
 
-// ── Quick Action button ───────────────────────────────────────────────────────
-
 class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -163,10 +160,8 @@ class _QuickAction extends StatelessWidget {
   final VoidCallback onTap;
 
   const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
+    required this.icon, required this.label,
+    required this.color, required this.onTap,
   });
 
   @override
@@ -190,12 +185,9 @@ class _QuickAction extends StatelessWidget {
             children: [
               Icon(icon, color: color, size: 24),
               const SizedBox(height: 8),
-              Text(
-                label,
-                style: AppTextStyles.caption.copyWith(
-                  color: color, fontWeight: FontWeight.w600),
-                textAlign: TextAlign.center,
-              ),
+              Text(label, style: AppTextStyles.caption.copyWith(
+                color: color, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center),
             ],
           ),
         ),
