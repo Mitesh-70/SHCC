@@ -115,7 +115,7 @@ class _AdminHomeState extends State<_AdminHome> {
         ? 'Your order $id has been approved by Admin.'
         : 'Your order $id was rejected.${comment != null && comment.isNotEmpty ? ' Comment: $comment' : ''}',
       type: approve
-        ? NotifType.orderConfirmed : NotifType.orderRejected,
+        ? NotifType.orderAccepted : NotifType.orderRejected,
     );
 
     if (!mounted) return;

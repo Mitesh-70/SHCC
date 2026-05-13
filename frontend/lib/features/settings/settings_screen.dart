@@ -80,7 +80,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: ShccAppBar(
@@ -252,7 +251,7 @@ class _SalesTargetSectionState extends State<_SalesTargetSection> {
         person: _selected!,
         title: 'Target Updated',
         description: 'Your monthly target has been set to ${_fmt(v)} by Admin.',
-        type: NotifType.target,
+        type: NotifType.targetModified,
       );
     });
     Future.delayed(const Duration(seconds: 2),

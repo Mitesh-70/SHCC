@@ -4,14 +4,27 @@ import '../../core/constants/app_text_styles.dart';
 import '../../shared/widgets/shcc_app_bar.dart';
 import '../../shared/widgets/empty_state.dart';
 
-// ── Notification types ────────────────────────────────────────────────────────
-enum NotifType { orderConfirmed, orderRejected, priceChange, availability, target, catalogue }
+// ── Notification types (only the 5 required) ──────────────────────────────────
+enum NotifType {
+  orderAccepted,
+  orderRejected,
+  targetModified,
+  targetCompleted,
+  catalogueUpdated,
+}
 
 // ── Notification model ────────────────────────────────────────────────────────
 class AppNotification {
-  final String id, person, title, description, timestamp;
+  final String id;
+  final String person;
+  final String title;
+  final String description;
+  final String timestamp;
   final NotifType type;
+  final String? orderId;       // for order-related notifications
+  final String? catalogueNote; // "Price updated" or "Availability updated"
   bool isRead;
+  final DateTime createdAt;
 
   AppNotification({
     required this.id,
@@ -20,8 +33,11 @@ class AppNotification {
     required this.description,
     required this.timestamp,
     required this.type,
+    this.orderId,
+    this.catalogueNote,
     this.isRead = false,
-  });
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 }
 
 // ── Global notification store ─────────────────────────────────────────────────
@@ -29,38 +45,65 @@ class NotificationStore {
   static final List<AppNotification> _items = [
     AppNotification(
       id: 'N001', person: 'Raj Sharma',
-      title: 'Order Confirmed',
+      title: 'Order Accepted',
       description: 'Your order ORD-2024-047 has been approved by Admin.',
-      timestamp: '2 min ago', type: NotifType.orderConfirmed,
+      timestamp: '2 min ago', type: NotifType.orderAccepted,
+      orderId: 'ORD-2024-047',
+      createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
     ),
     AppNotification(
       id: 'N002', person: 'Raj Sharma',
-      title: 'Price Updated',
-      description: 'Indonesian Coal price updated to ₹6,400/MT.',
-      timestamp: '1 hr ago', type: NotifType.priceChange,
+      title: 'Catalogue Updated',
+      description: 'Admin updated the product catalogue.',
+      timestamp: '1 hr ago', type: NotifType.catalogueUpdated,
+      catalogueNote: 'Price updated',
+      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
     ),
     AppNotification(
       id: 'N003', person: 'Raj Sharma',
       title: 'Order Rejected',
-      description: 'ORD-2024-045 was rejected. Check admin comment.',
+      description: 'Order ORD-2024-045 was rejected. Review admin comment.',
       timestamp: '3 hrs ago', type: NotifType.orderRejected,
+      orderId: 'ORD-2024-045',
+      isRead: true,
+      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
     ),
     AppNotification(
       id: 'N004', person: 'Raj Sharma',
-      title: 'Availability Changed',
-      description: 'Bio Coal is now unavailable. Catalogue updated.',
-      timestamp: 'Yesterday', type: NotifType.availability,
+      title: 'Target Updated',
+      description: 'Admin has updated your monthly sales target.',
+      timestamp: 'Yesterday', type: NotifType.targetModified,
+      isRead: true,
+      createdAt: DateTime.now().subtract(const Duration(days: 1)),
     ),
     AppNotification(
       id: 'N005', person: 'Raj Sharma',
+      title: 'Target Completed!',
+      description: 'Congratulations! You have achieved your monthly target.',
+      timestamp: '2 days ago', type: NotifType.targetCompleted,
+      isRead: true,
+      createdAt: DateTime.now().subtract(const Duration(days: 2)),
+    ),
+    AppNotification(
+      id: 'N006', person: 'Raj Sharma',
       title: 'Catalogue Updated',
-      description: 'Admin has updated the product catalogue.',
-      timestamp: '2 days ago', type: NotifType.catalogue,
+      description: 'Admin updated the product catalogue.',
+      timestamp: '3 days ago', type: NotifType.catalogueUpdated,
+      catalogueNote: 'Availability updated',
+      isRead: true,
+      createdAt: DateTime.now().subtract(const Duration(days: 3)),
     ),
   ];
 
-  static List<AppNotification> forPerson(String person) =>
-    _items.where((n) => n.person == person).toList();
+  /// Returns notifications for a person, unread first then read, each group newest first.
+  static List<AppNotification> forPerson(String person) {
+    final all = _items.where((n) => n.person == person).toList();
+    final unread = all.where((n) => !n.isRead).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final read = all.where((n) => n.isRead).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return [...unread, ...read];
+  }
 
   static int unreadCount(String person) =>
     _items.where((n) => n.person == person && !n.isRead).length;
@@ -70,11 +113,14 @@ class NotificationStore {
     required String title,
     required String description,
     required NotifType type,
+    String? orderId,
+    String? catalogueNote,
   }) {
     _items.insert(0, AppNotification(
       id: 'N${DateTime.now().millisecondsSinceEpoch}',
       person: person, title: title, description: description,
       timestamp: 'Just now', type: type,
+      orderId: orderId, catalogueNote: catalogueNote,
     ));
   }
 
@@ -90,22 +136,47 @@ class NotificationStore {
   }
 }
 
+// ── Navigation callback type ──────────────────────────────────────────────────
+typedef NotifNavCallback = void Function(NotifType type, {String? orderId});
+
 // ── Notifications Screen ──────────────────────────────────────────────────────
 class NotificationsScreen extends StatefulWidget {
   final String person;
-  const NotificationsScreen({super.key, required this.person});
+  final NotifNavCallback? onNavigate;
+
+  const NotificationsScreen({
+    super.key,
+    required this.person,
+    this.onNavigate,
+  });
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
+  List<AppNotification> get _notifs =>
+    NotificationStore.forPerson(widget.person);
+
+  int get _unread =>
+    _notifs.where((n) => !n.isRead).length;
+
+  void _onTap(AppNotification n) {
+    setState(() => NotificationStore.markRead(n.id));
+
+    // Navigate based on type
+    Navigator.pop(context); // close notifications screen first
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(n.type, orderId: n.orderId);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final notifs = NotificationStore.forPerson(widget.person);
-    final unread = notifs.where((n) => !n.isRead).length;
+    final notifs = _notifs;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: ShccAppBar(
         logoAsset: 'assets/images/logo.png',
         showBranding: false,
@@ -115,14 +186,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: unread > 0
-          ? [TextButton(
-              onPressed: () => setState(() =>
-                NotificationStore.markAllRead(widget.person)),
-              child: Text('Mark all read',
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.primary)),
-            )]
+        actions: _unread > 0
+          ? [
+              TextButton(
+                onPressed: () => setState(() =>
+                  NotificationStore.markAllRead(widget.person)),
+                child: Text('Mark all read',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.primary)),
+              ),
+            ]
           : null,
       ),
       body: notifs.isEmpty
@@ -131,22 +204,65 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             title: 'No notifications',
             subtitle: 'You are all caught up!',
           )
-        : ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            itemCount: notifs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (_, i) {
-              final n = notifs[i];
-              return _NotifCard(
-                notif: n,
-                onTap: () => setState(() => NotificationStore.markRead(n.id)),
-              );
-            },
-          ),
+        : Column(children: [
+            if (_unread > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Row(children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryMuted,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('$_unread unread',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600)),
+                  ),
+                ]),
+              ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                itemCount: notifs.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (_, i) {
+                  final n = notifs[i];
+                  // Section divider between unread and read
+                  final showDivider = i > 0 &&
+                    !notifs[i - 1].isRead && n.isRead;
+                  return Column(children: [
+                    if (showDivider)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(children: [
+                          const Expanded(child: Divider()),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10),
+                            child: Text('Earlier',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.textMuted)),
+                          ),
+                          const Expanded(child: Divider()),
+                        ]),
+                      ),
+                    _NotifCard(
+                      notif: n,
+                      onTap: () => _onTap(n),
+                    ),
+                  ]);
+                },
+              ),
+            ),
+          ]),
     );
   }
 }
 
+// ── Notification card ─────────────────────────────────────────────────────────
 class _NotifCard extends StatelessWidget {
   final AppNotification notif;
   final VoidCallback onTap;
@@ -154,77 +270,137 @@ class _NotifCard extends StatelessWidget {
 
   IconData get _icon {
     switch (notif.type) {
-      case NotifType.orderConfirmed: return Icons.check_circle_outline_rounded;
-      case NotifType.orderRejected:  return Icons.cancel_outlined;
-      case NotifType.priceChange:    return Icons.currency_rupee_rounded;
-      case NotifType.availability:   return Icons.inventory_2_outlined;
-      case NotifType.target:         return Icons.track_changes_rounded;
-      case NotifType.catalogue:      return Icons.list_alt_rounded;
+      case NotifType.orderAccepted:   return Icons.check_circle_outline_rounded;
+      case NotifType.orderRejected:   return Icons.cancel_outlined;
+      case NotifType.targetModified:  return Icons.track_changes_rounded;
+      case NotifType.targetCompleted: return Icons.emoji_events_outlined;
+      case NotifType.catalogueUpdated:return Icons.inventory_2_outlined;
     }
   }
 
   Color get _color {
     switch (notif.type) {
-      case NotifType.orderConfirmed: return AppColors.success;
-      case NotifType.orderRejected:  return AppColors.error;
-      case NotifType.priceChange:    return AppColors.warning;
-      case NotifType.availability:   return AppColors.info;
-      case NotifType.target:         return AppColors.primary;
-      case NotifType.catalogue:      return const Color(0xFF9B59B6);
+      case NotifType.orderAccepted:   return AppColors.success;
+      case NotifType.orderRejected:   return AppColors.error;
+      case NotifType.targetModified:  return AppColors.primary;
+      case NotifType.targetCompleted: return const Color(0xFFFFCC00);
+      case NotifType.catalogueUpdated:return AppColors.info;
+    }
+  }
+
+  String get _navHint {
+    switch (notif.type) {
+      case NotifType.orderAccepted:
+      case NotifType.orderRejected:   return '→ View Order';
+      case NotifType.targetModified:
+      case NotifType.targetCompleted: return '→ View Profile';
+      case NotifType.catalogueUpdated:return '→ View Catalogue';
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final color = _color;
+    final isRead = notif.isRead;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: notif.isRead
+          color: isRead
             ? Theme.of(context).cardColor
-            : _color.withValues(alpha: 0.06),
+            : color.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: notif.isRead
-              ? AppColors.border
-              : _color.withValues(alpha: 0.3),
+            color: isRead
+              ? Theme.of(context).dividerColor
+              : color.withValues(alpha: 0.4),
+            width: isRead ? 1 : 1.5,
           ),
+          boxShadow: isRead
+            ? null
+            : [BoxShadow(
+                color: color.withValues(alpha: 0.08),
+                blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Icon
           Container(
-            width: 38, height: 38,
+            width: 40, height: 40,
             decoration: BoxDecoration(
-              color: _color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              color: color.withValues(alpha: isRead ? 0.08 : 0.15),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(_icon, color: _color, size: 19),
+            child: Icon(_icon, color: isRead
+              ? color.withValues(alpha: 0.6) : color, size: 20),
           ),
           const SizedBox(width: 12),
+
+          // Content
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(children: [
                 Expanded(child: Text(notif.title,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: notif.isRead
-                      ? FontWeight.w400 : FontWeight.w600))),
-                if (!notif.isRead)
+                    fontWeight: isRead
+                      ? FontWeight.w400 : FontWeight.w700,
+                    color: isRead
+                      ? Theme.of(context).textTheme.bodyMedium?.color
+                        ?.withValues(alpha: 0.7)
+                      : null,
+                  ))),
+                if (!isRead)
                   Container(
-                    width: 8, height: 8,
+                    width: 8, height: 8, margin: const EdgeInsets.only(left: 6),
                     decoration: BoxDecoration(
-                      color: _color, shape: BoxShape.circle),
+                      color: color, shape: BoxShape.circle),
                   ),
               ]),
               const SizedBox(height: 4),
               Text(notif.description,
-                style: AppTextStyles.bodySecondary,
-                maxLines: 2, overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 6),
-              Text(notif.timestamp,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textMuted)),
+                style: AppTextStyles.bodySecondary.copyWith(
+                  color: isRead
+                    ? AppColors.textMuted
+                    : AppColors.textSecondary),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
+
+              // Catalogue sub-note
+              if (notif.catalogueNote != null) ...[
+                const SizedBox(height: 5),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(notif.catalogueNote!,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.info,
+                      fontWeight: FontWeight.w600)),
+                ),
+              ],
+
+              const SizedBox(height: 7),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(notif.timestamp,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted)),
+                  Text(_navHint,
+                    style: AppTextStyles.caption.copyWith(
+                      color: isRead
+                        ? AppColors.textMuted
+                        : color,
+                      fontWeight: isRead
+                        ? FontWeight.w400 : FontWeight.w600)),
+                ],
+              ),
             ],
           )),
         ]),
@@ -233,44 +409,76 @@ class _NotifCard extends StatelessWidget {
   }
 }
 
-// ── Bell icon widget (used in AppBar) ─────────────────────────────────────────
-class NotificationBell extends StatelessWidget {
+// ── Bell icon widget ──────────────────────────────────────────────────────────
+class NotificationBell extends StatefulWidget {
   final String person;
-  const NotificationBell({super.key, required this.person});
+  final NotifNavCallback? onNavigate;
+
+  const NotificationBell({
+    super.key,
+    required this.person,
+    this.onNavigate,
+  });
 
   @override
+  State<NotificationBell> createState() => _NotificationBellState();
+}
+
+class _NotificationBellState extends State<NotificationBell> {
+  @override
   Widget build(BuildContext context) {
-    final count = NotificationStore.unreadCount(person);
+    final count = NotificationStore.unreadCount(widget.person);
+
     return GestureDetector(
-      onTap: () => Navigator.push(context,
-        MaterialPageRoute(builder: (_) =>
-          NotificationsScreen(person: person))),
+      onTap: () async {
+        await Navigator.push(context, MaterialPageRoute(
+          builder: (_) => NotificationsScreen(
+            person: widget.person,
+            onNavigate: widget.onNavigate,
+          ),
+        ));
+        // Rebuild bell after returning to reflect read state
+        if (mounted) setState(() {});
+      },
       child: Container(
         margin: const EdgeInsets.only(right: 4),
         child: Stack(clipBehavior: Clip.none, children: [
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              color: AppColors.bgCard,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: Theme.of(context).dividerColor),
             ),
-            child: const Icon(Icons.notifications_outlined,
-              size: 18, color: AppColors.textSecondary),
+            child: Icon(
+              count > 0
+                ? Icons.notifications_rounded
+                : Icons.notifications_outlined,
+              size: 18,
+              color: count > 0
+                ? AppColors.primary : AppColors.textSecondary),
           ),
           if (count > 0)
             Positioned(
-              top: -3, right: -3,
+              top: -4, right: -4,
               child: Container(
-                padding: const EdgeInsets.all(3),
-                decoration: const BoxDecoration(
+                constraints: const BoxConstraints(
+                  minWidth: 16, minHeight: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
                   color: AppColors.error,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    width: 1.5),
                 ),
-                child: Text('$count',
+                child: Text(
+                  count > 9 ? '9+' : '$count',
                   style: const TextStyle(
                     color: Colors.white, fontSize: 9,
-                    fontWeight: FontWeight.w700)),
+                    fontWeight: FontWeight.w700),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
         ]),
