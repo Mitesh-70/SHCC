@@ -36,10 +36,12 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _navIndex = 0;
   late final List<Widget> _pages;
+  late final PageController _pageCtrl;
 
   @override
   void initState() {
     super.initState();
+    _pageCtrl = PageController(initialPage: 0);
     _pages = [
       const _AdminHome(),
       const SearchScreen(isAdmin: true),
@@ -50,15 +52,44 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
+
+  void _goTo(int navIndex) {
+    setState(() => _navIndex = navIndex);
+    _pageCtrl.animateToPage(navIndex,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeInOut);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _navIndex, children: _pages),
+      body: PageView(
+        controller: _pageCtrl,
+        physics: const _SwipePhysics(),
+        onPageChanged: (page) {
+          setState(() => _navIndex = page);
+        },
+        children: _pages,
+      ),
       bottomNavigationBar: ShccBottomNav(
         currentIndex: _navIndex, isAdmin: true,
-        onTap: (i) => setState(() => _navIndex = i),
+        onTap: _goTo,
       ),
     );
   }
+}
+
+// ── Custom physics: swipe only when not inside a scrollable ──────────────────
+class _SwipePhysics extends PageScrollPhysics {
+  const _SwipePhysics() : super(parent: const ClampingScrollPhysics());
+
+  @override
+  _SwipePhysics applyTo(ScrollPhysics? ancestor) =>
+    const _SwipePhysics();
 }
 
 class _AdminHome extends StatefulWidget {
