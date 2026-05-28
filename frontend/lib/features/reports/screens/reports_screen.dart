@@ -671,7 +671,7 @@ class _InvoiceCard extends StatelessWidget {
             _InvRow('Base Rate',    '₹${order['base_rate']}/MT'),
             _InvRow('GST',          '${order['gst']}%'),
             _InvRow('TCS',          '${order['tcs']}%'),
-            const Divider(color: AppColors.border, height: 24),
+            Divider(color: AppColors.border, height: 24),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text('Total Amount', style: AppTextStyles.heading3),
               Text(fmt(total), style: AppTextStyles.heading3.copyWith(
@@ -919,7 +919,7 @@ class _FilterDropdown extends StatelessWidget {
     value: selectedValue,
     dropdownColor: AppColors.bgCard,
     style: AppTextStyles.body,
-    icon: const Icon(Icons.keyboard_arrow_down_rounded,
+    icon: Icon(Icons.keyboard_arrow_down_rounded,
       color: AppColors.textMuted),
     decoration: InputDecoration(
       labelText: label,

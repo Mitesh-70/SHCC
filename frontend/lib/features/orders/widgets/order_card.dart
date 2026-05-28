@@ -24,7 +24,7 @@ class OrderCard extends StatelessWidget {
           Text(order['product'] ?? '', style: AppTextStyles.bodySecondary),
           const SizedBox(height: 8),
           Row(children: [
-            const Icon(Icons.scale_outlined, size: 14, color: AppColors.textMuted),
+            Icon(Icons.scale_outlined, size: 14, color: AppColors.textMuted),
             const SizedBox(width: 4),
             Text(order['qty'] ?? '', style: AppTextStyles.caption),
           ]),

@@ -17,7 +17,7 @@ class CustomersScreen extends StatelessWidget {
             leading: CircleAvatar(backgroundColor: AppColors.primary.withValues(alpha: 0.15), child: const Icon(Icons.business, color: AppColors.primary, size: 18)),
             title: Text('Client ${i + 1}', style: AppTextStyles.body),
             subtitle: Text('Surat, Gujarat', style: AppTextStyles.caption),
-            trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+            trailing: Icon(Icons.chevron_right, color: AppColors.textMuted),
           ),
         ),
       ),

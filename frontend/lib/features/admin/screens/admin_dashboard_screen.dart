@@ -168,7 +168,7 @@ class _AdminHomeState extends State<_AdminHome> {
           children: [
             Text('Admin Panel', style: AppTextStyles.bodySecondary),
             const SizedBox(height: 2),
-            const Text('Overview', style: AppTextStyles.heading1),
+            Text('Overview', style: AppTextStyles.heading1),
             const SizedBox(height: 24),
 
             GridView.count(
@@ -354,7 +354,7 @@ class _ApprovalCardState extends State<_ApprovalCard> {
               color: AppColors.primary)),
         ]),
         const SizedBox(height: 12),
-        const Divider(color: AppColors.border, height: 1),
+        Divider(color: AppColors.border, height: 1),
         const SizedBox(height: 12),
         Text(o['buyer_name'] as String, style: AppTextStyles.heading3),
         const SizedBox(height: 4),

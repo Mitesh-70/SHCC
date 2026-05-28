@@ -10,8 +10,7 @@ class OrderTrackingScreen extends StatefulWidget {
   final bool isAdmin;
 
   const OrderTrackingScreen({
-    super.key, required this.order, this.isAdmin = false,
-  });
+    super.key, required this.order, this.isAdmin = false});
 
   @override
   State<OrderTrackingScreen> createState() => _OrderTrackingScreenState();
@@ -30,7 +29,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme  = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: ShccAppBar(
         logoAsset: 'assets/images/logo.png',
         showBranding: false,
@@ -38,253 +41,211 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         showProfileIcon: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
+          onPressed: () => Navigator.pop(context)),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
         children: [
 
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.bgCard,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(widget.order['id'] ?? '',
-                style: AppTextStyles.label.copyWith(color: AppColors.primary)),
-              const SizedBox(height: 6),
-              Text(widget.order['buyer_name'] ?? '',
-                style: AppTextStyles.heading3),
-              const SizedBox(height: 2),
-              Text(
-                '${widget.order['product_type'] ?? ''}  ·  ${widget.order['quality'] ?? ''}',
-                style: AppTextStyles.caption),
-            ]),
-          ),
-          const SizedBox(height: 20),
+          // Order header card
+          _Card(isDark: isDark, child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(widget.order['id'] ?? '',
+              style: AppTextStyles.label.copyWith(color: AppColors.primary)),
+            const SizedBox(height: 6),
+            Text(widget.order['buyer_name'] ?? '',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600)),
+            const SizedBox(height: 2),
+            Text(
+              '${widget.order['product_type'] ?? ''}  ·  ${widget.order['quality'] ?? ''}',
+              style: theme.textTheme.bodySmall),
+          ])),
+          const SizedBox(height: 16),
 
+          // Progress card
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primary.withValues(alpha: 0.15),
-                  AppColors.primary.withValues(alpha: 0.04),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: isDark
+                ? AppColors.primary.withValues(alpha: 0.08)
+                : AppColors.primary.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.3)),
-            ),
+                color: AppColors.primary.withValues(alpha: isDark ? 0.3 : 0.2))),
             child: Column(children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Delivery Progress', style: AppTextStyles.heading3),
+                Text('Delivery Progress',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600)),
                 Text('${(_pct * 100).toStringAsFixed(0)}%',
-                  style: AppTextStyles.heading3.copyWith(
-                    color: AppColors.primary)),
+                  style: TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w700,
+                    color: _pct >= 1 ? AppColors.success : AppColors.primary)),
               ]),
               const SizedBox(height: 14),
               ClipRRect(
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
-                  value: _pct,
-                  minHeight: 10,
-                  backgroundColor: AppColors.bgBase,
+                  value: _pct, minHeight: 10,
+                  backgroundColor: isDark
+                    ? AppColors.bgBase : AppColors.lightBgBase,
                   valueColor: AlwaysStoppedAnimation(
-                    _pct >= 1 ? AppColors.success : AppColors.primary),
-                ),
-              ),
+                    _pct >= 1 ? AppColors.success : AppColors.primary))),
               const SizedBox(height: 16),
               Row(children: [
                 Expanded(child: _StatPill(
                   label: 'Ordered',
-                  statValue: '${_ordered.toStringAsFixed(0)} MT',
-                  color: AppColors.info,
-                )),
+                  value: '${_ordered.toStringAsFixed(0)} MT',
+                  color: AppColors.info, isDark: isDark)),
                 const SizedBox(width: 10),
                 Expanded(child: _StatPill(
                   label: 'Delivered',
-                  statValue: '${_delivered.toStringAsFixed(0)} MT',
-                  color: AppColors.success,
-                )),
+                  value: '${_delivered.toStringAsFixed(0)} MT',
+                  color: AppColors.success, isDark: isDark)),
                 const SizedBox(width: 10),
                 Expanded(child: _StatPill(
                   label: 'Remaining',
-                  statValue: '${_remaining.toStringAsFixed(0)} MT',
+                  value: '${_remaining.toStringAsFixed(0)} MT',
                   color: _remaining > 0 ? AppColors.warning : AppColors.success,
-                )),
+                  isDark: isDark)),
               ]),
             ]),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
 
+          // History header
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Delivery History', style: AppTextStyles.heading3),
+            Text('Delivery History',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600)),
             if (widget.isAdmin)
               TextButton.icon(
                 icon: const Icon(Icons.add_rounded, size: 16),
                 label: const Text('Add Entry'),
-                onPressed: () => _showAddDelivery(context),
-              ),
+                onPressed: () => _showAddDelivery(context)),
           ]),
           const SizedBox(height: 12),
 
           if (_deliveries.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.bgCard,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Center(
+            _Card(isDark: isDark, child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text('No deliveries recorded yet.',
-                  style: TextStyle(color: AppColors.textSecondary)),
-              ),
-            )
+                  style: theme.textTheme.bodySmall))))
           else
-            ...List.generate(_deliveries.length, (i) => _DeliveryCard(
-              entry: _deliveries[i],
-              index: i + 1,
-              isAdmin: widget.isAdmin,
-              onDelete: () => setState(() => _deliveries.removeAt(i)),
-            )),
+            ...List.generate(_deliveries.length, (i) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _DeliveryCard(
+                entry: _deliveries[i], index: i + 1,
+                isAdmin: widget.isAdmin, isDark: isDark,
+                onDelete: () => setState(() => _deliveries.removeAt(i))))),
         ],
       ),
     );
   }
 
   void _showAddDelivery(BuildContext context) {
-    final qtyCtrl  = TextEditingController();
-    final dateCtrl = TextEditingController();
+    final theme     = Theme.of(context);
+    final qtyCtrl   = TextEditingController();
+    final dateCtrl  = TextEditingController();
     String? selectedPort;
 
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.bgCard,
+      context: context, isScrollControlled: true,
+      backgroundColor: theme.cardColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) => Padding(
           padding: EdgeInsets.fromLTRB(
             24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(
-                width: 36, height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
+          child: Column(mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Center(child: Container(
+              width: 36, height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: theme.dividerColor,
+                borderRadius: BorderRadius.circular(2)))),
+            Text('Add Delivery Entry',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600)),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: qtyCtrl,
+              keyboardType: TextInputType.number,
+              style: theme.textTheme.bodyMedium,
+              decoration: InputDecoration(
+                labelText: 'Quantity Delivered (MT)',
+                prefixIcon: Icon(Icons.scale_rounded,
+                  size: 18, color: AppColors.textMuted),
+                suffixText: 'MT')),
+            const SizedBox(height: 14),
+            GestureDetector(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: ctx, initialDate: DateTime.now(),
+                  firstDate: DateTime(2024),
+                  lastDate: DateTime.now().add(const Duration(days: 30)),
+                  builder: (c, child) => Theme(
+                    data: Theme.of(c).copyWith(
+                      colorScheme: const ColorScheme.dark(
+                        primary: AppColors.primary)),
+                    child: child!));
+                if (picked != null) {
+                  dateCtrl.text =
+                    '${picked.day} ${_month(picked.month)} ${picked.year}';
+                  setModal(() {});
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2)),
-              )),
-              Text('Add Delivery Entry', style: AppTextStyles.heading3),
-              const SizedBox(height: 20),
-
-              TextFormField(
-                controller: qtyCtrl,
-                keyboardType: TextInputType.number,
-                style: AppTextStyles.body,
-                decoration: const InputDecoration(
-                  labelText: 'Quantity Delivered (MT)',
-                  prefixIcon: Icon(Icons.scale_rounded,
-                    size: 18, color: AppColors.textMuted),
-                  suffixText: 'MT',
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              GestureDetector(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: ctx,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2024),
-                    lastDate: DateTime.now().add(const Duration(days: 30)),
-                    builder: (c, child) => Theme(
-                      data: Theme.of(c).copyWith(
-                        colorScheme: const ColorScheme.dark(
-                          primary: AppColors.primary)),
-                      child: child!,
-                    ),
-                  );
-                  if (picked != null) {
-                    dateCtrl.text =
-                      '${picked.day} ${_month(picked.month)} ${picked.year}';
-                    setModal(() {});
-                  }
+                  color: theme.inputDecorationTheme.fillColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: theme.dividerColor)),
+                child: Row(children: [
+                  Icon(Icons.calendar_month_rounded,
+                    size: 18,
+                    color: AppColors.textMutedColor(context)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(
+                    dateCtrl.text.isEmpty
+                      ? 'Select Delivery Date' : dateCtrl.text,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: dateCtrl.text.isEmpty
+                        ? AppColors.textMutedColor(context) : null))),
+                ]))),
+            const SizedBox(height: 14),
+            DropdownButtonFormField<String>(
+              value: selectedPort,
+              dropdownColor: theme.cardColor,
+              style: theme.textTheme.bodyMedium,
+              decoration: InputDecoration(
+                labelText: 'Port',
+                prefixIcon: Icon(Icons.anchor_rounded,
+                  size: 18,
+                  color: AppColors.textMutedColor(context))),
+              items: AppConstants.ports.map((p) => DropdownMenuItem(
+                value: p,
+                child: Text(p, style: theme.textTheme.bodyMedium))).toList(),
+              onChanged: (v) => setModal(() => selectedPort = v)),
+            const SizedBox(height: 24),
+            SizedBox(width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  final q = double.tryParse(qtyCtrl.text) ?? 0;
+                  if (q <= 0 || dateCtrl.text.isEmpty ||
+                      selectedPort == null) return;
+                  setState(() => _deliveries.add(DeliveryEntry(
+                    id: 'D-00${_deliveries.length + 1}',
+                    quantity: q, date: dateCtrl.text, port: selectedPort!)));
+                  Navigator.pop(ctx);
                 },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgInput,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(children: [
-                    const Icon(Icons.calendar_month_rounded,
-                      size: 18, color: AppColors.textMuted),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text(
-                      dateCtrl.text.isEmpty
-                        ? 'Select Delivery Date'
-                        : dateCtrl.text,
-                      style: AppTextStyles.body.copyWith(
-                        color: dateCtrl.text.isEmpty
-                          ? AppColors.textMuted
-                          : AppColors.textPrimary),
-                    )),
-                  ]),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              DropdownButtonFormField<String>(
-                value: selectedPort,
-                dropdownColor: AppColors.bgCard,
-                style: AppTextStyles.body,
-                decoration: const InputDecoration(
-                  labelText: 'Port',
-                  prefixIcon: Icon(Icons.anchor_rounded,
-                    size: 18, color: AppColors.textMuted),
-                ),
-                items: AppConstants.ports
-                  .map((p) => DropdownMenuItem<String>(
-                    value: p,
-                    child: Text(p, style: AppTextStyles.body),
-                  )).toList(),
-                onChanged: (v) => setModal(() => selectedPort = v),
-              ),
-              const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    final q = double.tryParse(qtyCtrl.text) ?? 0;
-                    if (q <= 0 || dateCtrl.text.isEmpty ||
-                        selectedPort == null) return;
-                    setState(() => _deliveries.add(DeliveryEntry(
-                      id: 'D-00${_deliveries.length + 1}',
-                      quantity: q,
-                      date: dateCtrl.text,
-                      port: selectedPort!,
-                    )));
-                    Navigator.pop(ctx);
-                  },
-                  child: const Text('Save Delivery'),
-                ),
-              ),
-            ],
-          ),
+                child: const Text('Save Delivery'))),
+          ]),
         ),
       ),
     );
@@ -296,81 +257,107 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   ][m];
 }
 
+// ── Shared card container ─────────────────────────────────────────────────────
+class _Card extends StatelessWidget {
+  final Widget child;
+  final bool isDark;
+  const _Card({required this.child, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: isDark ? AppColors.bgCard : AppColors.lightBgCard,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: isDark ? AppColors.border : AppColors.lightBorder),
+      boxShadow: isDark
+        ? null
+        : [BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6, offset: const Offset(0, 2))]),
+    child: child,
+  );
+}
+
 class _StatPill extends StatelessWidget {
-  final String label, statValue;
+  final String label, value;
   final Color color;
+  final bool isDark;
   const _StatPill({
-    required this.label,
-    required this.statValue,
-    required this.color,
+    required this.label, required this.value,
+    required this.color, required this.isDark,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(children: [
-        Text(statValue,
-          style: AppTextStyles.bodyMedium.copyWith(color: color)),
-        const SizedBox(height: 2),
-        Text(label,
-          style: AppTextStyles.caption,
-          textAlign: TextAlign.center),
-      ]),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: isDark ? 0.12 : 0.08),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(
+        color: color.withValues(alpha: isDark ? 0.3 : 0.2))),
+    child: Column(children: [
+      Text(value,
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
+          color: color)),
+      const SizedBox(height: 2),
+      Text(label,
+        style: TextStyle(
+          fontSize: 11,
+          color: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.textSecondary : AppColors.lightTextSecondary),
+        textAlign: TextAlign.center),
+    ]),
+  );
 }
 
 class _DeliveryCard extends StatelessWidget {
   final DeliveryEntry entry;
   final int index;
-  final bool isAdmin;
+  final bool isAdmin, isDark;
   final VoidCallback onDelete;
 
   const _DeliveryCard({
-    required this.entry,
-    required this.index,
-    required this.isAdmin,
+    required this.entry, required this.index,
+    required this.isAdmin, required this.isDark,
     required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: isDark ? AppColors.bgCard : AppColors.lightBgCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
+        border: Border.all(
+          color: isDark ? AppColors.border : AppColors.lightBorder),
+        boxShadow: isDark
+          ? null
+          : [BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 4, offset: const Offset(0, 1))]),
       child: Row(children: [
         Container(
-          width: 36, height: 36,
+          width: 34, height: 34,
           decoration: BoxDecoration(
-            color: AppColors.successMuted,
-            borderRadius: BorderRadius.circular(10),
-          ),
+            color: AppColors.success.withValues(alpha: isDark ? 0.15 : 0.1),
+            borderRadius: BorderRadius.circular(10)),
           child: Center(child: Text('$index',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.success))),
-        ),
+            style: TextStyle(
+              fontSize: 14, fontWeight: FontWeight.w700,
+              color: AppColors.success)))),
         const SizedBox(width: 14),
-        Expanded(child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '${entry.quantity.toStringAsFixed(0)} MT  ·  ${entry.port}',
-              style: AppTextStyles.bodyMedium),
-            const SizedBox(height: 3),
-            Text(entry.date, style: AppTextStyles.caption),
-          ],
-        )),
+          Text('${entry.quantity.toStringAsFixed(0)} MT  ·  ${entry.port}',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500)),
+          const SizedBox(height: 2),
+          Text(entry.date, style: theme.textTheme.bodySmall),
+        ])),
         const Icon(Icons.check_circle_rounded,
           color: AppColors.success, size: 18),
         if (isAdmin) ...[
@@ -380,13 +367,10 @@ class _DeliveryCard extends StatelessWidget {
             child: Container(
               width: 30, height: 30,
               decoration: BoxDecoration(
-                color: AppColors.errorMuted,
-                borderRadius: BorderRadius.circular(8),
-              ),
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8)),
               child: const Icon(Icons.delete_outline_rounded,
-                size: 15, color: AppColors.error),
-            ),
-          ),
+                size: 15, color: AppColors.error))),
         ],
       ]),
     );

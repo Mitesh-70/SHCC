@@ -1,54 +1,57 @@
 import 'package:flutter/material.dart';
+import '../../app.dart';
 import 'app_colors.dart';
 
 class AppTextStyles {
+  static bool get _isDark => themeNotifier.value == ThemeMode.dark;
+  static Color get _textPrimary => _isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+  static Color get _textSecondary => _isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
 
-
-  static const TextStyle display = TextStyle(
+  static TextStyle get display => TextStyle(
     fontSize: 28, fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary, letterSpacing: -0.5, height: 1.2,
+    color: _textPrimary, letterSpacing: -0.5, height: 1.2,
   );
-  static const TextStyle heading1 = TextStyle(
+  static TextStyle get heading1 => TextStyle(
     fontSize: 22, fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary, letterSpacing: -0.3, height: 1.3,
+    color: _textPrimary, letterSpacing: -0.3, height: 1.3,
   );
-  static const TextStyle heading2 = TextStyle(
+  static TextStyle get heading2 => TextStyle(
     fontSize: 18, fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary, letterSpacing: -0.2, height: 1.3,
+    color: _textPrimary, letterSpacing: -0.2, height: 1.3,
   );
-  static const TextStyle heading3 = TextStyle(
+  static TextStyle get heading3 => TextStyle(
     fontSize: 15, fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary, letterSpacing: -0.1, height: 1.4,
+    color: _textPrimary, letterSpacing: -0.1, height: 1.4,
   );
-  static const TextStyle body = TextStyle(
+  static TextStyle get body => TextStyle(
     fontSize: 14, fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary, height: 1.5,
+    color: _textPrimary, height: 1.5,
   );
-  static const TextStyle bodyMedium = TextStyle(
+  static TextStyle get bodyMedium => TextStyle(
     fontSize: 14, fontWeight: FontWeight.w500,
-    color: AppColors.textPrimary, height: 1.5,
+    color: _textPrimary, height: 1.5,
   );
-  static const TextStyle bodySecondary = TextStyle(
+  static TextStyle get bodySecondary => TextStyle(
     fontSize: 14, fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary, height: 1.5,
+    color: _textSecondary, height: 1.5,
   );
-  static const TextStyle caption = TextStyle(
+  static TextStyle get caption => TextStyle(
     fontSize: 12, fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary, height: 1.4,
+    color: _textSecondary, height: 1.4,
   );
-  static const TextStyle label = TextStyle(
+  static TextStyle get label => TextStyle(
     fontSize: 11, fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary, letterSpacing: 0.8, height: 1.3,
+    color: _textSecondary, letterSpacing: 0.8, height: 1.3,
   );
-  static const TextStyle button = TextStyle(
+  static TextStyle get button => const TextStyle(
     fontSize: 15, fontWeight: FontWeight.w600,
     color: Colors.white, letterSpacing: 0.1,
   );
-  static const TextStyle kpiValue = TextStyle(
+  static TextStyle get kpiValue => TextStyle(
     fontSize: 26, fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary, letterSpacing: -0.5, height: 1.1,
+    color: _textPrimary, letterSpacing: -0.5, height: 1.1,
   );
-  static const TextStyle badge = TextStyle(
+  static TextStyle get badge => const TextStyle(
     fontSize: 11, fontWeight: FontWeight.w600,
     letterSpacing: 0.3, height: 1.2,
   );

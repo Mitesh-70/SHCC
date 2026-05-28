@@ -35,7 +35,7 @@ class _LoginFormState extends State<LoginForm> {
           controller: _emailCtrl,
           validator: Validators.email,
           keyboardType: TextInputType.emailAddress,
-          style: const TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(color: AppColors.textPrimary),
           decoration: const InputDecoration(
             labelText: 'Email',
             prefixIcon: Icon(Icons.email_outlined, size: 18),
@@ -46,7 +46,7 @@ class _LoginFormState extends State<LoginForm> {
           controller: _passCtrl,
           validator: Validators.required,
           obscureText: _obscure,
-          style: const TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(color: AppColors.textPrimary),
           decoration: InputDecoration(
             labelText: 'Password',
             prefixIcon: const Icon(Icons.lock_outline, size: 18),

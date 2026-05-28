@@ -314,7 +314,7 @@ class _SalesTargetSectionState extends State<_SalesTargetSection> {
               ),
             );
           }),
-          const Divider(color: AppColors.border, height: 24),
+          Divider(color: AppColors.border, height: 24),
 
           // Assign form
           Text('Assign / Update Target',
@@ -327,13 +327,13 @@ class _SalesTargetSectionState extends State<_SalesTargetSection> {
             style: AppTextStyles.body,
             hint: Text('Select sales person',
               style: AppTextStyles.caption),
-            icon: const Icon(Icons.keyboard_arrow_down_rounded,
+            icon: Icon(Icons.keyboard_arrow_down_rounded,
               color: AppColors.textMuted),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Sales Person',
               prefixIcon: Icon(Icons.person_outline_rounded,
                 size: 18, color: AppColors.textMuted),
-              contentPadding: EdgeInsets.symmetric(
+              contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16, vertical: 12),
             ),
             items: _salesPersons.map((p) => DropdownMenuItem(
@@ -355,7 +355,7 @@ class _SalesTargetSectionState extends State<_SalesTargetSection> {
             controller: _targetCtrl,
             style: AppTextStyles.body,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Monthly Target (₹)',
               prefixIcon: Icon(Icons.currency_rupee_rounded,
                 size: 18, color: AppColors.textMuted),
@@ -478,7 +478,7 @@ class _PwdField extends StatelessWidget {
     style: AppTextStyles.body,
     decoration: InputDecoration(
       labelText: label,
-      prefixIcon: const Icon(Icons.lock_outline_rounded,
+      prefixIcon: Icon(Icons.lock_outline_rounded,
         size: 18, color: AppColors.textMuted),
       suffixIcon: IconButton(
         icon: Icon(obscure

@@ -125,83 +125,128 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // ── Filter bottom sheet ────────────────────────────────────────────
   void _showFilter(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme  = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: theme.cardColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       builder: (_) => StatefulBuilder(
         builder: (ctx, setModal) => Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
+          child: Column(mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+
             // Drag handle
             Center(child: Container(
-              width: 36, height: 4,
+              width: 40, height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
                 color: theme.dividerColor,
-                borderRadius: BorderRadius.circular(2)),
-            )),
-            const SizedBox(height: 20),
+                borderRadius: BorderRadius.circular(2)))),
+
+            // Header row
             Row(children: [
-              Text('Filter Orders', style: AppTextStyles.heading3),
+              Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMuted,
+                  borderRadius: BorderRadius.circular(9)),
+                child: const Icon(Icons.filter_list_rounded,
+                  size: 16, color: AppColors.primary)),
+              const SizedBox(width: 10),
+              Text('Filter Orders',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700)),
               const Spacer(),
               if (_filter != 'All')
-                TextButton(
-                  onPressed: () {
+                GestureDetector(
+                  onTap: () {
                     setState(() => _filter = 'All');
                     setModal(() {});
                   },
-                  style: TextButton.styleFrom(
+                  child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text('Clear',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.error)),
-                ),
+                      horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.3))),
+                    child: Text('Clear',
+                      style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600,
+                        color: AppColors.error)))),
             ]),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 10, runSpacing: 10,
-              children: ['All', 'Pending', 'Processed', 'Completed']
-                .map((f) {
-                  final sel = _filter == f;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => _filter = f);
-                      setModal(() {});
-                      Navigator.pop(ctx);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
+            const SizedBox(height: 20),
+
+            // Label
+            Text('Select a filter to apply',
+              style: theme.textTheme.bodySmall),
+            const SizedBox(height: 14),
+
+            // Filter options — full width rows
+            ...[ 'All', 'Pending', 'Processed', 'Completed' ].map((f) {
+              final sel   = _filter == f;
+              final color = _statusColor(f);
+
+              return GestureDetector(
+                onTap: () {
+                  setState(() => _filter = f);
+                  setModal(() {});
+                  Navigator.pop(ctx);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: sel
+                      ? color.withValues(alpha: isDark ? 0.12 : 0.08)
+                      : theme.scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: sel
+                        ? color.withValues(alpha: 0.5)
+                        : theme.dividerColor,
+                      width: sel ? 1.5 : 1)),
+                  child: Row(children: [
+                    Container(
+                      width: 8, height: 8,
                       decoration: BoxDecoration(
-                        color: sel
-                          ? AppColors.primary : theme.scaffoldBackgroundColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: sel
-                            ? AppColors.primary : theme.dividerColor),
-                      ),
-                      child: Text(f,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: sel ? Colors.white
-                            : theme.textTheme.bodyMedium?.color,
-                          fontWeight: sel
-                            ? FontWeight.w600 : FontWeight.w400)),
-                    ),
-                  );
-                }).toList(),
-            ),
-            const SizedBox(height: 8),
+                        color: sel ? color : theme.dividerColor,
+                        shape: BoxShape.circle)),
+                    const SizedBox(width: 14),
+                    Text(f,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
+                        color: sel ? color
+                          : theme.textTheme.bodyMedium?.color)),
+                    const Spacer(),
+                    if (sel)
+                      Icon(Icons.check_circle_rounded,
+                        size: 18, color: color),
+                  ]),
+                ),
+              );
+            }),
           ]),
         ),
       ),
     );
+  }
+
+  Color _statusColor(String f) {
+    switch (f) {
+      case 'Pending':   return AppColors.statusPending;
+      case 'Processed': return AppColors.statusProcessed;
+      case 'Completed': return AppColors.statusCompleted;
+      default:           return AppColors.primary;
+    }
   }
 
   @override
@@ -937,13 +982,14 @@ class _DSection extends StatelessWidget {
 class _ABtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
-  final Color color;
-  const _ABtn({required this.icon, this.onTap,
-    this.color = AppColors.textSecondary});
+  final Color? color;
+  const _ABtn({required this.icon, this.onTap, this.color});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final resolvedColor = color ?? 
+      (theme.brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -959,7 +1005,7 @@ class _ABtn extends StatelessWidget {
           color: onTap == null
             ? (theme.brightness == Brightness.dark
                 ? AppColors.textMuted : AppColors.lightTextMuted)
-            : color),
+            : resolvedColor),
       ),
     );
   }

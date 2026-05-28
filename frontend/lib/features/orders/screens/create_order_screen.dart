@@ -225,7 +225,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     validator: Validators.required,
                     style: AppTextStyles.body,
                     textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Buyer Name / Company',
                       prefixIcon: Icon(Icons.business_outlined,
                         size: 18, color: AppColors.textMuted),
@@ -256,9 +256,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
         bottomNavigationBar: Container(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          decoration: const BoxDecoration(
-            color: AppColors.bgSurface,
-            border: Border(top: BorderSide(color: AppColors.border)),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceColor(context),
+            border: Border(top: BorderSide(color: AppColors.dividerColor(context))),
           ),
           child: SizedBox(
             height: 52,
@@ -376,7 +376,7 @@ class _AppDropdown<T> extends StatelessWidget {
       validator: validator,
       dropdownColor: AppColors.bgCard,
       style: AppTextStyles.body,
-      icon: const Icon(Icons.keyboard_arrow_down_rounded,
+      icon: Icon(Icons.keyboard_arrow_down_rounded,
         color: AppColors.textMuted),
       decoration: InputDecoration(
         labelText: label,

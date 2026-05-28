@@ -52,7 +52,7 @@ class RecentOrderTile extends StatelessWidget {
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.primary, fontWeight: FontWeight.w700)),
           Row(children: [
-            const Icon(Icons.calendar_today_outlined, size: 11, color: AppColors.textMuted),
+            Icon(Icons.calendar_today_outlined, size: 11, color: AppColors.textMuted),
             const SizedBox(width: 4),
             Text(order['date'] ?? '', style: AppTextStyles.caption),
           ]),
