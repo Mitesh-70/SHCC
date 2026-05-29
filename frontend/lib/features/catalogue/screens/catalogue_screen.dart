@@ -17,8 +17,6 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
     {'name': 'South African Coal','grade': 'Premium',  'gcv': '6000', 'price': 7100.0,  'available': true},
     {'name': 'US Coal',           'grade': 'A-Grade',  'gcv': '4200', 'price': 4800.0,  'available': true},
     {'name': 'Russian Coal',      'grade': 'Standard', 'gcv': '3800', 'price': 3500.0,  'available': false},
-    {'name': 'Bio Coal',          'grade': 'Premium',  'gcv': '6500', 'price': 8200.0,  'available': true},
-    {'name': 'Metallurgical Coke','grade': 'Export',   'gcv': '7200', 'price': 11500.0, 'available': false},
   ];
 
   @override
