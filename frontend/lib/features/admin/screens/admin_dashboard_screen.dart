@@ -47,7 +47,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       const SearchScreen(isAdmin: true),
       const ReportsScreen(),
       const CatalogueScreen(isAdmin: true),
-      const ProfileScreen(isAdmin: true),
+      ProfileScreen(
+        isAdmin: true,
+        onGoHome: () => _goTo(0),
+      ),
     ];
   }
 

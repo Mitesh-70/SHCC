@@ -1,11 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../shared/widgets/shcc_app_bar.dart';
-import '../admin/screens/admin_dashboard_screen.dart';
-import '../notifications/notifications_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final bool isAdmin;
@@ -16,31 +15,26 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // ── Password change ───────────────────────────────────────────────
-  final _formKey    = GlobalKey<FormState>();
-  final _oldCtrl    = TextEditingController();
-  final _newCtrl    = TextEditingController();
-  final _confirmCtrl = TextEditingController();
-  bool _oldObscure  = true;
-  bool _newObscure  = true;
-  bool _confObscure = true;
-  bool _pwdLoading  = false;
-
   // ── Theme ─────────────────────────────────────────────────────────
   bool _isDark = true;
+
+  // ── Notifications ─────────────────────────────────────────────────
+  bool _notificationsEnabled = true;
 
   @override
   void initState() {
     super.initState();
     _isDark = themeNotifier.value == ThemeMode.dark;
-    _loadThemePref();
+    _loadPrefs();
   }
 
-  Future<void> _loadThemePref() async {
+  Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    final dark  = prefs.getBool('dark_mode') ?? true;
-    setState(() => _isDark = dark);
-    themeNotifier.value = dark ? ThemeMode.dark : ThemeMode.light;
+    setState(() {
+      _isDark = prefs.getBool('dark_mode') ?? true;
+      _notificationsEnabled = prefs.getBool('notifications') ?? true;
+    });
+    themeNotifier.value = _isDark ? ThemeMode.dark : ThemeMode.light;
   }
 
   Future<void> _toggleTheme(bool val) async {
@@ -50,37 +44,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setBool('dark_mode', val);
   }
 
-  Future<void> _changePassword() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _pwdLoading = true);
-    await Future.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
-    setState(() => _pwdLoading = false);
-    _oldCtrl.clear(); _newCtrl.clear(); _confirmCtrl.clear();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [
-        const Icon(Icons.check_circle_outline,
-          color: AppColors.success, size: 18),
-        const SizedBox(width: 10),
-        Text('Password updated successfully',
-          style: AppTextStyles.body),
-      ]),
-      backgroundColor: Theme.of(context).cardColor,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
-  }
-
-  @override
-  void dispose() {
-    _oldCtrl.dispose(); _newCtrl.dispose(); _confirmCtrl.dispose();
-    super.dispose();
+  Future<void> _toggleNotifications(bool val) async {
+    setState(() => _notificationsEnabled = val);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notifications', val);
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: ShccAppBar(
         logoAsset: 'assets/images/logo.png',
@@ -97,10 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
 
           // ── Appearance ────────────────────────────────────────────
-          _SectionHeader(
-            icon: Icons.palette_outlined,
-            title: 'Appearance',
-          ),
+          _SectionHeader(icon: Icons.palette_outlined, title: 'Appearance'),
           const SizedBox(height: 12),
           _SettingsCard(children: [
             _ToggleRow(
@@ -114,87 +82,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
           const SizedBox(height: 24),
 
-          // ── Security ──────────────────────────────────────────────
+          // ── Notifications ─────────────────────────────────────────
           _SectionHeader(
-            icon: Icons.lock_outline_rounded,
-            title: 'Security',
-          ),
+            icon: Icons.notifications_outlined, title: 'Notifications'),
           const SizedBox(height: 12),
           _SettingsCard(children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(children: [
-                  _PwdField(
-                    ctrl: _oldCtrl,
-                    label: 'Current Password',
-                    obscure: _oldObscure,
-                    onToggle: () =>
-                      setState(() => _oldObscure = !_oldObscure),
-                    validator: (v) => (v == null || v.isEmpty)
-                      ? 'Enter current password' : null,
-                  ),
-                  const SizedBox(height: 14),
-                  _PwdField(
-                    ctrl: _newCtrl,
-                    label: 'New Password',
-                    obscure: _newObscure,
-                    onToggle: () =>
-                      setState(() => _newObscure = !_newObscure),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Enter new password';
-                      if (v.length < 6) return 'Minimum 6 characters';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  _PwdField(
-                    ctrl: _confirmCtrl,
-                    label: 'Confirm New Password',
-                    obscure: _confObscure,
-                    onToggle: () =>
-                      setState(() => _confObscure = !_confObscure),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Confirm your password';
-                      if (v != _newCtrl.text) return 'Passwords do not match';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _pwdLoading ? null : _changePassword,
-                      child: _pwdLoading
-                        ? const SizedBox(width: 20, height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                        : const Text('Update Password'),
-                    ),
-                  ),
-                ]),
-              ),
+            _ToggleRow(
+              icon: Icons.notifications_active_rounded,
+              iconColor: const Color(0xFF34C759),
+              label: 'Push Notifications',
+              sub: _notificationsEnabled ? 'Notifications on' : 'Notifications off',
+              value: _notificationsEnabled,
+              onChanged: _toggleNotifications,
             ),
           ]),
           const SizedBox(height: 24),
 
-          // ── Admin: Sales Target Management ────────────────────────
-          if (widget.isAdmin) ...[
-            _SectionHeader(
-              icon: Icons.track_changes_rounded,
-              title: 'Sales Target Management',
+          // ── Language ──────────────────────────────────────────────
+          _SectionHeader(icon: Icons.language_rounded, title: 'Language'),
+          const SizedBox(height: 12),
+          _SettingsCard(children: [
+            _NavRow(
+              icon: Icons.translate_rounded,
+              iconColor: const Color(0xFF0EA5E9),
+              label: 'Language',
+              sub: 'English',
+              onTap: () {},
             ),
-            const SizedBox(height: 12),
-            const _SalesTargetSection(),
-            const SizedBox(height: 24),
-          ],
+          ]),
+          const SizedBox(height: 24),
 
           // ── About ─────────────────────────────────────────────────
-          _SectionHeader(
-            icon: Icons.info_outline_rounded,
-            title: 'About',
-          ),
+          _SectionHeader(icon: Icons.info_outline_rounded, title: 'About'),
           const SizedBox(height: 12),
           _SettingsCard(children: [
             _InfoRow(icon: Icons.business_rounded,
@@ -209,176 +128,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
-  }
-}
-
-// ── Sales Target Section (moved from admin dashboard) ─────────────────────────
-class _SalesTargetSection extends StatefulWidget {
-  const _SalesTargetSection();
-  @override
-  State<_SalesTargetSection> createState() => _SalesTargetSectionState();
-}
-
-class _SalesTargetSectionState extends State<_SalesTargetSection> {
-  final _salesPersons = ['Raj Sharma', 'Amit Patel', 'Priya Mehta'];
-  String? _selected;
-  final _targetCtrl = TextEditingController();
-  bool _saved = false;
-
-  @override
-  void dispose() { _targetCtrl.dispose(); super.dispose(); }
-
-  String _fmt(double v) {
-    if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
-    if (v >= 100000)   return '₹${(v / 100000).toStringAsFixed(2)} L';
-    return '₹${v.toStringAsFixed(0)}';
-  }
-
-  void _save() {
-    final v = double.tryParse(_targetCtrl.text);
-    if (_selected == null || v == null || v <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Select a salesperson and enter a valid target'),
-        backgroundColor: AppColors.error,
-      ));
-      return;
-    }
-    setState(() {
-      TargetStore.targets[_selected!] = v;
-      _saved = true;
-      // Trigger a notification for the salesperson
-      NotificationStore.add(
-        person: _selected!,
-        title: 'Target Updated',
-        description: 'Your monthly target has been set to ${_fmt(v)} by Admin.',
-        type: NotifType.targetModified,
-      );
-    });
-    Future.delayed(const Duration(seconds: 2),
-      () { if (mounted) setState(() => _saved = false); });
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [
-        const Icon(Icons.check_circle_outline,
-          color: AppColors.success, size: 18),
-        const SizedBox(width: 10),
-        Text('Target updated for $_selected',
-          style: AppTextStyles.body),
-      ]),
-      backgroundColor: Theme.of(context).cardColor,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _SettingsCard(children: [
-      Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Progress overview
-          ...TargetStore.targets.entries.map((e) {
-            final achieved = TargetStore.achieved[e.key] ?? 0;
-            final pct = e.value == 0
-              ? 0.0 : (achieved / e.value).clamp(0.0, 1.0);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(e.key, style: AppTextStyles.bodyMedium),
-                      Text('${(pct * 100).toStringAsFixed(0)}%',
-                        style: AppTextStyles.caption.copyWith(
-                          color: pct >= 1
-                            ? AppColors.success : AppColors.primary)),
-                    ]),
-                  const SizedBox(height: 6),
-                  Row(children: [
-                    Expanded(child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: pct, minHeight: 6,
-                        backgroundColor: AppColors.bgBase,
-                        valueColor: AlwaysStoppedAnimation(
-                          pct >= 1 ? AppColors.success : AppColors.primary),
-                      ),
-                    )),
-                    const SizedBox(width: 8),
-                    Text('${_fmt(achieved)} / ${_fmt(e.value)}',
-                      style: AppTextStyles.caption),
-                  ]),
-                ],
-              ),
-            );
-          }),
-          Divider(color: AppColors.border, height: 24),
-
-          // Assign form
-          Text('Assign / Update Target',
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.textSecondary, letterSpacing: 0.6)),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _selected,
-            dropdownColor: Theme.of(context).cardColor,
-            style: AppTextStyles.body,
-            hint: Text('Select sales person',
-              style: AppTextStyles.caption),
-            icon: Icon(Icons.keyboard_arrow_down_rounded,
-              color: AppColors.textMuted),
-            decoration: InputDecoration(
-              labelText: 'Sales Person',
-              prefixIcon: Icon(Icons.person_outline_rounded,
-                size: 18, color: AppColors.textMuted),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 12),
-            ),
-            items: _salesPersons.map((p) => DropdownMenuItem(
-              value: p,
-              child: Text(p, style: AppTextStyles.body),
-            )).toList(),
-            onChanged: (v) => setState(() {
-              _selected = v;
-              if (v != null && TargetStore.targets.containsKey(v)) {
-                _targetCtrl.text =
-                  TargetStore.targets[v]!.toStringAsFixed(0);
-              } else {
-                _targetCtrl.clear();
-              }
-            }),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _targetCtrl,
-            style: AppTextStyles.body,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Monthly Target (₹)',
-              prefixIcon: Icon(Icons.currency_rupee_rounded,
-                size: 18, color: AppColors.textMuted),
-            ),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              icon: Icon(_saved
-                ? Icons.check_rounded : Icons.save_rounded, size: 16),
-              label: Text(_saved ? 'Saved!' : 'Save Target'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                  _saved ? AppColors.success : AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              onPressed: _save,
-            ),
-          ),
-        ]),
-      ),
-    ]);
   }
 }
 
@@ -452,43 +201,58 @@ class _ToggleRow extends StatelessWidget {
           Text(sub, style: AppTextStyles.caption),
         ],
       )),
-      Switch(value: value, onChanged: onChanged),
+      CupertinoSwitch(
+        value: value,
+        activeColor: iconColor,
+        onChanged: onChanged,
+      ),
     ]),
   );
 }
 
-class _PwdField extends StatelessWidget {
-  final TextEditingController ctrl;
-  final String label;
-  final bool obscure;
-  final VoidCallback onToggle;
-  final String? Function(String?)? validator;
+class _NavRow extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label, sub;
+  final VoidCallback onTap;
 
-  const _PwdField({
-    required this.ctrl, required this.label,
-    required this.obscure, required this.onToggle,
-    this.validator,
+  const _NavRow({
+    required this.icon, required this.iconColor,
+    required this.label, required this.sub,
+    required this.onTap,
   });
 
   @override
-  Widget build(BuildContext context) => TextFormField(
-    controller: ctrl,
-    obscureText: obscure,
-    validator: validator,
-    style: AppTextStyles.body,
-    decoration: InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(Icons.lock_outline_rounded,
-        size: 18, color: AppColors.textMuted),
-      suffixIcon: IconButton(
-        icon: Icon(obscure
-          ? Icons.visibility_off_outlined
-          : Icons.visibility_outlined,
-          size: 18, color: AppColors.textMuted),
-        onPressed: onToggle,
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(children: [
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: iconColor, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppTextStyles.bodyMedium),
+              Text(sub, style: AppTextStyles.caption),
+            ],
+          )),
+          Icon(CupertinoIcons.chevron_right,
+            size: 16,
+            color: isDark ? const Color(0xFF48484A) : const Color(0xFFC7C7CC)),
+        ]),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _InfoRow extends StatelessWidget {

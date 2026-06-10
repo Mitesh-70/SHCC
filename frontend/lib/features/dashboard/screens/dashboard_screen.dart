@@ -114,7 +114,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             highlightOrderId: _highlightOrder,
           ),
           const CatalogueScreen(isAdmin: false),
-          const ProfileScreen(isAdmin: false),
+          ProfileScreen(
+            isAdmin: false,
+            onGoHome: () => _goTo(0),
+          ),
         ],
       ),
       bottomNavigationBar: ShccBottomNav(
