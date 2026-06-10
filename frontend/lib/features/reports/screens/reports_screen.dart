@@ -123,6 +123,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return '₹${v.toStringAsFixed(0)}';
   }
 
+  // Format without ₹ symbol (for metric cards that already show a rupee icon)
+  String _fmtNoSymbol(double v) {
+    if (v >= 10000000) return '${(v / 10000000).toStringAsFixed(2)} Cr';
+    if (v >= 100000)   return '${(v / 100000).toStringAsFixed(2)} L';
+    return '${v.toStringAsFixed(0)}';
+  }
+
   String _fmtDate(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
@@ -449,11 +456,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1.5,
+            childAspectRatio: 2.1,
             children: [
               _MetricCard(
                 label: 'Total Revenue',
-                value: _fmt(_revenue),
+                value: _fmtNoSymbol(_revenue),
                 icon: Icons.currency_rupee_rounded,
                 color: AppColors.success,
               ),
@@ -576,63 +583,123 @@ class _InvoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final status = order['status'] as String;
     final color  = _statusColor(status);
     final dateParts = (order['date'] as String).split('-');
     final displayDate =
       '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}';
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(order['id'] as String,
-            style: AppTextStyles.label.copyWith(color: AppColors.primary)),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: color.withValues(alpha: 0.35)),
+    return GestureDetector(
+      onTap: () => _showInvoice(context),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Text(status.toUpperCase(),
-              style: AppTextStyles.badge.copyWith(color: color)),
+          ],
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(order['id'] as String,
+              style: AppTextStyles.label.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              )),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: color.withValues(alpha: 0.35)),
+              ),
+              child: Text(status.toUpperCase(),
+                style: AppTextStyles.badge.copyWith(color: color, fontWeight: FontWeight.bold)),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          Text(order['buyer_name'] as String, 
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: isDark ? Colors.white : Colors.black87,
+            )),
+          const SizedBox(height: 10),
+          
+          // Salesperson, Port & Date Row with Icons
+          Wrap(
+            spacing: 12,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.person_outline_rounded, size: 16, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(order['sales_person_name'] as String, style: AppTextStyles.bodySecondary),
+                ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.anchor_rounded, size: 16, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(order['port_name'] as String, style: AppTextStyles.bodySecondary),
+                ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(displayDate, style: AppTextStyles.bodySecondary),
+                ],
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          Divider(color: AppColors.border.withValues(alpha: 0.3), height: 1),
+          const SizedBox(height: 16),
+  
+          Row(
+            children: [
+              Text(fmt(total),
+                style: AppTextStyles.heading2.copyWith(
+                  color: AppColors.primary, 
+                  fontWeight: FontWeight.bold,
+                )),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => _downloadInvoice(context),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.download_outlined, color: AppColors.primary, size: 18),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Download',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ]),
-        const SizedBox(height: 8),
-        Text(order['buyer_name'] as String, style: AppTextStyles.bodyMedium),
-        const SizedBox(height: 2),
-        Text('${order['sales_person_name']}  ·  ${order['port_name']}',
-          style: AppTextStyles.caption),
-        const SizedBox(height: 10),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(fmt(total),
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.primary, fontWeight: FontWeight.w700)),
-            Text(displayDate, style: AppTextStyles.caption),
-          ]),
-          Row(children: [
-            _InvBtn(
-              icon: Icons.visibility_outlined,
-              label: 'View',
-              onTap: () => _showInvoice(context),
-            ),
-            const SizedBox(width: 8),
-            _InvBtn(
-              icon: Icons.download_outlined,
-              label: 'Download',
-              onTap: () => _downloadInvoice(context),
-              primary: true,
-            ),
-          ]),
-        ]),
-      ]),
+      ),
     );
   }
 
@@ -832,32 +899,56 @@ class _MetricCard extends StatelessWidget {
     required this.label, required this.value,
     required this.icon, required this.color,
   });
+
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: [color.withValues(alpha: 0.15), color.withValues(alpha: 0.04)],
-        begin: Alignment.topLeft, end: Alignment.bottomRight,
-      ),
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: color.withValues(alpha: 0.3)),
-    ),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Container(
-        width: 32, height: 32,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(9),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color.withValues(alpha: 0.15), color.withValues(alpha: 0.04)],
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
-        child: Icon(icon, color: color, size: 17),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      const Spacer(),
-      Text(value, style: AppTextStyles.heading2.copyWith(color: color)),
-      const SizedBox(height: 2),
-      Text(label, style: AppTextStyles.caption),
-    ]),
-  );
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: AppTextStyles.caption.copyWith(
+              color: isDark ? Colors.white70 : Colors.black54,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+              letterSpacing: 1.1,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _DateField extends StatelessWidget {
