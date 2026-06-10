@@ -128,6 +128,19 @@ class _ProductCard extends StatelessWidget {
     required this.isDark,  required this.onEdit,
   });
 
+  // Badge widget shared between layouts
+  Widget _badge(bool avail) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: avail
+        ? AppColors.success.withValues(alpha: 0.12)
+        : AppColors.error.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(20)),
+    child: Text(avail ? 'Available' : 'Unavailable',
+      style: TextStyle(
+        fontSize: 11, fontWeight: FontWeight.w600,
+        color: avail ? AppColors.success : AppColors.error)));
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -135,58 +148,56 @@ class _ProductCard extends StatelessWidget {
     final cardBg = isDark ? AppColors.bgCard : AppColors.lightBgCard;
     final border = isDark ? AppColors.border : AppColors.lightBorder;
 
-    return Container(
-      padding: const EdgeInsets.all(14),
+    // Original fire icon
+    const coalIcon = Icons.local_fire_department_rounded;
+
+    final iconBox = Container(
+      width: 46, height: 46,
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
-        boxShadow: isDark
-          ? null
-          : [BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 6, offset: const Offset(0, 2))],
+        color: avail
+          ? AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.1)
+          : (isDark ? AppColors.bgBase : AppColors.lightBgBase),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(children: [
-        Container(
-          width: 46, height: 46,
-          decoration: BoxDecoration(
-            color: avail
-              ? AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.1)
-              : (isDark ? AppColors.bgBase : AppColors.lightBgBase),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(Icons.local_fire_department_rounded,
-            color: avail ? AppColors.primary
-              : (isDark ? AppColors.textMuted : AppColors.lightTextMuted),
-            size: 22)),
-        const SizedBox(width: 14),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          Text(product['name'] as String,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600)),
-          const SizedBox(height: 3),
-          Row(children: [
-            Text('₹${(product['price'] as double).toStringAsFixed(0)}/MT',
-              style: TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w700,
-                color: AppColors.primary)),
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: avail
-                  ? AppColors.success.withValues(alpha: 0.12)
-                  : AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20)),
-              child: Text(avail ? 'Available' : 'Unavailable',
-                style: TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w600,
-                  color: avail ? AppColors.success : AppColors.error))),
-          ]),
-        ])),
-        if (isAdmin)
+      child: Icon(coalIcon,
+        color: avail ? AppColors.primary
+          : (isDark ? AppColors.textMuted : AppColors.lightTextMuted),
+        size: 22));
+
+    final cardDecoration = BoxDecoration(
+      color: cardBg,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: border),
+      boxShadow: isDark
+        ? null
+        : [BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6, offset: const Offset(0, 2))],
+    );
+
+    // ── ADMIN layout: icon | name + price + inline badge | edit button ──
+    if (isAdmin) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: cardDecoration,
+        child: Row(children: [
+          iconBox,
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+            Text(product['name'] as String,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600)),
+            const SizedBox(height: 3),
+            Row(children: [
+              Text('₹${(product['price'] as double).toStringAsFixed(0)}/MT',
+                style: const TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w700,
+                  color: AppColors.primary)),
+              const SizedBox(width: 10),
+              _badge(avail),
+            ]),
+          ])),
           GestureDetector(
             onTap: onEdit,
             child: Container(
@@ -196,7 +207,37 @@ class _ProductCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(color: border)),
               child: Icon(Icons.edit_outlined, size: 16,
-                color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary))),
+                color: isDark ? AppColors.textSecondary
+                  : AppColors.lightTextSecondary))),
+        ]),
+      );
+    }
+
+    // ── SALESPERSON layout: badge pinned top-right, no inline badge ──
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: cardDecoration,
+      child: Stack(clipBehavior: Clip.none, children: [
+        // Main content row
+        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          iconBox,
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+            Text(product['name'] as String,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600)),
+            const SizedBox(height: 3),
+            Text('₹${(product['price'] as double).toStringAsFixed(0)}/MT',
+              style: const TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w700,
+                color: AppColors.primary)),
+          ])),
+        ]),
+        // Badge pinned to top-right
+        Positioned(
+          top: 0, right: 0,
+          child: _badge(avail)),
       ]),
     );
   }

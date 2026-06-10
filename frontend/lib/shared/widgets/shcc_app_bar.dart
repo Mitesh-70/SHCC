@@ -69,7 +69,7 @@ class ShccAppBar extends StatelessWidget implements PreferredSizeWidget {
               right: 12,
             ),
             child: Row(children: [
-              if (leading != null) leading!,
+              ?leading,
               if (showBranding) _buildBranding(context) else _buildTitle(context),
               const Spacer(),
               if (actions != null) ...actions!,
@@ -116,7 +116,7 @@ class ShccAppBar extends StatelessWidget implements PreferredSizeWidget {
         margin: const EdgeInsets.only(left: 4),
         decoration: BoxDecoration(
           color: AppColors.primaryMuted,
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: AppColors.primary.withValues(alpha: 0.45), width: 1.5),
         ),

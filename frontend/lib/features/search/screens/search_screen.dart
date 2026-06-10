@@ -23,11 +23,43 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final _ctrl   = TextEditingController();
+  final _ctrl = TextEditingController();
   String _query  = '';
+  // ── Confirmed removed from filter options ─────────────────────────
   String _filter = 'All';
 
   final Map<String, GlobalKey> _cardKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    for (final o in _orders) {
+      _cardKeys[o['id'] as String] = GlobalKey();
+    }
+    if (widget.highlightOrderId != null) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _scrollToHighlight());
+    }
+  }
+
+  @override
+  void didUpdateWidget(SearchScreen old) {
+    super.didUpdateWidget(old);
+    if (widget.highlightOrderId != old.highlightOrderId &&
+        widget.highlightOrderId != null) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _scrollToHighlight());
+    }
+  }
+
+  void _scrollToHighlight() {
+    final key = _cardKeys[widget.highlightOrderId];
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(key!.currentContext!,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut, alignment: 0.2);
+    }
+  }
 
   static const _orders = [
     {
@@ -90,305 +122,91 @@ class _SearchScreenState extends State<SearchScreen> {
   }).toList();
 
   bool get _isGrouped => _query.isNotEmpty;
-  bool get _isFiltered => _filter != 'All';
-
-  @override
-  void initState() {
-    super.initState();
-    for (final o in _orders) {
-      _cardKeys[o['id'] as String] = GlobalKey();
-    }
-    if (widget.highlightOrderId != null) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _scrollToHighlight());
-    }
-  }
-
-  @override
-  void didUpdateWidget(SearchScreen old) {
-    super.didUpdateWidget(old);
-    if (widget.highlightOrderId != old.highlightOrderId &&
-        widget.highlightOrderId != null) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _scrollToHighlight());
-    }
-  }
-
-  void _scrollToHighlight() {
-    final key = _cardKeys[widget.highlightOrderId];
-    if (key?.currentContext != null) {
-      Scrollable.ensureVisible(key!.currentContext!,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut, alignment: 0.2);
-    }
-  }
-
-  // ── Filter bottom sheet ────────────────────────────────────────────
-  void _showFilter(BuildContext context) {
-    final theme  = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: theme.cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      builder: (_) => StatefulBuilder(
-        builder: (ctx, setModal) => Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
-          child: Column(mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-
-            // Drag handle
-            Center(child: Container(
-              width: 40, height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: theme.dividerColor,
-                borderRadius: BorderRadius.circular(2)))),
-
-            // Header row
-            Row(children: [
-              Container(
-                width: 32, height: 32,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMuted,
-                  borderRadius: BorderRadius.circular(9)),
-                child: const Icon(Icons.filter_list_rounded,
-                  size: 16, color: AppColors.primary)),
-              const SizedBox(width: 10),
-              Text('Filter Orders',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700)),
-              const Spacer(),
-              if (_filter != 'All')
-                GestureDetector(
-                  onTap: () {
-                    setState(() => _filter = 'All');
-                    setModal(() {});
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppColors.error.withValues(alpha: 0.3))),
-                    child: Text('Clear',
-                      style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w600,
-                        color: AppColors.error)))),
-            ]),
-            const SizedBox(height: 20),
-
-            // Label
-            Text('Select a filter to apply',
-              style: theme.textTheme.bodySmall),
-            const SizedBox(height: 14),
-
-            // Filter options — full width rows
-            ...[ 'All', 'Pending', 'Processed', 'Completed' ].map((f) {
-              final sel   = _filter == f;
-              final color = _statusColor(f);
-
-              return GestureDetector(
-                onTap: () {
-                  setState(() => _filter = f);
-                  setModal(() {});
-                  Navigator.pop(ctx);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: sel
-                      ? color.withValues(alpha: isDark ? 0.12 : 0.08)
-                      : theme.scaffoldBackgroundColor,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: sel
-                        ? color.withValues(alpha: 0.5)
-                        : theme.dividerColor,
-                      width: sel ? 1.5 : 1)),
-                  child: Row(children: [
-                    Container(
-                      width: 8, height: 8,
-                      decoration: BoxDecoration(
-                        color: sel ? color : theme.dividerColor,
-                        shape: BoxShape.circle)),
-                    const SizedBox(width: 14),
-                    Text(f,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-                        color: sel ? color
-                          : theme.textTheme.bodyMedium?.color)),
-                    const Spacer(),
-                    if (sel)
-                      Icon(Icons.check_circle_rounded,
-                        size: 18, color: color),
-                  ]),
-                ),
-              );
-            }),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  Color _statusColor(String f) {
-    switch (f) {
-      case 'Pending':   return AppColors.statusPending;
-      case 'Processed': return AppColors.statusProcessed;
-      case 'Completed': return AppColors.statusCompleted;
-      default:           return AppColors.primary;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    final theme   = Theme.of(context);
-    final isDark  = theme.brightness == Brightness.dark;
     final filtered = _filtered;
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: ShccAppBar(
         logoAsset: 'assets/images/logo.png',
         onProfileTap: () {},
         userInitials: widget.isAdmin ? 'AD' : 'RS',
       ),
       body: Column(children: [
-
-        // ── Search bar (single row, no permanent chips) ────────────
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Row(children: [
-            Expanded(
-              child: TextField(
-                controller: _ctrl,
-                style: theme.textTheme.bodyMedium,
-                onChanged: (v) => setState(() => _query = v),
-                decoration: InputDecoration(
-                  hintText: 'Search orders…',
-                  prefixIcon: Icon(Icons.search_rounded, size: 20,
-                    color: isDark
-                      ? AppColors.textMuted : AppColors.lightTextMuted),
-                  suffixIcon: _query.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.close_rounded, size: 18,
-                          color: isDark
-                            ? AppColors.textMuted : AppColors.lightTextMuted),
-                        onPressed: () =>
-                          setState(() { _query = ''; _ctrl.clear(); }))
-                    : null,
-                ),
+            Expanded(child: TextField(
+              controller: _ctrl,
+              style: AppTextStyles.body,
+              onChanged: (v) => setState(() => _query = v),
+              decoration: InputDecoration(
+                hintText: 'Search orders...',
+                prefixIcon: Icon(Icons.search_rounded,
+                  size: 20, color: AppColors.textMuted),
+                suffixIcon: _query.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.close_rounded,
+                        size: 18, color: AppColors.textMuted),
+                      onPressed: () => setState(() {
+                        _query = ''; _ctrl.clear();
+                      }))
+                  : null,
               ),
-            ),
+            )),
             const SizedBox(width: 10),
-            // Filter button — shows active dot if filter applied
-            GestureDetector(
+            _FilterBtn(
+              isActive: _filter != 'All',
               onTap: () => _showFilter(context),
-              child: Stack(clipBehavior: Clip.none, children: [
-                Container(
-                  width: 46, height: 48,
-                  decoration: BoxDecoration(
-                    color: _isFiltered
-                      ? AppColors.primaryMuted : theme.cardColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _isFiltered
-                        ? AppColors.primary : theme.dividerColor),
-                  ),
-                  child: Icon(Icons.tune_rounded,
-                    size: 20,
-                    color: _isFiltered
-                      ? AppColors.primary
-                      : (isDark
-                          ? AppColors.textSecondary
-                          : AppColors.lightTextSecondary)),
-                ),
-                if (_isFiltered)
-                  Positioned(
-                    top: -3, right: -3,
-                    child: Container(
-                      width: 10, height: 10,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: theme.scaffoldBackgroundColor,
-                          width: 1.5)),
-                    ),
-                  ),
-              ]),
             ),
           ]),
         ),
 
-        // ── Active filter + count row ──────────────────────────────
+        // ── Filter chips — Confirmed removed ─────────────────────
+        SizedBox(
+          height: 52,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16, vertical: 8),
+            children: ['All', 'Pending', 'Processed', 'Completed']
+              .map((f) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _FChip(
+                  label: f.toUpperCase(),
+                  selected: _filter == f,
+                  onTap: () => setState(() => _filter = f),
+                ),
+              )).toList(),
+          ),
+        ),
+
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
           child: Row(children: [
-            Text(
-              '${filtered.length} order${filtered.length == 1 ? '' : 's'}',
-              style: theme.textTheme.bodySmall),
-            const SizedBox(width: 8),
-            if (_isFiltered)
-              GestureDetector(
-                onTap: () => setState(() => _filter = 'All'),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryMuted,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Text(_filter,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600)),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.close_rounded,
-                      size: 11, color: AppColors.primary),
-                  ]),
-                ),
-              ),
-            if (widget.highlightOrderId != null && !_isFiltered) ...[
+            Text('${filtered.length} ORDERS FOUND',
+              style: AppTextStyles.caption.copyWith(letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+            const Spacer(),
+            if (widget.highlightOrderId != null) ...[
+              // Highlighted text removed
+            ],
+            if (_isGrouped) ...[
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 3),
+                  horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.primaryMuted,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text('Highlighted',
+                  borderRadius: BorderRadius.circular(10)),
+                child: Text('Grouped by buyer',
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.primary)),
               ),
-            ],
-            if (_isGrouped && !_isFiltered) ...[
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMuted,
-                  borderRadius: BorderRadius.circular(20)),
-                child: Text('Grouped',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.primary)),
-              ),
             ],
+            Icon(Icons.sort_rounded, color: AppColors.textSecondary, size: 20),
           ]),
         ),
 
-        // ── Results list ───────────────────────────────────────────
         Expanded(
           child: filtered.isEmpty
             ? const EmptyState(
@@ -397,20 +215,56 @@ class _SearchScreenState extends State<SearchScreen> {
                 subtitle: AppStrings.noResultsSub)
             : _isGrouped
               ? _GroupedList(
-                  orders: filtered, isAdmin: widget.isAdmin,
+                  orders: filtered,
+                  isAdmin: widget.isAdmin,
                   highlightOrderId: widget.highlightOrderId,
-                  cardKeys: _cardKeys)
+                  cardKeys: _cardKeys,
+                )
               : _FlatList(
-                  orders: filtered, isAdmin: widget.isAdmin,
+                  orders: filtered,
+                  isAdmin: widget.isAdmin,
                   highlightOrderId: widget.highlightOrderId,
-                  cardKeys: _cardKeys),
+                  cardKeys: _cardKeys,
+                ),
         ),
       ]),
     );
   }
+
+  void _showFilter(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Filter by Status', style: AppTextStyles.heading3),
+            const SizedBox(height: 16),
+            ...['All', 'Pending', 'Processed', 'Completed'].map((f) =>
+              ListTile(
+                contentPadding: EdgeInsets.zero, dense: true,
+                title: Text(f, style: AppTextStyles.body),
+                trailing: _filter == f
+                  ? const Icon(Icons.check_circle_rounded,
+                      color: AppColors.primary, size: 20)
+                  : null,
+                onTap: () {
+                  setState(() => _filter = f);
+                  Navigator.pop(context);
+                },
+              )),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-// ── Flat list ─────────────────────────────────────────────────────────────────
 class _FlatList extends StatelessWidget {
   final List<Map<String, dynamic>> orders;
   final bool isAdmin;
@@ -418,8 +272,10 @@ class _FlatList extends StatelessWidget {
   final Map<String, GlobalKey> cardKeys;
 
   const _FlatList({
-    required this.orders, required this.isAdmin,
-    required this.highlightOrderId, required this.cardKeys,
+    required this.orders,
+    required this.isAdmin,
+    required this.highlightOrderId,
+    required this.cardKeys,
   });
 
   @override
@@ -428,16 +284,20 @@ class _FlatList extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       itemCount: orders.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => _OrderCard(
-        key: cardKeys[orders[i]['id']],
-        order: orders[i], isAdmin: isAdmin,
-        isHighlighted: orders[i]['id'] == highlightOrderId,
-      ),
+      itemBuilder: (_, i) {
+        final o = orders[i];
+        final id = o['id'] as String;
+        return _OrderCard(
+          key: cardKeys[id],
+          order: o,
+          isAdmin: isAdmin,
+          isHighlighted: id == highlightOrderId,
+        );
+      },
     );
   }
 }
 
-// ── Grouped list ──────────────────────────────────────────────────────────────
 class _GroupedList extends StatefulWidget {
   final List<Map<String, dynamic>> orders;
   final bool isAdmin;
@@ -445,8 +305,10 @@ class _GroupedList extends StatefulWidget {
   final Map<String, GlobalKey> cardKeys;
 
   const _GroupedList({
-    required this.orders, required this.isAdmin,
-    required this.highlightOrderId, required this.cardKeys,
+    required this.orders,
+    required this.isAdmin,
+    required this.highlightOrderId,
+    required this.cardKeys,
   });
 
   @override
@@ -458,26 +320,38 @@ class _GroupedListState extends State<_GroupedList> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final Map<String, List<Map<String, dynamic>>> grouped = {};
     for (final o in widget.orders) {
       grouped.putIfAbsent(o['buyer_name'] as String, () => []).add(o);
     }
+
+    // Auto-expand group containing highlighted order
+    if (widget.highlightOrderId != null) {
+      for (final e in grouped.entries) {
+        final containsHighlight = e.value.any((o) => o['id'] == widget.highlightOrderId);
+        if (containsHighlight) {
+          _collapsed.remove(e.key);
+        }
+      }
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       children: [
         for (final e in grouped.entries) ...[
           GestureDetector(
-            onTap: () => setState(() => _collapsed.contains(e.key)
-              ? _collapsed.remove(e.key) : _collapsed.add(e.key)),
+            onTap: () => setState(() =>
+              _collapsed.contains(e.key)
+                ? _collapsed.remove(e.key)
+                : _collapsed.add(e.key)),
             child: Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(
                 horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: theme.cardColor,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.dividerColor),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(children: [
                 Container(
@@ -492,36 +366,37 @@ class _GroupedListState extends State<_GroupedList> {
                 Expanded(child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(e.key,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600)),
-                    Text(
-                      '${e.value.length} order${e.value.length == 1 ? '' : 's'}',
-                      style: theme.textTheme.bodySmall),
+                    Text(e.key, style: AppTextStyles.bodyMedium),
+                    Text('${e.value.length} order${e.value.length == 1 ? '' : 's'}',
+                      style: AppTextStyles.caption),
                   ],
                 )),
-                Icon(_collapsed.contains(e.key)
-                  ? Icons.keyboard_arrow_down_rounded
-                  : Icons.keyboard_arrow_up_rounded,
-                  color: theme.brightness == Brightness.dark
-                    ? AppColors.textMuted : AppColors.lightTextMuted),
+                Icon(
+                  _collapsed.contains(e.key)
+                    ? Icons.keyboard_arrow_down_rounded
+                    : Icons.keyboard_arrow_up_rounded,
+                  color: AppColors.textMuted),
               ]),
             ),
           ),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
             child: _collapsed.contains(e.key)
-              ? const SizedBox(key: ValueKey('h'))
+              ? const SizedBox(key: ValueKey('hidden'))
               : Column(
-                  key: const ValueKey('s'),
-                  children: e.value.map((o) => Padding(
-                    padding: const EdgeInsets.only(left: 12, bottom: 8),
-                    child: _OrderCard(
-                      key: widget.cardKeys[o['id']],
-                      order: o, isAdmin: widget.isAdmin,
-                      isHighlighted: o['id'] == widget.highlightOrderId,
-                    ),
-                  )).toList()),
+                  key: const ValueKey('shown'),
+                  children: e.value.map((o) {
+                    final id = o['id'] as String;
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 12, bottom: 8),
+                      child: _OrderCard(
+                        key: widget.cardKeys[id],
+                        order: o,
+                        isAdmin: widget.isAdmin,
+                        isHighlighted: id == widget.highlightOrderId,
+                      ),
+                    );
+                  }).toList()),
           ),
           const SizedBox(height: 4),
         ],
@@ -530,243 +405,246 @@ class _GroupedListState extends State<_GroupedList> {
   }
 }
 
-// ── Order card ────────────────────────────────────────────────────────────────
-class _OrderCard extends StatefulWidget {
+class _SmallBadge extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _SmallBadge({required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: color.withValues(alpha: 0.35)),
+    ),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 10, color: color),
+      const SizedBox(width: 3),
+      Text(label, style: AppTextStyles.badge.copyWith(color: color)),
+    ]),
+  );
+}
+
+class _OrderCard extends StatelessWidget {
   final Map<String, dynamic> order;
-  final bool isAdmin, isHighlighted;
+  final bool isAdmin;
+  final bool isHighlighted;
 
   const _OrderCard({
     super.key,
-    required this.order, required this.isAdmin,
+    required this.order,
+    required this.isAdmin,
     this.isHighlighted = false,
   });
 
-  @override
-  State<_OrderCard> createState() => _OrderCardState();
-}
+  // ── Edit allowed ONLY when status == pending ──────────────────────
+  bool get _canEdit => (order['status'] as String) == 'pending';
 
-class _OrderCardState extends State<_OrderCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _glowCtrl;
-  late Animation<double> _glowAnim;
-
-  bool get _canEdit => (widget.order['status'] as String) == 'pending';
+  // ── Rejected = pending + rejected flag ────────────────────────────
   bool get _isRejected =>
-    widget.order['rejected'] == true &&
-    (widget.order['status'] as String) == 'pending';
+    order['rejected'] == true &&
+    (order['status'] as String) == 'pending';
+
+  // ── Delivery tracking for processed/completed ─────────────────────
   bool get _showTracking {
-    final s = widget.order['status'] as String;
+    final s = order['status'] as String;
     return s == 'processed' || s == 'completed';
   }
 
   double get _total {
-    final b = (widget.order['base_rate'] as num).toDouble()
-      * (widget.order['quantity'] as num).toDouble();
-    return b + b * ((widget.order['gst'] as num) / 100)
-             + b * ((widget.order['tcs'] as num) / 100);
+    final b = (order['base_rate'] as num).toDouble()
+      * (order['quantity'] as num).toDouble();
+    return b
+      + b * ((order['gst'] as num) / 100)
+      + b * ((order['tcs'] as num) / 100);
   }
 
   String get _totalStr {
-    if (_total >= 10000000) {
+    if (_total >= 10000000)
       return '₹${(_total / 10000000).toStringAsFixed(2)} Cr';
-    }
-    if (_total >= 100000) {
+    if (_total >= 100000)
       return '₹${(_total / 100000).toStringAsFixed(2)} L';
-    }
     return '₹${_total.toStringAsFixed(0)}';
   }
 
   @override
-  void initState() {
-    super.initState();
-    _glowCtrl = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1400));
-    _glowAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut));
-    if (widget.isHighlighted) {
-      _glowCtrl.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void didUpdateWidget(_OrderCard old) {
-    super.didUpdateWidget(old);
-    if (widget.isHighlighted && !old.isHighlighted) {
-      _glowCtrl.repeat(reverse: true);
-    } else if (!widget.isHighlighted && old.isHighlighted) {
-      _glowCtrl.stop(); _glowCtrl.reset();
-    }
-  }
-
-  @override
-  void dispose() { _glowCtrl.dispose(); super.dispose(); }
-
-  @override
   Widget build(BuildContext context) {
-    final theme  = Theme.of(context);
+    final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     final borderColor = _isRejected
-      ? AppColors.error.withValues(alpha: 0.5)
-      : widget.isHighlighted
+      ? AppColors.error.withValues(alpha: 0.45)
+      : isHighlighted
         ? AppColors.primary
-        : theme.dividerColor;
+        : AppColors.border.withValues(alpha: 0.5);
 
     final bgColor = _isRejected
-      ? AppColors.error.withValues(alpha: isDark ? 0.06 : 0.04)
-      : widget.isHighlighted
+      ? AppColors.error.withValues(alpha: 0.02)
+      : isHighlighted
         ? AppColors.primary.withValues(alpha: isDark ? 0.1 : 0.06)
-        : theme.cardColor;
+        : Theme.of(context).cardColor;
 
-    return AnimatedBuilder(
-      animation: _glowAnim,
-      builder: (_, child) => Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: widget.isHighlighted
-            ? [BoxShadow(
-                color: AppColors.primary.withValues(
-                  alpha: 0.1 + _glowAnim.value * 0.18),
-                blurRadius: 10 + _glowAnim.value * 8,
-                spreadRadius: _glowAnim.value * 1.5,
-              )]
-            : null,
-        ),
-        child: child,
-      ),
+    return GestureDetector(
+      onTap: () {
+        if (!_canEdit) {
+          _showDetail(context);
+        } else {
+          Navigator.push(context,
+            MaterialPageRoute(builder: (_) =>
+              CreateOrderScreen(
+                prefill: order, isAdmin: isAdmin)));
+        }
+      },
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: borderColor,
-            width: widget.isHighlighted ? 1.5 : 1),
+            width: isHighlighted ? 1.5 : 1.0,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: Column(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(order['id'] as String,
+                style: AppTextStyles.label.copyWith(
+                  color: AppColors.primary.withValues(alpha: 0.8), letterSpacing: 1.5)),
+              Row(children: [
+                StatusBadge.fromString(order['status'] as String),
+                if (_isRejected) ...[
+                  const SizedBox(width: 6),
+                  _SmallBadge(
+                    icon: Icons.error_outline_rounded,
+                    label: 'REJECTED',
+                    color: AppColors.error,
+                  ),
+                ],
+                if (isHighlighted) ...[
+                  // Highlighted badge removed to prevent overflow
+                ],
+              ]),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(order['buyer_name'] as String,
+            style: AppTextStyles.heading2),
+          const SizedBox(height: 16),
+          
+          Row(
+            children: [
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Badges — Wrap to prevent overflow
-                    Wrap(spacing: 6, runSpacing: 4, children: [
-                      Text(widget.order['id'] as String,
-                        style: AppTextStyles.label.copyWith(
-                          color: AppColors.primary)),
-                      StatusBadge.fromString(
-                        widget.order['status'] as String),
-                      if (_isRejected)
-                        _SmallBadge(
-                          icon: Icons.error_outline_rounded,
-                          label: 'Rejected',
-                          color: AppColors.error),
-                      if (widget.isHighlighted)
-                        _SmallBadge(
-                          icon: Icons.my_location_rounded,
-                          label: 'Highlighted',
-                          color: AppColors.primary),
-                    ]),
-                    const SizedBox(height: 8),
-                    Text(widget.order['buyer_name'] as String,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${widget.order['quantity']} MT  ·  '
-                      '${widget.order['product_type']}  ·  '
-                      '${widget.order['port_name']}',
-                      style: theme.textTheme.bodySmall),
-                    const SizedBox(height: 7),
-                    Row(children: [
-                      Text(_totalStr,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700)),
-                      const SizedBox(width: 8),
-                      Text(widget.order['date'] as String,
-                        style: theme.textTheme.bodySmall),
-                    ]),
+                    Text('QUANTITY', style: AppTextStyles.caption.copyWith(letterSpacing: 1.2)),
+                    const SizedBox(height: 4),
+                    Text('${order['quantity']} MT', style: AppTextStyles.bodyMedium),
                   ],
-                )),
-                const SizedBox(width: 8),
-                Column(children: [
-                  _ABtn(icon: Icons.info_outline_rounded,
-                    onTap: () => _showDetail(context)),
-                  const SizedBox(height: 8),
-                  if (_showTracking)
-                    _ABtn(
-                      icon: Icons.local_shipping_outlined,
-                      color: AppColors.primary,
-                      onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) =>
-                          OrderTrackingScreen(
-                            order: widget.order,
-                            isAdmin: widget.isAdmin))))
-                  else
-                    _ABtn(
-                      icon: Icons.edit_outlined,
-                      color: _canEdit ? AppColors.primary
-                        : (isDark ? AppColors.textMuted : AppColors.lightTextMuted),
-                      onTap: _canEdit
-                        ? () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) =>
-                              CreateOrderScreen(
-                                prefill: widget.order,
-                                isAdmin: widget.isAdmin)))
-                        : null),
-                ]),
-              ],
-            ),
-
-            if (_isRejected && widget.order['admin_comment'] != null) ...[
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(
-                    alpha: isDark ? 0.08 : 0.05),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: AppColors.error.withValues(alpha: 0.25)),
                 ),
-                child: Row(
+              ),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.admin_panel_settings_outlined,
-                      size: 14, color: AppColors.error),
-                    const SizedBox(width: 8),
-                    Expanded(child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Admin Comment',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.error,
-                            fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 3),
-                        Text(widget.order['admin_comment'] as String,
-                          style: theme.textTheme.bodySmall),
-                      ],
-                    )),
+                    Text('ORIGIN', style: AppTextStyles.caption.copyWith(letterSpacing: 1.2)),
+                    const SizedBox(height: 4),
+                    Text('${order['product_type']}', style: AppTextStyles.bodyMedium),
                   ],
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('PORT', style: AppTextStyles.caption.copyWith(letterSpacing: 1.2)),
+                    const SizedBox(height: 4),
+                    Text('${order['port_name']}', style: AppTextStyles.bodyMedium),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('DATE', style: AppTextStyles.caption.copyWith(letterSpacing: 1.2)),
+                    const SizedBox(height: 4),
+                    Text('${order['date']}', style: AppTextStyles.bodyMedium),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // ── Admin comment for rejected orders ─────────────────────
+          if (_isRejected && order['admin_comment'] != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.chat_bubble_outline_rounded,
+                        size: 14, color: AppColors.error),
+                      const SizedBox(width: 8),
+                      Text('ADMIN COMMENT',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.error,
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(order['admin_comment'] as String,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
           ],
-        ),
+          
+          const SizedBox(height: 16),
+          Divider(color: AppColors.border.withValues(alpha: 0.3), height: 1),
+          const SizedBox(height: 16),
+          
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(_totalStr,
+                style: AppTextStyles.heading2.copyWith(
+                  color: AppColors.primary)),
+              Icon(
+                _canEdit ? Icons.edit_outlined : Icons.chevron_right_rounded,
+                color: AppColors.primary,
+                size: 24,
+              ),
+            ],
+          ),
+        ]),
       ),
     );
   }
 
   void _showDetail(BuildContext context) {
-    final theme  = Theme.of(context);
-    final b = (widget.order['base_rate'] as num).toDouble()
-      * (widget.order['quantity'] as num).toDouble();
-    final gstAmt = b * ((widget.order['gst'] as num) / 100);
-    final tcsAmt = b * ((widget.order['tcs'] as num) / 100);
+    final b = (order['base_rate'] as num).toDouble()
+      * (order['quantity'] as num).toDouble();
+    final gstAmt = b * ((order['gst'] as num) / 100);
+    final tcsAmt = b * ((order['tcs'] as num) / 100);
     final total  = b + gstAmt + tcsAmt;
     String fmt(double v) {
       if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
@@ -775,10 +653,11 @@ class _OrderCardState extends State<_OrderCard>
     }
 
     showModalBottomSheet(
-      context: context, isScrollControlled: true,
-      backgroundColor: theme.cardColor,
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.78, maxChildSize: 0.95,
         minChildSize: 0.5, expand: false,
@@ -790,49 +669,58 @@ class _OrderCardState extends State<_OrderCard>
               width: 36, height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: theme.dividerColor,
+                color: AppColors.border,
                 borderRadius: BorderRadius.circular(2)),
             )),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Order Detail', style: AppTextStyles.heading2),
-                    const SizedBox(height: 8),
-                    Wrap(spacing: 6, runSpacing: 4, children: [
-                      StatusBadge.fromString(
-                        widget.order['status'] as String),
-                      if (_isRejected)
-                        _SmallBadge(
-                          icon: Icons.error_outline_rounded,
-                          label: 'Rejected', color: AppColors.error),
+                    const SizedBox(height: 6),
+                    Row(children: [
+                      StatusBadge.fromString(order['status'] as String),
+                      if (_isRejected) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.error.withValues(
+                                alpha: 0.35)),
+                          ),
+                          child: Text('Rejected',
+                            style: AppTextStyles.badge.copyWith(
+                              color: AppColors.error)),
+                        ),
+                      ],
                     ]),
-                  ],
-                )),
-                const SizedBox(width: 8),
-                Wrap(spacing: 8, children: [
+                  ]),
+                Row(children: [
                   if (_showTracking)
-                    OutlinedButton.icon(
-                      icon: const Icon(
-                        Icons.local_shipping_outlined, size: 15),
-                      label: const Text('Track'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8)),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (_) => OrderTrackingScreen(
-                            order: widget.order,
-                            isAdmin: widget.isAdmin)));
-                      },
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: OutlinedButton.icon(
+                        icon: const Icon(
+                          Icons.local_shipping_outlined, size: 15),
+                        label: const Text('Track'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8)),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => OrderTrackingScreen(
+                              order: order, isAdmin: isAdmin)));
+                        },
+                      ),
                     ),
                   ElevatedButton.icon(
-                    icon: const Icon(
-                      Icons.receipt_long_rounded, size: 15),
+                    icon: const Icon(Icons.receipt_long_rounded, size: 15),
                     label: const Text('Invoice'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
@@ -843,7 +731,8 @@ class _OrderCardState extends State<_OrderCard>
               ],
             ),
 
-            if (_isRejected && widget.order['admin_comment'] != null) ...[
+            // Admin comment in detail view
+            if (_isRejected && order['admin_comment'] != null) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -866,9 +755,9 @@ class _OrderCardState extends State<_OrderCard>
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.error)),
                         const SizedBox(height: 4),
-                        Text(widget.order['admin_comment'] as String,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 13)),
+                        Text(order['admin_comment'] as String,
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.textSecondary)),
                       ],
                     )),
                   ],
@@ -878,29 +767,29 @@ class _OrderCardState extends State<_OrderCard>
 
             const SizedBox(height: 20),
             _DSection('Order Info', [
-              ('Order ID',     widget.order['id'] as String),
-              ('Date',         widget.order['date'] as String),
-              ('Sales Person', widget.order['sales_person_name'] as String),
+              ('Order ID',     order['id'] as String),
+              ('Date',         order['date'] as String),
+              ('Sales Person', order['sales_person_name'] as String),
             ]),
             const SizedBox(height: 16),
             _DSection('Product Details', [
-              ('Product',      widget.order['product_type'] as String),
-              ('Quality',      widget.order['quality'] as String),
-              ('Type of Sale', widget.order['type_of_sale'] as String),
-              ('Port',         widget.order['port_name'] as String),
-              ('Quantity',     '${widget.order['quantity']} MT'),
+              ('Product',      order['product_type'] as String),
+              ('Quality',      order['quality'] as String),
+              ('Type of Sale', order['type_of_sale'] as String),
+              ('Port',         order['port_name'] as String),
+              ('Quantity',     '${order['quantity']} MT'),
             ]),
             const SizedBox(height: 16),
             _DSection('Pricing', [
-              ('Base Rate', '₹${widget.order['base_rate']}/MT'),
-              ('GST', '${widget.order['gst']}%  →  ${fmt(gstAmt)}'),
-              ('TCS', '${widget.order['tcs']}%  →  ${fmt(tcsAmt)}'),
-              ('Total', fmt(total)),
+              ('Base Rate', '₹${order['base_rate']}/MT'),
+              ('GST',       '${order['gst']}%  →  ${fmt(gstAmt)}'),
+              ('TCS',       '${order['tcs']}%  →  ${fmt(tcsAmt)}'),
+              ('Total',     fmt(total)),
             ]),
             const SizedBox(height: 16),
             _DSection('Buyer Info', [
-              ('Buyer',         widget.order['buyer_name'] as String),
-              ('Payment Terms', widget.order['payment_terms'] as String),
+              ('Buyer',          order['buyer_name'] as String),
+              ('Payment Terms',  order['payment_terms'] as String),
             ]),
           ],
         ),
@@ -909,31 +798,6 @@ class _OrderCardState extends State<_OrderCard>
   }
 }
 
-// ── Small badge ───────────────────────────────────────────────────────────────
-class _SmallBadge extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _SmallBadge({
-    required this.icon, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: color.withValues(alpha: 0.35)),
-    ),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 10, color: color),
-      const SizedBox(width: 3),
-      Text(label, style: AppTextStyles.badge.copyWith(color: color)),
-    ]),
-  );
-}
-
-// ── Detail section ────────────────────────────────────────────────────────────
 class _DSection extends StatelessWidget {
   final String title;
   final List<(String, String)> rows;
@@ -941,18 +805,15 @@ class _DSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: AppTextStyles.label.copyWith(
-        letterSpacing: 0.8,
-        color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary)),
+      Text(title,
+        style: AppTextStyles.label.copyWith(letterSpacing: 0.8)),
       const SizedBox(height: 10),
       Container(
         decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
+          color: AppColors.bgBase,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: theme.dividerColor),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           children: rows.asMap().entries.map((e) => Column(children: [
@@ -961,16 +822,13 @@ class _DSection extends StatelessWidget {
                 horizontal: 14, vertical: 11),
               child: Row(children: [
                 SizedBox(width: 110,
-                  child: Text(e.value.$1,
-                    style: theme.textTheme.bodySmall)),
+                  child: Text(e.value.$1, style: AppTextStyles.caption)),
                 Expanded(child: Text(e.value.$2,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500))),
+                  style: AppTextStyles.bodyMedium)),
               ]),
             ),
             if (e.key < rows.length - 1)
-              Divider(height: 1, indent: 14, endIndent: 14,
-                color: theme.dividerColor),
+              const Divider(height: 1, indent: 14, endIndent: 14),
           ])).toList(),
         ),
       ),
@@ -978,7 +836,6 @@ class _DSection extends StatelessWidget {
   }
 }
 
-// ── Action button ─────────────────────────────────────────────────────────────
 class _ABtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
@@ -987,25 +844,75 @@ class _ABtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final resolvedColor = color ?? 
-      (theme.brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary);
+    final resolvedColor = color ?? AppColors.textSecondary;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 36, height: 36,
         decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
+          color: AppColors.bgBase,
           borderRadius: BorderRadius.circular(9),
           border: Border.all(
-            color: onTap == null
-              ? Colors.transparent : theme.dividerColor),
+            color: onTap == null ? AppColors.bgBase : AppColors.border),
         ),
         child: Icon(icon, size: 17,
-          color: onTap == null
-            ? (theme.brightness == Brightness.dark
-                ? AppColors.textMuted : AppColors.lightTextMuted)
-            : resolvedColor),
+          color: onTap == null ? AppColors.textMuted : resolvedColor),
+      ),
+    );
+  }
+}
+
+class _FilterBtn extends StatelessWidget {
+  final bool isActive;
+  final VoidCallback onTap;
+  const _FilterBtn({required this.isActive, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 46, height: 48,
+      decoration: BoxDecoration(
+        color: isActive ? AppColors.primaryMuted : Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isActive ? AppColors.primary : AppColors.border),
+      ),
+      child: Icon(Icons.tune_rounded,
+        color: isActive ? AppColors.primary : AppColors.textSecondary,
+        size: 20),
+    ),
+  );
+}
+
+class _FChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _FChip({required this.label, required this.selected,
+    required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5)),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.border.withValues(alpha: 0.3)),
+        ),
+        child: Text(label, style: AppTextStyles.caption.copyWith(
+          color: selected ? (isDark ? Colors.black : Colors.white) : AppColors.textSecondary,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        )),
       ),
     );
   }

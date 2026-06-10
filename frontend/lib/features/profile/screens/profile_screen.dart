@@ -91,11 +91,11 @@ class ProfileScreen extends StatelessWidget {
 
           // Info card
           _InfoCard(items: const [
-            ('Employee ID', empId),
-            ('Region',      region),
-            ('Email',       'raj.sharma@shcc.com'),
-            ('Phone',       '+91 98765 43210'),
-            ('Joined',      'March 2021'),
+            (Icons.badge_outlined,           empId),
+            (Icons.location_on_outlined,     region),
+            (Icons.email_outlined,           'raj.sharma@shcc.com'),
+            (Icons.phone_outlined,           '+91 98765 43210'),
+            (Icons.calendar_today_outlined,  'March 2021'),
           ]),
           const SizedBox(height: 20),
 
@@ -211,7 +211,7 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _InfoCard extends StatelessWidget {
-  final List<(String, String)> items;
+  final List<(IconData, String)> items;
   const _InfoCard({required this.items});
 
   @override
@@ -228,9 +228,16 @@ class _InfoCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
               horizontal: 16, vertical: 13),
             child: Row(children: [
-              SizedBox(width: 110,
-                child: Text(e.value.$1,
-                  style: AppTextStyles.caption)),
+              Container(
+                width: 34, height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMuted,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(e.value.$1,
+                  size: 16, color: AppColors.primary),
+              ),
+              const SizedBox(width: 12),
               Expanded(child: Text(e.value.$2,
                 style: AppTextStyles.bodyMedium)),
             ]),

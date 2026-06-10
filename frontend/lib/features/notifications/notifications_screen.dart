@@ -227,7 +227,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                 itemCount: notifs.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (_, i) {
                   final n = notifs[i];
                   // Section divider between unread and read
@@ -445,39 +445,37 @@ class _NotificationBellState extends State<NotificationBell> {
         child: Stack(clipBehavior: Clip.none, children: [
           Container(
             width: 36, height: 36,
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Theme.of(context).dividerColor),
-            ),
+            alignment: Alignment.center,
             child: Icon(
               count > 0
                 ? Icons.notifications_rounded
                 : Icons.notifications_outlined,
-              size: 18,
+              size: 26,
               color: count > 0
                 ? AppColors.primary : AppColors.textSecondary),
           ),
           if (count > 0)
             Positioned(
-              top: -4, right: -4,
+              top: 0, right: 2,
               child: Container(
                 constraints: const BoxConstraints(
-                  minWidth: 16, minHeight: 16),
+                  minWidth: 20, minHeight: 20),
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   color: AppColors.error,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: Theme.of(context).scaffoldBackgroundColor,
-                    width: 1.5),
+                    width: 2),
                 ),
-                child: Text(
-                  count > 9 ? '9+' : '$count',
-                  style: const TextStyle(
-                    color: Colors.white, fontSize: 9,
-                    fontWeight: FontWeight.w700),
-                  textAlign: TextAlign.center,
+                child: Center(
+                  child: Text(
+                    count > 9 ? '9+' : '$count',
+                    style: const TextStyle(
+                      color: Colors.white, fontSize: 11,
+                      fontWeight: FontWeight.w800),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ),

@@ -40,20 +40,36 @@ class RecentOrderTile extends StatelessWidget {
         ]),
         const SizedBox(height: 10),
         Text(order['buyer_name'] ?? order['customer'] ?? '',
-          style: AppTextStyles.bodyMedium),
-        const SizedBox(height: 2),
-        Text(
-          '${order['quantity'] ?? order['qty'] ?? ''} MT  ·  ${order['type_of_sale'] ?? ''}  ·  ${order['port_name'] ?? ''}',
-          style: AppTextStyles.caption,
+          style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 15)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Icon(Icons.shopping_bag_outlined, size: 14, color: AppColors.textMuted),
+            const SizedBox(width: 4),
+            Text('${order['quantity'] ?? order['qty'] ?? ''} MT', style: AppTextStyles.caption),
+            const SizedBox(width: 14),
+            Icon(
+              order['type_of_sale'] == 'F.O.R.' 
+                ? Icons.local_shipping_outlined 
+                : Icons.verified_outlined, 
+              size: 14, color: AppColors.textMuted
+            ),
+            const SizedBox(width: 4),
+            Text('${order['type_of_sale'] ?? ''}', style: AppTextStyles.caption),
+            const SizedBox(width: 14),
+            Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
+            const SizedBox(width: 4),
+            Text('${order['port_name'] ?? ''}', style: AppTextStyles.caption),
+          ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 14),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text(_totalStr,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.primary, fontWeight: FontWeight.w700)),
+              color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 20)),
           Row(children: [
-            Icon(Icons.calendar_today_outlined, size: 11, color: AppColors.textMuted),
-            const SizedBox(width: 4),
+            Icon(Icons.calendar_today_outlined, size: 13, color: AppColors.textMuted),
+            const SizedBox(width: 6),
             Text(order['date'] ?? '', style: AppTextStyles.caption),
           ]),
         ]),
