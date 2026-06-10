@@ -16,6 +16,7 @@ class OrderModel {
   final String createdAt;
   final String updatedAt;
   final List<DeliveryEntry> deliveries;
+  final String? remark;
 
   OrderModel({
     required this.uuid,
@@ -35,6 +36,7 @@ class OrderModel {
     required this.createdAt,
     required this.updatedAt,
     this.deliveries = const [],
+    this.remark,
   });
 
   // ── Once admin confirms, order is locked ──────────────────────────
@@ -66,6 +68,7 @@ class OrderModel {
     'payment_terms':     paymentTerms,
     'sync_status':       syncStatus,
     'status':            status,
+    'remark':            remark,
     'created_at':        createdAt,
     'updated_at':        updatedAt,
   };
@@ -87,9 +90,10 @@ class OrderModel {
     status:          m['status']      ?? 'pending',
     createdAt:       m['created_at'],
     updatedAt:       m['updated_at'],
+    remark:          m['remark'],
   );
 
-  OrderModel copyWith({String? status, List<DeliveryEntry>? deliveries}) => OrderModel(
+  OrderModel copyWith({String? status, List<DeliveryEntry>? deliveries, String? remark}) => OrderModel(
     uuid:            uuid,
     salesPersonName: salesPersonName,
     baseRate:        baseRate,
@@ -107,6 +111,7 @@ class OrderModel {
     createdAt:       createdAt,
     updatedAt:       updatedAt,
     deliveries:      deliveries  ?? this.deliveries,
+    remark:          remark      ?? this.remark,
   );
 }
 

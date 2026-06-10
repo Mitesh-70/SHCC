@@ -69,6 +69,7 @@ class _SearchScreenState extends State<SearchScreen> {
       'type_of_sale': 'Spot', 'quality': '5000 GAR',
       'port_name': 'Mundra', 'payment_terms': 'Advance',
       'status': 'processed', 'date': '28 Apr 2024',
+      'remark': 'ASAP Delivery Needed',
     },
     {
       'id': 'ORD-2024-047', 'buyer_name': 'Ultratech Cement',
@@ -79,6 +80,7 @@ class _SearchScreenState extends State<SearchScreen> {
       'status': 'pending', 'date': '27 Apr 2024',
       'rejected': true,
       'admin_comment': 'Quantity too high for this port. Reduce to 100 MT.',
+      'remark': 'Urgent requirement',
     },
     {
       'id': 'ORD-2024-046', 'buyer_name': 'Tata Steel',
@@ -87,6 +89,7 @@ class _SearchScreenState extends State<SearchScreen> {
       'type_of_sale': 'Spot', 'quality': '4800 GAR',
       'port_name': 'Hazira', 'payment_terms': 'On Delivery',
       'status': 'processed', 'date': '26 Apr 2024',
+      'remark': '89012',
     },
     {
       'id': 'ORD-2024-045', 'buyer_name': 'JSW Steel Ltd',
@@ -95,6 +98,7 @@ class _SearchScreenState extends State<SearchScreen> {
       'type_of_sale': 'F.O.R.', 'quality': '3800 GAR',
       'port_name': 'Magdalla', 'payment_terms': 'Advance',
       'status': 'pending', 'date': '25 Apr 2024',
+      'remark': '',
     },
     {
       'id': 'ORD-2024-044', 'buyer_name': 'ACC Cement',
@@ -103,6 +107,7 @@ class _SearchScreenState extends State<SearchScreen> {
       'type_of_sale': 'Spot', 'quality': '4500 GAR',
       'port_name': 'Navlakhi', 'payment_terms': 'LC',
       'status': 'completed', 'date': '24 Apr 2024',
+      'remark': 'Order #4423',
     },
   ];
 
@@ -790,6 +795,8 @@ class _OrderCard extends StatelessWidget {
             _DSection('Buyer Info', [
               ('Buyer',          order['buyer_name'] as String),
               ('Payment Terms',  order['payment_terms'] as String),
+              if (order['remark'] != null && (order['remark'] as String).isNotEmpty)
+                ('Remark',       order['remark'] as String),
             ]),
           ],
         ),

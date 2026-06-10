@@ -10,7 +10,7 @@ class SqliteHelper {
   }
 
   static Future<Database> _initDb() async {
-    final path = join(await getDatabasesPath(), 'shcc_sales_v2.db');
+    final path = join(await getDatabasesPath(), 'shcc_sales_v3.db');
     return openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
@@ -30,6 +30,7 @@ class SqliteHelper {
         buyer_name        TEXT,
         payment_terms     TEXT,
         sync_status       TEXT DEFAULT 'pending',
+        remark            TEXT,
         created_at        TEXT,
         updated_at        TEXT
       )

@@ -26,6 +26,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final _tcsCtrl      = TextEditingController(text: '0.1');
   final _qtyCtrl      = TextEditingController();
   final _buyerCtrl    = TextEditingController();
+  final _remarkCtrl   = TextEditingController();
 
   String  _typeOfSale   = 'Spot';
   String? _productType;
@@ -57,6 +58,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       _quality           = p['quality'];
       _portName          = p['port_name'];
       _paymentTerms      = p['payment_terms']          ?? 'Advance';
+      _remarkCtrl.text   = p['remark']?.toString()     ?? '';
     }
     for (final c in [_baseRateCtrl, _gstCtrl, _tcsCtrl, _qtyCtrl]) {
       c.addListener(() => setState(() {}));
@@ -65,7 +67,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   @override
   void dispose() {
-    for (final c in [_baseRateCtrl, _gstCtrl, _tcsCtrl, _qtyCtrl, _buyerCtrl]) {
+    for (final c in [_baseRateCtrl, _gstCtrl, _tcsCtrl, _qtyCtrl, _buyerCtrl, _remarkCtrl]) {
       c.dispose();
     }
     super.dispose();
@@ -248,6 +250,17 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         )).toList(),
                     ),
                   ]),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _remarkCtrl,
+                    style: AppTextStyles.body,
+                    decoration: InputDecoration(
+                      labelText: 'Remark (Optional)',
+                      hintText: 'Enter any remarks',
+                      prefixIcon: Icon(Icons.note_alt_outlined,
+                        size: 18, color: AppColors.textMuted),
+                    ),
+                  ),
                 ],
               ),
             ],
