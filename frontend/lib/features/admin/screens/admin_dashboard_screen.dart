@@ -47,10 +47,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       const SearchScreen(isAdmin: true),
       const ReportsScreen(),
       const CatalogueScreen(isAdmin: true),
-      ProfileScreen(
-        isAdmin: true,
-        onGoHome: () => _goTo(0),
-      ),
+      const ProfileScreen(isAdmin: true),
     ];
   }
 
@@ -209,12 +206,12 @@ class _AdminHomeState extends State<_AdminHome> {
               crossAxisCount: 2, shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisSpacing: 12, mainAxisSpacing: 12,
-              childAspectRatio: 1.4,
+              childAspectRatio: 1.7,
               children: [
                 const KpiCard(label: 'Total Orders', value: '142',
                   icon: Icons.receipt_long_rounded,
                   color: AppColors.primary),
-                const KpiCard(label: 'Revenue MTD', value: '₹3.2 Cr',
+                const KpiCard(label: 'Revenue MTD', value: '3.2 Cr',
                   icon: Icons.currency_rupee_rounded,
                   color: AppColors.success),
                 KpiCard(
@@ -392,13 +389,117 @@ class _ApprovalCardState extends State<_ApprovalCard> {
         const SizedBox(height: 12),
         Text(o['buyer_name'] as String, style: AppTextStyles.heading3),
         const SizedBox(height: 4),
-        Text(
-          '${o['product_type']}  ·  ${o['quality']}  ·  ${o['quantity']} MT',
-          style: AppTextStyles.caption),
-        const SizedBox(height: 2),
-        Text(
-          '${o['type_of_sale']}  ·  ${o['port_name']}  ·  ${o['payment_terms']}',
-          style: AppTextStyles.caption),
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.local_fire_department_rounded, size: 15, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(o['product_type'] as String,
+                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.grade_outlined, size: 15, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(o['quality'] as String,
+                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.scale_rounded, size: 15, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text('${o['quantity']} MT',
+                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.shopping_bag_outlined, size: 15, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(o['type_of_sale'] as String,
+                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.anchor_rounded, size: 15, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(o['port_name'] as String,
+                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.payment_rounded, size: 15, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(o['payment_terms'] as String,
+                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
         Container(
           padding: const EdgeInsets.symmetric(
