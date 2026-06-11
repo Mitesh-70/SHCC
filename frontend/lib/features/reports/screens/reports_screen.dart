@@ -7,6 +7,7 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../profile/screens/profile_screen.dart';
 
 // ── Static sample orders (replace with real data layer) ───────────────────────
 const _allOrders = [
@@ -75,8 +76,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
   DateTime? _toDate;
   String _salesperson = 'All';
   String _port        = 'All';
-  bool   _filtersApplied = false;
   bool   _pdfLoading     = false;
+
+  bool get _hasActiveFilters => 
+    _fromDate != null || _toDate != null || _salesperson != 'All' || _port != 'All';
 
   // ── Filtered orders ────────────────────────────────────────────────
   List<Map<String, dynamic>> get _filtered {
@@ -316,22 +319,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  void _applyFilters() {
-    if (_fromDate != null && _toDate != null &&
-        _fromDate!.isAfter(_toDate!)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('From date cannot be after To date'),
-        backgroundColor: AppColors.error,
-      ));
-      return;
-    }
-    setState(() => _filtersApplied = true);
-  }
-
   void _clearFilters() => setState(() {
     _fromDate = null; _toDate = null;
     _salesperson = 'All'; _port = 'All';
-    _filtersApplied = false;
   });
 
   @override
@@ -342,30 +332,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       appBar: ShccAppBar(
         logoAsset: 'assets/images/logo.png',
         userInitials: 'AD',
-        onProfileTap: () {},
-        actions: [
-          if (_pdfLoading)
-            const Padding(
-              padding: EdgeInsets.only(right: 16),
-              child: Center(child: SizedBox(width: 20, height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2, color: AppColors.primary))),
-            )
-          else
-            IconButton(
-              tooltip: 'Download PDF',
-              icon: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMuted,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.picture_as_pdf_rounded,
-                  color: AppColors.primary, size: 20),
-              ),
-              onPressed: filtered.isEmpty ? null : _downloadPdf,
-            ),
-        ],
+        onProfileTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen(isAdmin: true, fromTab: false))),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
@@ -373,10 +340,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
           // ── Header ───────────────────────────────────────────────
           Text('Sales Reports', style: AppTextStyles.heading1),
-          const SizedBox(height: 4),
-          Text('Filter, analyse and export order data',
-            style: AppTextStyles.bodySecondary),
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
+          
 
           // ── Filter panel ─────────────────────────────────────────
           Container(
@@ -395,7 +360,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   const SizedBox(width: 8),
                   Text('Filters', style: AppTextStyles.heading3),
                   const Spacer(),
-                  if (_filtersApplied)
+                  if (_hasActiveFilters)
                     TextButton(
                       onPressed: _clearFilters,
                       style: TextButton.styleFrom(
@@ -456,9 +421,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    icon: const Icon(Icons.search_rounded, size: 16),
-                    label: const Text('Apply Filters'),
-                    onPressed: _applyFilters,
+                    icon: _pdfLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                    label: Text(_pdfLoading ? 'Generating...' : 'Download Report PDF'),
+                    onPressed: _pdfLoading || filtered.isEmpty ? null : _downloadPdf,
                   ),
                 ),
               ],

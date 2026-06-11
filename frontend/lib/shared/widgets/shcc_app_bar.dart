@@ -12,6 +12,7 @@ class ShccAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showProfileIcon;
   final VoidCallback? onProfileTap;
   final String? userInitials;
+  final String? profileImageUrl;
   final String? logoAsset;
 
   const ShccAppBar({
@@ -23,6 +24,7 @@ class ShccAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showProfileIcon = true,
     this.onProfileTap,
     this.userInitials,
+    this.profileImageUrl = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
     this.logoAsset,
   });
 
@@ -116,19 +118,26 @@ class ShccAppBar extends StatelessWidget implements PreferredSizeWidget {
         margin: const EdgeInsets.only(left: 4),
         decoration: BoxDecoration(
           color: AppColors.primaryMuted,
-          borderRadius: BorderRadius.circular(10),
+          shape: BoxShape.circle,
           border: Border.all(
             color: AppColors.primary.withValues(alpha: 0.45), width: 1.5),
         ),
-        child: Center(
-          child: Text(
-            userInitials ?? 'U',
-            style: const TextStyle(
-              color: AppColors.primary,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+        child: ClipOval(
+          child: profileImageUrl != null && profileImageUrl!.isNotEmpty
+            ? Image.network(
+                profileImageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (ctx, err, stack) => const Icon(
+                  Icons.person,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              )
+            : const Icon(
+                Icons.person,
+                color: AppColors.primary,
+                size: 20,
+              ),
         ),
       ),
     );

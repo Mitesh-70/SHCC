@@ -223,8 +223,6 @@ class _AdminHomeState extends State<_AdminHome> {
           body: ListView(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
             children: [
-              Text('Admin Panel', style: AppTextStyles.bodySecondary),
-              const SizedBox(height: 2),
               Text('Overview', style: AppTextStyles.heading1),
               const SizedBox(height: 24),
 
