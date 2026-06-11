@@ -1,16 +1,15 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Topbar from '../../components/layout/Topbar';
 import { FileText, Download, Play } from 'lucide-react';
 
 const RECENT_REPORTS = [
   { id: 'REP-7721', name: 'FY 2026 GST Return Summary', type: 'GST Report', generatedAt: '2026-06-11 14:30', size: '1.2 MB', format: 'PDF' },
   { id: 'REP-7720', name: 'May 2026 Consolidated Sales Report', type: 'Sales Report', generatedAt: '2026-06-10 11:15', size: '4.8 MB', format: 'Excel' },
-  { id: 'REP-7719', name: 'Warehouse Stock Valuation Ledger', type: 'Inventory Report', generatedAt: '2026-06-08 16:45', size: '2.5 MB', format: 'PDF' },
   { id: 'REP-7718', name: 'Q1 Outstanding Payments Analysis', type: 'Financial Report', generatedAt: '2026-06-05 09:00', size: '890 KB', format: 'Excel' },
 ];
 
-export default function AdminReports() {
-  const [reportType, setReportType] = useState('sales');
+export default function FinanceReports() {
+  const [reportType, setReportType] = useState('financial');
   const [dateRange, setDateRange] = useState('this-month');
   const [format, setFormat] = useState('pdf');
   const [generating, setGenerating] = useState(false);
@@ -35,34 +34,32 @@ export default function AdminReports() {
 
   return (
     <div className="bg-gray-50 min-h-screen pb-10">
-      <Topbar title="Report Generation Center" subtitle="Generate, schedule, export and view analytical reports of sales, inventory, and finances." />
+      <Topbar title="Finance Report Generator" subtitle="Compile GST returns, revenue summaries, invoice registers, and credit ledgers." />
 
       <div className="px-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Report configuration form */}
         <div className="bg-white rounded-xl shadow-card border border-gray-100 p-5 h-fit">
-          <h3 className="text-sm font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">Generate Custom Report</h3>
+          <h3 className="text-sm font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">Generate Finance Report</h3>
           <form onSubmit={handleGenerate} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
-                Report Module
+                Report Type
               </label>
               <select
                 value={reportType}
                 onChange={e => setReportType(e.target.value)}
                 className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-gray-700 outline-none"
               >
-                <option value="sales">Sales & Revenue Report</option>
-                <option value="inventory">Inventory & Stock Movement</option>
                 <option value="financial">Financial Analysis & Profit/Loss</option>
                 <option value="gst">GST & Taxation Summary</option>
-                <option value="orders">Orders Lifecycle Metrics</option>
-                <option value="customers">Customers Transaction Ledger</option>
+                <option value="revenue">Revenue Stream Metrics</option>
+                <option value="invoice">Invoice Aging Register</option>
+                <option value="credit">Customer Credit Ledger</option>
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
-                Time Interval
+                Date Range
               </label>
               <select
                 value={dateRange}
@@ -79,7 +76,7 @@ export default function AdminReports() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
-                File Format
+                Format
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {['pdf', 'excel', 'csv'].map(f => (
@@ -107,21 +104,20 @@ export default function AdminReports() {
               {generating ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Generating Ledger...</span>
+                  <span>Compiling Ledger...</span>
                 </>
               ) : (
                 <>
                   <Play size={14} />
-                  <span>Start Report Generation</span>
+                  <span>Compile Statement</span>
                 </>
               )}
             </button>
           </form>
         </div>
 
-        {/* Generated report logs list */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-card border border-gray-100 p-5">
-          <h3 className="text-sm font-bold text-gray-800 mb-4">Export History & Archives</h3>
+          <h3 className="text-sm font-bold text-gray-800 mb-4">Export History</h3>
           <div className="divide-y divide-gray-50">
             {generatedList.map(rep => (
               <div key={rep.id} className="flex items-center justify-between py-3.5 hover:bg-gray-50/20 px-2 rounded-lg transition-all">
