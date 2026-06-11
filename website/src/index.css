@@ -80,3 +80,104 @@
   background-size: 400% 400%;
   animation: gradientShift 8s ease infinite;
 }
+.fire-particle {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(24px);
+  opacity: 0.85;
+  mix-blend-mode: screen;
+  animation: fireGlow 3.2s ease-in-out infinite;
+}
+.fire-particle-1 {
+  width: 5.5rem;
+  height: 5.5rem;
+  top: 4rem;
+  left: 3rem;
+  background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(252,211,77,0.75) 35%, rgba(252,165,40,0.2) 70%, transparent 100%);
+}
+.fire-particle-2 {
+  width: 4rem;
+  height: 4rem;
+  top: 6rem;
+  left: 14rem;
+  background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251,191,36,0.7) 40%, rgba(248,113,113,0.18) 75%, transparent 100%);
+  animation-delay: 0.3s;
+}
+.fire-particle-3 {
+  width: 5rem;
+  height: 5rem;
+  top: 12rem;
+  left: 5rem;
+  background: radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(252,165,40,0.6) 35%, rgba(248,113,113,0.15) 65%, transparent 100%);
+  animation-delay: 0.5s;
+}
+.fire-particle-4 {
+  width: 3.5rem;
+  height: 3.5rem;
+  top: 10rem;
+  right: 6rem;
+  background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251,191,36,0.7) 40%, rgba(249,115,22,0.18) 80%, transparent 100%);
+  animation-delay: 0.15s;
+}
+.fire-particle-5 {
+  width: 6rem;
+  height: 6rem;
+  bottom: 4rem;
+  right: 4rem;
+  background: radial-gradient(circle, rgba(255,255,255,0.92) 0%, rgba(252,211,77,0.68) 30%, rgba(251,146,60,0.16) 65%, transparent 100%);
+  animation-delay: 0.6s;
+}
+@keyframes fireGlow {
+  0%, 100% { transform: scale(1); opacity: 0.75; }
+  50% { transform: scale(1.18); opacity: 0.95; }
+}
+.spark-dot {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(16px);
+  opacity: 0.8;
+  animation: sparkPulse 2.8s ease-in-out infinite;
+}
+.spark-dot-1 {
+  width: 16px;
+  height: 16px;
+  top: 8%;
+  left: 12%;
+  background: rgba(251, 146, 60, 0.9);
+}
+.spark-dot-2 {
+  width: 10px;
+  height: 10px;
+  top: 18%;
+  right: 10%;
+  background: rgba(249, 115, 22, 0.9);
+  animation-delay: 0.35s;
+}
+.spark-dot-3 {
+  width: 14px;
+  height: 14px;
+  bottom: 14%;
+  left: 15%;
+  background: rgba(251, 191, 36, 0.85);
+  animation-delay: 0.55s;
+}
+.spark-dot-4 {
+  width: 12px;
+  height: 12px;
+  bottom: 22%;
+  right: 18%;
+  background: rgba(251, 191, 36, 0.65);
+  animation-delay: 0.15s;
+}
+.spark-dot-5 {
+  width: 8px;
+  height: 8px;
+  top: 45%;
+  left: 6%;
+  background: rgba(252, 211, 77, 0.85);
+  animation-delay: 0.7s;
+}
+@keyframes sparkPulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.4); opacity: 1; }
+}

@@ -4,12 +4,11 @@ import StatCard from '../../components/ui/StatCard';
 import SalesLineChart from '../../components/charts/SalesLineChart';
 import {
   ShoppingCart, FileText, AlertTriangle, Truck, CheckCircle2,
-  Package, UserCheck, Sparkles, ChevronRight, X
+  Package, UserCheck, ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
-  const [showBanner, setShowBanner] = useState(true);
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'year'>('week');
 
   const spark1 = [10, 15, 8, 20, 18, 25, 30];
@@ -22,23 +21,7 @@ export default function AdminDashboard() {
       <Topbar />
 
       <div className="px-6 space-y-5">
-        {/* Banner */}
-        {showBanner && (
-          <div className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm transition-all">
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-orange-500" />
-              <span className="text-xs text-gray-700 font-medium">Upgrade your plan to unlock advanced reporting and analytics.</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="text-xs font-semibold text-gray-800 hover:text-orange-600 border border-gray-200 rounded-lg px-2.5 py-1">
-                View Plans
-              </button>
-              <button onClick={() => setShowBanner(false)} className="text-gray-400 hover:text-gray-600">
-                <X size={15} />
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Banner removed per request */}
 
         {/* Filters & Grid Layout */}
         <div className="flex items-center justify-between">

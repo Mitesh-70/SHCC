@@ -4,9 +4,9 @@ import { Landmark, Layers, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 const STOCK_ITEMS = [
   { name: 'Indonesian Coal (5500 GAR)', type: 'Thermal Coal', quantity: 3450, valuation: 189700000, rate: 5500, status: 'healthy' },
-  { name: 'South African Coal (6000 NAR)', type: 'Steam Coal', quantity: 2180, valuation: 141700000, rate: 6500, status: 'healthy' },
-  { name: 'US Coal (6800 NAR)', type: 'Coking Coal', quantity: 1240, valuation: 99200000, rate: 8000, status: 'low' },
-  { name: 'Russian Coal (6000 NAR)', type: 'Thermal Coal', quantity: 980, valuation: 63700000, rate: 6500, status: 'critical' },
+  { name: 'South African Coal (6000 GAR)', type: 'Steam Coal', quantity: 2180, valuation: 141700000, rate: 6500, status: 'healthy' },
+  { name: 'US Coal (6800 GAR)', type: 'Coking Coal', quantity: 1240, valuation: 99200000, rate: 8000, status: 'low' },
+  { name: 'Russian Coal (6000 GAR)', type: 'Thermal Coal', quantity: 980, valuation: 63700000, rate: 6500, status: 'critical' },
 ];
 
 export default function FinanceStockAnalysis() {

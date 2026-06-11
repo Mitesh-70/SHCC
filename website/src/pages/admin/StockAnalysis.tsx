@@ -5,17 +5,17 @@ import type { StockItem } from '../../types';
 
 const INITIAL_STOCK: StockItem[] = [
   { id: 'ST-001', name: 'Indonesian Coal (5500 GAR)', type: 'Thermal Coal', quantity: 3450, unit: 'MT', location: 'Warehouse A (Navlakhi)', lastUpdated: '2026-06-11 10:30', status: 'healthy' },
-  { id: 'ST-002', name: 'South African Coal (6000 NAR)', type: 'Steam Coal', quantity: 2180, unit: 'MT', location: 'Warehouse B (Kandla)', lastUpdated: '2026-06-11 09:15', status: 'healthy' },
-  { id: 'ST-003', name: 'US Coal (6800 NAR)', type: 'Coking Coal', quantity: 1240, unit: 'MT', location: 'Warehouse A (Navlakhi)', lastUpdated: '2026-06-10 16:45', status: 'low' },
-  { id: 'ST-004', name: 'Russian Coal (6000 NAR)', type: 'Thermal Coal', quantity: 980, unit: 'MT', location: 'Warehouse C (Mundra)', lastUpdated: '2026-06-11 11:00', status: 'critical' },
+  { id: 'ST-002', name: 'South African Coal (6000 GAR)', type: 'Steam Coal', quantity: 2180, unit: 'MT', location: 'Warehouse B (Kandla)', lastUpdated: '2026-06-11 09:15', status: 'healthy' },
+  { id: 'ST-003', name: 'US Coal (6800 GAR)', type: 'Coking Coal', quantity: 1240, unit: 'MT', location: 'Warehouse A (Navlakhi)', lastUpdated: '2026-06-10 16:45', status: 'low' },
+  { id: 'ST-004', name: 'Russian Coal (6000 GAR)', type: 'Thermal Coal', quantity: 980, unit: 'MT', location: 'Warehouse C (Mundra)', lastUpdated: '2026-06-11 11:00', status: 'critical' },
   { id: 'ST-005', name: 'Indonesian Coal (3800 GAR)', type: 'Thermal Coal', quantity: 5120, unit: 'MT', location: 'Warehouse B (Kandla)', lastUpdated: '2026-06-11 08:00', status: 'healthy' },
 ];
 
 const MOVEMENTS = [
   { id: 'MOV-901', product: 'Indonesian Coal (5500 GAR)', quantity: 1200, type: 'incoming', date: '2026-06-11 10:15', warehouse: 'Warehouse A (Navlakhi)' },
-  { id: 'MOV-900', product: 'US Coal (6800 NAR)', quantity: 500, type: 'outgoing', date: '2026-06-11 09:30', warehouse: 'Warehouse A (Navlakhi)' },
-  { id: 'MOV-899', product: 'South African Coal (6000 NAR)', quantity: 800, type: 'incoming', date: '2026-06-10 14:00', warehouse: 'Warehouse B (Kandla)' },
-  { id: 'MOV-898', product: 'Russian Coal (6000 NAR)', quantity: 1500, type: 'outgoing', date: '2026-06-10 11:30', warehouse: 'Warehouse C (Mundra)' },
+  { id: 'MOV-900', product: 'US Coal (6800 GAR)', quantity: 500, type: 'outgoing', date: '2026-06-11 09:30', warehouse: 'Warehouse A (Navlakhi)' },
+  { id: 'MOV-899', product: 'South African Coal (6000 GAR)', quantity: 800, type: 'incoming', date: '2026-06-10 14:00', warehouse: 'Warehouse B (Kandla)' },
+  { id: 'MOV-898', product: 'Russian Coal (6000 GAR)', quantity: 1500, type: 'outgoing', date: '2026-06-10 11:30', warehouse: 'Warehouse C (Mundra)' },
 ];
 
 export default function AdminStockAnalysis() {
@@ -119,7 +119,7 @@ export default function AdminStockAnalysis() {
                 <div key={mov.id} className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-3">
                     <div className={`p-1.5 rounded-lg ${mov.type === 'incoming' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                      {mov.type === 'incoming' ? <ArrowDownRight size={15} /> : <ArrowUpRight size={15} />}
+                      {mov.type === 'incoming' ? <ArrowUpRight size={15} /> : <ArrowDownRight size={15} />}
                     </div>
                     <div>
                       <span className="text-xs font-semibold text-gray-800 block">{mov.product}</span>

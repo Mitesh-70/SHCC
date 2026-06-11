@@ -29,10 +29,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Stock Analysis', path: 'stock-analysis', icon: <Package size={18} />, roles: ['admin', 'finance'] },
   { label: 'Reports', path: 'reports', icon: <FileText size={18} />, roles: ['admin', 'finance'] },
   { label: 'User Permissions', path: 'user-permissions', icon: <Shield size={18} />, roles: ['admin'] },
-  { label: 'Settings', path: 'settings', icon: <Settings size={18} />, roles: ['admin'] },
   { label: 'Profile', path: 'profile', icon: <UserCircle size={18} />, roles: ['salesperson'] },
   { label: 'Notifications', path: 'notifications', icon: <Bell size={18} />, roles: ['salesperson'] },
-  { label: 'Logout', path: 'logout', icon: <LogOut size={18} />, roles: ['admin', 'finance', 'salesperson'] },
 ];
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -82,14 +80,11 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
       {/* Logo and Collapse Toggle */}
       <div className={`flex items-center justify-between px-4 py-5 border-b border-gray-100 ${collapsed ? 'flex-col gap-2' : ''}`}>
         <div className="flex items-center gap-3">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-extrabold text-xs shadow-md border-2 border-orange-100">
-            SHCC
-          </div>
+          <img src="/logo.svg" alt="SHCC Logo" className="flex-shrink-0 w-14 h-14 object-contain" />
           {!collapsed && (
-            <div className="leading-tight overflow-hidden text-left">
-              <div className="text-xs font-extrabold text-gray-900 tracking-wide">SHREE HARI</div>
-              <div className="text-[10px] font-semibold text-orange-600 tracking-widest uppercase">COAL CORPORATION</div>
-              <div className="text-[9px] text-gray-400 italic">Fueling Industries. Delivering Trust.</div>
+            <div className="leading-tight overflow-hidden text-left max-w-[140px]">
+              <div className="text-base font-extrabold text-gray-900 tracking-tight">SHREE HARI</div>
+              <div className="text-xs font-extrabold text-orange-600 tracking-wide uppercase -mt-0.5 truncate">COAL CORPORATION</div>
             </div>
           )}
         </div>
