@@ -67,9 +67,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final theme  = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isCompleted = _remaining <= 0;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      resizeToAvoidBottomInset: false, // We control the keyboard offset manually for a smoother slide-up transition
       appBar: ShccAppBar(
         logoAsset: 'assets/images/logo.png',
         showBranding: false,
@@ -79,155 +81,169 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           onPressed: () => Navigator.pop(context)),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+      body: Stack(
         children: [
-          // Order header card
-          _Card(isDark: isDark, child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(widget.order['id'] ?? '',
-              style: AppTextStyles.label.copyWith(color: AppColors.primary)),
-            const SizedBox(height: 6),
-            Text(widget.order['buyer_name'] ?? '',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600)),
-            const SizedBox(height: 2),
-            Text(
-              '${widget.order['product_type'] ?? ''}  ·  ${widget.order['quality'] ?? ''}',
-              style: theme.textTheme.bodySmall),
-          ])),
-          const SizedBox(height: 16),
+          Positioned.fill(
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                20,
+                16,
+                (_isAdding ? 240.0 : 96.0) + (keyboardHeight > 0 ? keyboardHeight - 40 : 0).clamp(0.0, double.infinity),
+              ),
+              children: [
+                // Order header card
+                _Card(isDark: isDark, child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(widget.order['id'] ?? '',
+                    style: AppTextStyles.label.copyWith(color: AppColors.primary)),
+                  const SizedBox(height: 6),
+                  Text(widget.order['buyer_name'] ?? '',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${widget.order['product_type'] ?? ''}  ·  ${widget.order['quality'] ?? ''}',
+                    style: theme.textTheme.bodySmall),
+                ])),
+                const SizedBox(height: 16),
 
-          // Progress card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: isDark
-                ? AppColors.primary.withValues(alpha: 0.08)
-                : AppColors.primary.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: isDark ? 0.3 : 0.2))),
-            child: Column(children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Delivery Progress',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600)),
-                Text('${(_pct * 100).toStringAsFixed(0)}%',
-                  style: TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w700,
-                    color: _pct >= 1 ? AppColors.success : AppColors.primary)),
-              ]),
-              const SizedBox(height: 14),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: _pct, minHeight: 10,
-                  backgroundColor: isDark
-                    ? AppColors.bgBase : AppColors.lightBgBase,
-                  valueColor: AlwaysStoppedAnimation(
-                    _pct >= 1 ? AppColors.success : AppColors.primary))),
-              const SizedBox(height: 16),
-              Row(children: [
-                Expanded(child: _StatPill(
-                  label: 'Ordered',
-                  value: '${_ordered.toStringAsFixed(0)} MT',
-                  color: AppColors.info, isDark: isDark)),
-                const SizedBox(width: 10),
-                Expanded(child: _StatPill(
-                  label: 'Delivered',
-                  value: '${_delivered.toStringAsFixed(0)} MT',
-                  color: AppColors.success, isDark: isDark)),
-                const SizedBox(width: 10),
-                Expanded(child: _StatPill(
-                  label: 'Remaining',
-                  value: '${_remaining.toStringAsFixed(0)} MT',
-                  color: _remaining > 0 ? AppColors.warning : AppColors.success,
-                  isDark: isDark)),
-              ]),
-            ]),
+                // Progress card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: isDark
+                      ? AppColors.primary.withValues(alpha: 0.08)
+                      : AppColors.primary.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: isDark ? 0.3 : 0.2))),
+                  child: Column(children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Text('Delivery Progress',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600)),
+                      Text('${(_pct * 100).toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700,
+                          color: _pct >= 1 ? AppColors.success : AppColors.primary)),
+                    ]),
+                    const SizedBox(height: 14),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: _pct, minHeight: 10,
+                        backgroundColor: isDark
+                          ? AppColors.bgBase : AppColors.lightBgBase,
+                        valueColor: AlwaysStoppedAnimation(
+                          _pct >= 1 ? AppColors.success : AppColors.primary))),
+                    const SizedBox(height: 16),
+                    Row(children: [
+                      Expanded(child: _StatPill(
+                        label: 'Ordered',
+                        value: '${_ordered.toStringAsFixed(0)} MT',
+                        color: AppColors.info, isDark: isDark)),
+                      const SizedBox(width: 10),
+                      Expanded(child: _StatPill(
+                        label: 'Delivered',
+                        value: '${_delivered.toStringAsFixed(0)} MT',
+                        color: AppColors.success, isDark: isDark)),
+                      const SizedBox(width: 10),
+                      Expanded(child: _StatPill(
+                        label: 'Remaining',
+                        value: '${_remaining.toStringAsFixed(0)} MT',
+                        color: _remaining > 0 ? AppColors.warning : AppColors.success,
+                        isDark: isDark)),
+                    ]),
+                  ]),
+                ),
+                const SizedBox(height: 24),
+
+                // History header
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Text('Delivery History',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600)),
+                ]),
+                const SizedBox(height: 12),
+
+                if (_deliveries.isEmpty)
+                  _Card(isDark: isDark, child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text('No deliveries recorded yet.',
+                        style: theme.textTheme.bodySmall))))
+                else
+                  ...List.generate(_deliveries.length, (i) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _DeliveryCard(
+                      entry: _deliveries[i], index: i + 1,
+                      isAdmin: widget.isAdmin, isDark: isDark,
+                      onDelete: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: isDark ? AppColors.darkBgCard : AppColors.lightBgCard,
+                            title: Text('Confirm Delete', style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary)),
+                            content: Text('Are you sure you want to delete this delivery entry?', style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancel', style: TextStyle(color: AppColors.primary)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          setState(() => _deliveries.removeAt(i));
+                        }
+                      }
+                    ))),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
-
-          // History header
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Delivery History',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600)),
-          ]),
-          const SizedBox(height: 12),
-
-          if (_deliveries.isEmpty)
-            _Card(isDark: isDark, child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text('No deliveries recorded yet.',
-                  style: theme.textTheme.bodySmall))))
-          else
-            ...List.generate(_deliveries.length, (i) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _DeliveryCard(
-                entry: _deliveries[i], index: i + 1,
-                isAdmin: widget.isAdmin, isDark: isDark,
-                onDelete: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      backgroundColor: isDark ? AppColors.darkBgCard : AppColors.lightBgCard,
-                      title: Text('Confirm Delete', style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary)),
-                      content: Text('Are you sure you want to delete this delivery entry?', style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Cancel', style: TextStyle(color: AppColors.primary)),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: keyboardHeight,
+            child: isCompleted
+                ? const SizedBox.shrink()
+                : Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: (isDark ? AppColors.darkBorder : AppColors.lightBorder)
+                              .withValues(alpha: 0.5),
+                          width: 1,
                         ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Delete', style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
+                      ),
                     ),
-                  );
-                  if (confirm == true) {
-                    setState(() => _deliveries.removeAt(i));
-                  }
-                }
-              ))),
+                    child: ClipRect(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                        child: Container(
+                          color: isDark
+                              ? AppColors.darkBgSurface.withValues(alpha: 0.7)
+                              : AppColors.lightBgSurface.withValues(alpha: 0.8),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: SafeArea(
+                            top: false,
+                            child: _isAdding
+                                ? _buildExpandedForm(context, isDark, theme)
+                                : _buildCollapsedBar(context, isDark, theme),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
         ],
       ),
-      bottomNavigationBar: isCompleted
-          ? null
-          : Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: (isDark ? AppColors.darkBorder : AppColors.lightBorder)
-                        .withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeInOut,
-                    color: isDark
-                        ? AppColors.darkBgSurface.withValues(alpha: 0.7)
-                        : AppColors.lightBgSurface.withValues(alpha: 0.8),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: SafeArea(
-                      top: false,
-                      child: _isAdding
-                          ? _buildExpandedForm(context, isDark, theme)
-                          : _buildCollapsedBar(context, isDark, theme),
-                    ),
-                  ),
-                ),
-              ),
-            ),
     );
   }
 
@@ -279,228 +295,229 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       ),
     );
   }
-
   Widget _buildExpandedForm(BuildContext context, bool isDark, ThemeData theme) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Add Dispatch Entry',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.close_rounded, size: 20),
-              onPressed: () {
-                setState(() {
-                  _isAdding = false;
-                  _resetForm();
-                });
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _qtyCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: theme.textTheme.bodyMedium,
-                decoration: InputDecoration(
-                  labelText: 'Qty (MT)',
-                  labelStyle: TextStyle(
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                    fontSize: 13,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  prefixIcon: const Icon(Icons.scale_rounded, size: 16, color: AppColors.primary),
-                  suffixText: 'MT',
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                value: _selectedPort,
-                dropdownColor: theme.cardColor,
-                style: theme.textTheme.bodyMedium,
-                decoration: InputDecoration(
-                  labelText: 'Port',
-                  labelStyle: TextStyle(
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                    fontSize: 13,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  prefixIcon: const Icon(Icons.anchor_rounded, size: 16, color: AppColors.primary),
-                ),
-                items: AppConstants.ports.map((p) => DropdownMenuItem(
-                  value: p,
-                  child: Text(p, style: theme.textTheme.bodyMedium))).toList(),
-                onChanged: (v) => setState(() => _selectedPort = v),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        GestureDetector(
-          onTap: () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: DateTime.now(),
-              firstDate: DateTime(2024),
-              lastDate: DateTime.now().add(const Duration(days: 30)),
-              builder: (c, child) => Theme(
-                data: Theme.of(c).copyWith(
-                  colorScheme: isDark
-                      ? const ColorScheme.dark(
-                          primary: AppColors.primary,
-                          onPrimary: Colors.white,
-                          surface: AppColors.darkBgSurface,
-                          onSurface: AppColors.darkTextPrimary,
-                        )
-                      : const ColorScheme.light(
-                          primary: AppColors.primary,
-                          onPrimary: Colors.white,
-                          surface: AppColors.lightBgSurface,
-                          onSurface: AppColors.lightTextPrimary,
-                        ),
-                ),
-                child: child!,
-              ),
-            );
-            if (picked != null) {
-              setState(() {
-                _dateCtrl.text =
-                  '${picked.day} ${_month(picked.month)} ${picked.year}';
-              });
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkBgInput : AppColors.lightBgInput,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.calendar_month_rounded, size: 16, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _dateCtrl.text.isEmpty ? 'Select Delivery Date' : _dateCtrl.text,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: _dateCtrl.text.isEmpty
-                          ? (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                          : null,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            GlowingAddButton(
-              onTap: () {
-                final q = double.tryParse(_qtyCtrl.text) ?? 0;
-                if (q <= 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a valid quantity.')),
-                  );
-                  return;
-                }
-                if (q > _remaining) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Quantity cannot exceed remaining quantity (${_remaining.toStringAsFixed(0)} MT).')),
-                  );
-                  return;
-                }
-                if (_selectedPort == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select a port.')),
-                  );
-                  return;
-                }
-                if (_dateCtrl.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select a delivery date.')),
-                  );
-                  return;
-                }
-                setState(() {
-                  _deliveries.add(DeliveryEntry(
-                    id: 'D-00${_deliveries.length + 1}',
-                    quantity: q,
-                    date: _dateCtrl.text,
-                    port: _selectedPort!,
-                  ));
-                  _isAdding = false;
-                  _resetForm();
-                });
-              },
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Submit Entry',
-                style: theme.textTheme.bodyMedium?.copyWith(
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Add Dispatch Entry',
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                 ),
               ),
+              IconButton(
+                icon: const Icon(Icons.close_rounded, size: 20),
+                onPressed: () {
+                  setState(() {
+                    _isAdding = false;
+                    _resetForm();
+                  });
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _qtyCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: theme.textTheme.bodyMedium,
+                  decoration: InputDecoration(
+                    labelText: 'Qty (MT)',
+                    labelStyle: TextStyle(
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      fontSize: 13,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    prefixIcon: const Icon(Icons.scale_rounded, size: 16, color: AppColors.primary),
+                    suffixText: 'MT',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _selectedPort,
+                  dropdownColor: theme.cardColor,
+                  style: theme.textTheme.bodyMedium,
+                  decoration: InputDecoration(
+                    labelText: 'Port',
+                    labelStyle: TextStyle(
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      fontSize: 13,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    prefixIcon: const Icon(Icons.anchor_rounded, size: 16, color: AppColors.primary),
+                  ),
+                  items: AppConstants.ports.map((p) => DropdownMenuItem(
+                    value: p,
+                    child: Text(p, style: theme.textTheme.bodyMedium))).toList(),
+                  onChanged: (v) => setState(() => _selectedPort = v),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime(2024),
+                lastDate: DateTime.now().add(const Duration(days: 30)),
+                builder: (c, child) => Theme(
+                  data: Theme.of(c).copyWith(
+                    colorScheme: isDark
+                        ? const ColorScheme.dark(
+                            primary: AppColors.primary,
+                            onPrimary: Colors.white,
+                            surface: AppColors.darkBgSurface,
+                            onSurface: AppColors.darkTextPrimary,
+                          )
+                        : const ColorScheme.light(
+                            primary: AppColors.primary,
+                            onPrimary: Colors.white,
+                            surface: AppColors.lightBgSurface,
+                            onSurface: AppColors.lightTextPrimary,
+                          ),
+                  ),
+                  child: child!,
+                ),
+              );
+              if (picked != null) {
+                setState(() {
+                  _dateCtrl.text =
+                    '${picked.day} ${_month(picked.month)} ${picked.year}';
+                });
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkBgInput : AppColors.lightBgInput,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_month_rounded, size: 16, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _dateCtrl.text.isEmpty ? 'Select Delivery Date' : _dateCtrl.text,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: _dateCtrl.text.isEmpty
+                            ? (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                            : null,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              GlowingAddButton(
+                onTap: () {
+                  final q = double.tryParse(_qtyCtrl.text) ?? 0;
+                  if (q <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please enter a valid quantity.')),
+                    );
+                    return;
+                  }
+                  if (q > _remaining) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Quantity cannot exceed remaining quantity (${_remaining.toStringAsFixed(0)} MT).')),
+                    );
+                    return;
+                  }
+                  if (_selectedPort == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select a port.')),
+                    );
+                    return;
+                  }
+                  if (_dateCtrl.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select a delivery date.')),
+                    );
+                    return;
+                  }
+                  setState(() {
+                    _deliveries.add(DeliveryEntry(
+                      id: 'D-00${_deliveries.length + 1}',
+                      quantity: q,
+                      date: _dateCtrl.text,
+                      port: _selectedPort!,
+                    ));
+                    _isAdding = false;
+                    _resetForm();
+                  });
+                },
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Submit Entry',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

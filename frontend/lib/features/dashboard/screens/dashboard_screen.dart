@@ -3,7 +3,6 @@ import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/shcc_bottom_nav.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_text_styles.dart';
 import '../widgets/kpi_card.dart';
 import '../widgets/recent_order_tile.dart';
 import '../../orders/screens/create_order_screen.dart';
@@ -28,7 +27,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // We map nav indices [0,1,3,4] to page indices [0,1,2,3]
   // Tab 2 (Order) is excluded from swipe — tapping opens modal
 
-  static const _swipeTabCount = 4;
 
   int _navToPage(int nav) {
     if (nav == 0) return 0;
@@ -205,28 +203,49 @@ class _SalesHome extends StatelessWidget {
           const SizedBox(height: 24),
 
           // KPI grid
-          GridView.count(
-            crossAxisCount: 2, shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12, mainAxisSpacing: 12,
-            childAspectRatio: 2.3,
-            children: const [
-              KpiCard(label: 'Total Orders', value: '48',
-                icon: Icons.receipt_long_rounded,
-                color: AppColors.primary),
-              KpiCard(label: 'Revenue MTD', value: '84.2L',
-                icon: Icons.currency_rupee_rounded,
-                color: AppColors.success),
-              KpiCard(label: 'Pending', value: '6',
-                icon: Icons.hourglass_top_rounded,
-                color: AppColors.warning),
-              KpiCard(
-                label: 'Target Achieved',
-                value: '62%',
-                icon: Icons.track_changes_rounded,
-                color: AppColors.info,
-                progressValue: 0.62,
-                progressLabel: '₹31L of ₹50L',
+          Column(
+            children: [
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: const [
+                    Expanded(
+                      child: KpiCard(label: 'Total Orders', value: '48',
+                        icon: Icons.receipt_long_rounded,
+                        color: AppColors.primary),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: KpiCard(label: 'Revenue MTD', value: '84.2L',
+                        icon: Icons.currency_rupee_rounded,
+                        color: AppColors.success),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: const [
+                    Expanded(
+                      child: KpiCard(label: 'Pending', value: '6',
+                        icon: Icons.hourglass_top_rounded,
+                        color: AppColors.warning),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: KpiCard(
+                        label: 'Target Achieved',
+                        value: '62%',
+                        icon: Icons.track_changes_rounded,
+                        color: AppColors.info,
+                        progressValue: 0.62,
+                        progressLabel: '₹31L of ₹50L',
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

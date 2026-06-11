@@ -16,13 +16,13 @@ import '../../notifications/notifications_screen.dart';
 // ── Shared target store ───────────────────────────────────────────────────────
 class TargetStore {
   static final Map<String, double> targets = {
-    'Raj Sharma':  5000000,
-    'Amit Patel':  4000000,
+    'Raj Sharma': 5000000,
+    'Amit Patel': 4000000,
     'Priya Mehta': 3500000,
   };
   static final Map<String, double> achieved = {
-    'Raj Sharma':  3100000,
-    'Amit Patel':  2800000,
+    'Raj Sharma': 3100000,
+    'Amit Patel': 2800000,
     'Priya Mehta': 1900000,
   };
 }
@@ -51,9 +51,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   void _goTo(int navIndex) {
     setState(() => _navIndex = navIndex);
-    _pageCtrl.animateToPage(navIndex,
+    _pageCtrl.animateToPage(
+      navIndex,
       duration: const Duration(milliseconds: 280),
-      curve: Curves.easeInOut);
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -65,11 +67,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       const SearchScreen(isAdmin: true),
       const ReportsScreen(),
       const CatalogueScreen(isAdmin: true),
-      ProfileScreen(
-        isAdmin: true,
-        fromTab: true,
-        onGoHome: () => _goTo(0),
-      ),
+      ProfileScreen(isAdmin: true, fromTab: true, onGoHome: () => _goTo(0)),
     ];
 
     return Scaffold(
@@ -82,7 +80,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         children: pages,
       ),
       bottomNavigationBar: ShccBottomNav(
-        currentIndex: _navIndex, isAdmin: true,
+        currentIndex: _navIndex,
+        isAdmin: true,
         onTap: _goTo,
       ),
     );
@@ -94,8 +93,7 @@ class _SwipePhysics extends PageScrollPhysics {
   const _SwipePhysics() : super(parent: const ClampingScrollPhysics());
 
   @override
-  _SwipePhysics applyTo(ScrollPhysics? ancestor) =>
-    const _SwipePhysics();
+  _SwipePhysics applyTo(ScrollPhysics? ancestor) => const _SwipePhysics();
 }
 
 class _AdminHome extends StatefulWidget {
@@ -105,42 +103,69 @@ class _AdminHome extends StatefulWidget {
 }
 
 class _AdminHomeState extends State<_AdminHome> {
-  bool    _processing  = false;
+  bool _processing = false;
   String? _processingId;
 
   final List<Map<String, dynamic>> _pending = [
     {
-      'id': 'ORD-2024-049', 'salesman': 'Raj Sharma',
-      'buyer_name': 'Birla Cement', 'product_type': 'Indonesian Coal',
-      'base_rate': 7100.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 300.0,
-      'type_of_sale': 'F.O.R.', 'quality': '4000 GAR',
-      'port_name': 'Mundra', 'payment_terms': 'Advance', 'time': '10 min ago',
+      'id': 'ORD-2024-049',
+      'salesman': 'Raj Sharma',
+      'buyer_name': 'Birla Cement',
+      'product_type': 'Indonesian Coal',
+      'base_rate': 7100.0,
+      'gst': 18.0,
+      'tcs': 0.1,
+      'quantity': 300.0,
+      'type_of_sale': 'F.O.R.',
+      'quality': '4000 GAR',
+      'port_name': 'Mundra',
+      'payment_terms': 'Advance',
+      'time': '10 min ago',
     },
     {
-      'id': 'ORD-2024-050', 'salesman': 'Amit Patel',
-      'buyer_name': 'Essar Steel', 'product_type': 'South African Coal',
-      'base_rate': 6200.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 450.0,
-      'type_of_sale': 'Spot', 'quality': '5000 GAR',
-      'port_name': 'Hazira', 'payment_terms': 'LC', 'time': '25 min ago',
+      'id': 'ORD-2024-050',
+      'salesman': 'Amit Patel',
+      'buyer_name': 'Essar Steel',
+      'product_type': 'South African Coal',
+      'base_rate': 6200.0,
+      'gst': 18.0,
+      'tcs': 0.1,
+      'quantity': 450.0,
+      'type_of_sale': 'Spot',
+      'quality': '5000 GAR',
+      'port_name': 'Hazira',
+      'payment_terms': 'LC',
+      'time': '25 min ago',
     },
     {
-      'id': 'ORD-2024-051', 'salesman': 'Priya Mehta',
-      'buyer_name': 'ACC Cement', 'product_type': 'Russian Coal',
-      'base_rate': 4800.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 200.0,
-      'type_of_sale': 'Spot', 'quality': '4200 GAR',
-      'port_name': 'Kandla', 'payment_terms': 'On Delivery',
+      'id': 'ORD-2024-051',
+      'salesman': 'Priya Mehta',
+      'buyer_name': 'ACC Cement',
+      'product_type': 'Russian Coal',
+      'base_rate': 4800.0,
+      'gst': 18.0,
+      'tcs': 0.1,
+      'quantity': 200.0,
+      'type_of_sale': 'Spot',
+      'quality': '4200 GAR',
+      'port_name': 'Kandla',
+      'payment_terms': 'On Delivery',
       'time': '1 hr ago',
     },
   ];
 
   Future<void> _act(int index, bool approve, {String? comment}) async {
-    final id       = _pending[index]['id'] as String;
+    final id = _pending[index]['id'] as String;
     final salesman = _pending[index]['salesman'] as String;
-    setState(() { _processing = true; _processingId = id; });
+    setState(() {
+      _processing = true;
+      _processingId = id;
+    });
     await Future.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
     setState(() {
-      _processing = false; _processingId = null;
+      _processing = false;
+      _processingId = null;
       _pending.removeAt(index);
     });
 
@@ -149,177 +174,256 @@ class _AdminHomeState extends State<_AdminHome> {
       person: salesman,
       title: approve ? 'Order Approved' : 'Order Rejected',
       description: approve
-        ? 'Your order $id has been approved by Admin.'
-        : 'Your order $id was rejected.${comment != null && comment.isNotEmpty ? ' Comment: $comment' : ''}',
-      type: approve
-        ? NotifType.orderAccepted : NotifType.orderRejected,
+          ? 'Your order $id has been approved by Admin.'
+          : 'Your order $id was rejected.${comment != null && comment.isNotEmpty ? ' Comment: $comment' : ''}',
+      type: approve ? NotifType.orderAccepted : NotifType.orderRejected,
     );
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [
-        Icon(approve
-          ? Icons.check_circle_outline : Icons.cancel_outlined,
-          color: approve ? AppColors.success : AppColors.error,
-          size: 18),
-        const SizedBox(width: 10),
-        Text('Order ${approve ? 'approved' : 'rejected'}',
-          style: AppTextStyles.body),
-      ]),
-      backgroundColor: Theme.of(context).cardColor,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12)),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              approve ? Icons.check_circle_outline : Icons.cancel_outlined,
+              color: approve ? AppColors.success : AppColors.error,
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Order ${approve ? 'approved' : 'rejected'}',
+              style: AppTextStyles.body,
+            ),
+          ],
+        ),
+        backgroundColor: Theme.of(context).cardColor,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [
-      Scaffold(
-        appBar: ShccAppBar(
-          logoAsset: 'assets/images/logo.png',
-          userInitials: 'AD',
-          onProfileTap: () => Navigator.push(context,
-            MaterialPageRoute(
-              builder: (_) => const ProfileScreen(
-                isAdmin: true,
-                fromTab: false,
-              ))),
-          actions: [
-            IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMuted,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.add_rounded,
-                  color: AppColors.primary, size: 20),
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: ShccAppBar(
+            logoAsset: 'assets/images/logo.png',
+            userInitials: 'AD',
+            onProfileTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    const ProfileScreen(isAdmin: true, fromTab: false),
               ),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => const CreateOrderScreen(isAdmin: true))),
             ),
-          ],
-        ),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-          children: [
-            Text('Admin Panel', style: AppTextStyles.bodySecondary),
-            const SizedBox(height: 2),
-            Text('Overview', style: AppTextStyles.heading1),
-            const SizedBox(height: 24),
-
-            GridView.count(
-              crossAxisCount: 2, shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12, mainAxisSpacing: 12,
-              childAspectRatio: 1.7,
-              children: [
-                const KpiCard(label: 'Total Orders', value: '142',
-                  icon: Icons.receipt_long_rounded,
-                  color: AppColors.primary),
-                const KpiCard(label: 'Revenue MTD', value: '3.2 Cr',
-                  icon: Icons.currency_rupee_rounded,
-                  color: AppColors.success),
-                KpiCard(
-                  label: 'Awaiting Approval',
-                  value: '${_pending.length}',
-                  icon: Icons.pending_actions_rounded,
-                  color: AppColors.warning),
-                const KpiCard(label: 'Active Salesmen', value: '8',
-                  icon: Icons.people_rounded,
-                  color: AppColors.info),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Create order banner
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [
-                  AppColors.primary.withValues(alpha: 0.15),
-                  AppColors.primary.withValues(alpha: 0.04),
-                ], begin: Alignment.topLeft,
-                   end: Alignment.bottomRight),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.3)),
-              ),
-              child: Row(children: [
-                Container(
-                  width: 44, height: 44,
+            actions: [
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.primaryMuted,
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.add_shopping_cart_rounded,
-                    color: Colors.white, size: 22),
+                  child: const Icon(
+                    Icons.add_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(width: 14),
-                Expanded(child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Create New Order',
-                      style: AppTextStyles.bodyMedium),
-                    Text('Admin order entry',
-                      style: AppTextStyles.caption),
-                  ],
-                )),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10)),
-                  onPressed: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) =>
-                      const CreateOrderScreen(isAdmin: true))),
-                  child: const Text('Create'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CreateOrderScreen(isAdmin: true),
+                  ),
                 ),
-              ]),
-            ),
-            const SizedBox(height: 24),
+              ),
+            ],
+          ),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+            children: [
+              Text('Admin Panel', style: AppTextStyles.bodySecondary),
+              const SizedBox(height: 2),
+              Text('Overview', style: AppTextStyles.heading1),
+              const SizedBox(height: 24),
 
-            SectionHeader(
-              title: 'Pending Approvals',
-              actionLabel: _pending.isEmpty ? null : '${_pending.length} new',
-            ),
-            const SizedBox(height: 14),
-
-            if (_pending.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Column(children: [
-                  const Icon(Icons.check_circle_outline_rounded,
-                    color: AppColors.success, size: 36),
+              Column(
+                children: [
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: const [
+                        Expanded(
+                          child: KpiCard(
+                            label: 'Total Orders',
+                            value: '142',
+                            icon: Icons.receipt_long_rounded,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: KpiCard(
+                            label: 'Revenue MTD',
+                            value: '3.2 Cr',
+                            icon: Icons.currency_rupee_rounded,
+                            color: AppColors.success,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 12),
-                  Text('All caught up!', style: AppTextStyles.heading3),
-                  const SizedBox(height: 4),
-                  Text('No pending orders to review.',
-                    style: AppTextStyles.bodySecondary),
-                ]),
-              )
-            else
-              ...List.generate(_pending.length, (i) => Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: _ApprovalCard(
-                  order: _pending[i],
-                  isProcessing: _processingId == _pending[i]['id'],
-                  onApprove: () => _act(i, true),
-                  onReject: (comment) => _act(i, false, comment: comment),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: KpiCard(
+                            label: 'Awaiting Approval',
+                            value: '${_pending.length}',
+                            icon: Icons.pending_actions_rounded,
+                            color: AppColors.warning,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: KpiCard(
+                            label: 'Active Salesmen',
+                            value: '8',
+                            icon: Icons.people_rounded,
+                            color: AppColors.info,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Create order banner
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withValues(alpha: 0.15),
+                      AppColors.primary.withValues(alpha: 0.04),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                  ),
                 ),
-              )),
-          ],
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.add_shopping_cart_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Create New Order',
+                            style: AppTextStyles.bodyMedium,
+                          ),
+                          Text(
+                            'Admin order entry',
+                            style: AppTextStyles.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                      ),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const CreateOrderScreen(isAdmin: true),
+                        ),
+                      ),
+                      child: const Text('Create'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              SectionHeader(
+                title: 'Pending Approvals',
+                actionLabel: _pending.isEmpty ? null : '${_pending.length} new',
+              ),
+              const SizedBox(height: 14),
+
+              if (_pending.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.check_circle_outline_rounded,
+                        color: AppColors.success,
+                        size: 36,
+                      ),
+                      const SizedBox(height: 12),
+                      Text('All caught up!', style: AppTextStyles.heading3),
+                      const SizedBox(height: 4),
+                      Text(
+                        'No pending orders to review.',
+                        style: AppTextStyles.bodySecondary,
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ...List.generate(
+                  _pending.length,
+                  (i) => Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: _ApprovalCard(
+                      order: _pending[i],
+                      isProcessing: _processingId == _pending[i]['id'],
+                      onApprove: () => _act(i, true),
+                      onReject: (comment) => _act(i, false, comment: comment),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
-      if (_processing) const LoadingOverlay(message: 'Processing…'),
-    ]);
+        if (_processing) const LoadingOverlay(message: 'Processing…'),
+      ],
+    );
   }
 }
 
@@ -330,8 +434,10 @@ class _ApprovalCard extends StatefulWidget {
   final void Function(String?) onReject;
 
   const _ApprovalCard({
-    required this.order, required this.isProcessing,
-    required this.onApprove, required this.onReject,
+    required this.order,
+    required this.isProcessing,
+    required this.onApprove,
+    required this.onReject,
   });
 
   @override
@@ -340,21 +446,25 @@ class _ApprovalCard extends StatefulWidget {
 
 class _ApprovalCardState extends State<_ApprovalCard> {
   final _commentCtrl = TextEditingController();
-  bool _showComment  = false;
+  bool _showComment = false;
 
   double get _total {
-    final b = (widget.order['base_rate'] as num).toDouble()
-      * (widget.order['quantity'] as num).toDouble();
-    return b + b * ((widget.order['gst'] as num) / 100)
-             + b * ((widget.order['tcs'] as num) / 100);
+    final b =
+        (widget.order['base_rate'] as num).toDouble() *
+        (widget.order['quantity'] as num).toDouble();
+    return b +
+        b * ((widget.order['gst'] as num) / 100) +
+        b * ((widget.order['tcs'] as num) / 100);
   }
 
   String get _totalStr {
     final v = _total;
-    if (v >= 10000000)
+    if (v >= 10000000) {
       return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
-    if (v >= 100000)
+    }
+    if (v >= 100000) {
       return '₹${(v / 100000).toStringAsFixed(2)} L';
+    }
     return '₹${v.toStringAsFixed(0)}';
   }
 
@@ -368,205 +478,284 @@ class _ApprovalCardState extends State<_ApprovalCard> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-        Row(children: [
-          Container(
-            width: 38, height: 38,
-            decoration: BoxDecoration(
-              color: AppColors.primaryMuted, shape: BoxShape.circle),
-            child: Center(child: Text(
-              (o['salesman'] as String).substring(0, 1),
-              style: const TextStyle(color: AppColors.primary,
-                fontWeight: FontWeight.w700, fontSize: 15))),
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Text(o['salesman'] as String,
-                style: AppTextStyles.bodyMedium),
-              Text(o['time'] as String, style: AppTextStyles.caption),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMuted,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    (o['salesman'] as String).substring(0, 1),
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      o['salesman'] as String,
+                      style: AppTextStyles.bodyMedium,
+                    ),
+                    Text(o['time'] as String, style: AppTextStyles.caption),
+                  ],
+                ),
+              ),
+              Text(
+                o['id'] as String,
+                style: AppTextStyles.label.copyWith(color: AppColors.primary),
+              ),
             ],
-          )),
-          Text(o['id'] as String,
-            style: AppTextStyles.label.copyWith(
-              color: AppColors.primary)),
-        ]),
-        const SizedBox(height: 12),
-        Divider(color: AppColors.border, height: 1),
-        const SizedBox(height: 12),
-        Text(o['buyer_name'] as String, style: AppTextStyles.heading3),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Expanded(
-              flex: 3,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.local_fire_department_rounded, size: 15, color: AppColors.textSecondary),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(o['product_type'] as String,
-                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.grade_outlined, size: 15, color: AppColors.textSecondary),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(o['quality'] as String,
-                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.scale_rounded, size: 15, color: AppColors.textSecondary),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text('${o['quantity']} MT',
-                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              flex: 3,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.shopping_bag_outlined, size: 15, color: AppColors.textSecondary),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(o['type_of_sale'] as String,
-                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.anchor_rounded, size: 15, color: AppColors.textSecondary),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(o['port_name'] as String,
-                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.payment_rounded, size: 15, color: AppColors.textSecondary),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(o['payment_terms'] as String,
-                        style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.primaryMuted,
-            borderRadius: BorderRadius.circular(8)),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+          const SizedBox(height: 12),
+          Divider(color: AppColors.border, height: 1),
+          const SizedBox(height: 12),
+          Text(o['buyer_name'] as String, style: AppTextStyles.heading3),
+          const SizedBox(height: 4),
+          Row(
             children: [
-            Text('Total Amount', style: AppTextStyles.caption),
-            Text(_totalStr, style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700)),
-          ]),
-        ),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: _showComment
-            ? Padding(
-                key: const ValueKey('comment'),
-                padding: const EdgeInsets.only(top: 12),
-                child: TextField(
-                  controller: _commentCtrl,
-                  style: AppTextStyles.body, maxLines: 2,
-                  decoration: const InputDecoration(
-                    hintText: 'Add a note (will be shown to salesperson)…',
-                    labelText: 'Rejection Comment'),
+              Expanded(
+                flex: 3,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.local_fire_department_rounded,
+                        size: 15,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          o['product_type'] as String,
+                          style: AppTextStyles.caption,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              )
-            : const SizedBox(key: ValueKey('none')),
-        ),
-        const SizedBox(height: 14),
-        Row(children: [
-          Expanded(child: OutlinedButton.icon(
-            icon: const Icon(Icons.close_rounded, size: 16),
-            label: const Text('Reject'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.error,
-              side: const BorderSide(color: AppColors.error),
-              padding: const EdgeInsets.symmetric(vertical: 12)),
-            onPressed: widget.isProcessing ? null : () {
-              if (!_showComment) {
-                setState(() => _showComment = true); return;
-              }
-              widget.onReject(_commentCtrl.text.trim());
-            },
-          )),
-          const SizedBox(width: 10),
-          Expanded(child: ElevatedButton.icon(
-            icon: const Icon(Icons.check_rounded, size: 16),
-            label: const Text('Approve'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.success,
-              padding: const EdgeInsets.symmetric(vertical: 12)),
-            onPressed: widget.isProcessing ? null : widget.onApprove,
-          )),
-        ]),
-      ]),
+              ),
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.grade_outlined,
+                        size: 15,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          o['quality'] as String,
+                          style: AppTextStyles.caption,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.scale_rounded,
+                        size: 15,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '${o['quantity']} MT',
+                          style: AppTextStyles.caption,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 15,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          o['type_of_sale'] as String,
+                          style: AppTextStyles.caption,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.anchor_rounded,
+                        size: 15,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          o['port_name'] as String,
+                          style: AppTextStyles.caption,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.payment_rounded,
+                        size: 15,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          o['payment_terms'] as String,
+                          style: AppTextStyles.caption,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryMuted,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Total Amount', style: AppTextStyles.caption),
+                Text(
+                  _totalStr,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: _showComment
+                ? Padding(
+                    key: const ValueKey('comment'),
+                    padding: const EdgeInsets.only(top: 12),
+                    child: TextField(
+                      controller: _commentCtrl,
+                      style: AppTextStyles.body,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        hintText: 'Add a note (will be shown to salesperson)…',
+                        labelText: 'Rejection Comment',
+                      ),
+                    ),
+                  )
+                : const SizedBox(key: ValueKey('none')),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.close_rounded, size: 16),
+                  label: const Text('Reject'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: widget.isProcessing
+                      ? null
+                      : () {
+                          if (!_showComment) {
+                            setState(() => _showComment = true);
+                            return;
+                          }
+                          widget.onReject(_commentCtrl.text.trim());
+                        },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.check_rounded, size: 16),
+                  label: const Text('Approve'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: widget.isProcessing ? null : widget.onApprove,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
