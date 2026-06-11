@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
+import '../../profile/screens/profile_screen.dart';
 
 class CatalogueScreen extends StatefulWidget {
   final bool isAdmin;
@@ -29,7 +30,12 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: ShccAppBar(
         logoAsset: 'assets/images/logo.png',
-        onProfileTap: () {},
+        onProfileTap: () => Navigator.push(context,
+          MaterialPageRoute(
+            builder: (_) => ProfileScreen(
+              isAdmin: widget.isAdmin,
+              fromTab: false,
+            ))),
         userInitials: widget.isAdmin ? 'AD' : 'RS',
       ),
       body: ListView(

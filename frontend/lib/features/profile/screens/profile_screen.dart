@@ -479,12 +479,22 @@ class _TargetManagementScreenState extends State<TargetManagementScreen> {
 // ── Main Profile Screen ───────────────────────────────────────────────────────
 class ProfileScreen extends StatelessWidget {
   final bool isAdmin;
+
+  /// Set to [true] when ProfileScreen is embedded as a PageView tab.
+  /// Set to [false] (default) when pushed via Navigator.push.
+  ///
+  /// This makes back-button visibility explicit and theme-change-proof,
+  /// instead of relying on Navigator.canPop which is unreliable in tab context.
+  final bool fromTab;
+
   /// Called when the user wants to go back while Profile is embedded
   /// as a tab (not pushed). The dashboard uses this to switch to Home.
   final VoidCallback? onGoHome;
+
   const ProfileScreen({
     super.key,
     this.isAdmin = false,
+    this.fromTab = false,
     this.onGoHome,
   });
 
@@ -492,6 +502,28 @@ class ProfileScreen extends StatelessWidget {
   static const String _email    = 'sarah.jenkins@email.com';
   static const String _imageUrl =
     'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80';
+
+  /// Universal back handler:
+  /// - If pushed (fromTab == false): pop normally.
+  /// - If tab-embedded (fromTab == true): call onGoHome if available.
+  /// - Safety net: if stack is somehow empty, replace with dashboard route.
+  void _handleBack(BuildContext context) {
+    if (!fromTab) {
+      // Pushed screen — pop back to wherever we came from.
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        // Safety fallback: should never happen for a pushed screen, but
+        // guard against corrupted stack by navigating to dashboard.
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      }
+    } else {
+      // Tab-embedded — hand off to the parent dashboard.
+      if (onGoHome != null) {
+        onGoHome!();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -502,11 +534,19 @@ class ProfileScreen extends StatelessWidget {
     final textPri= isDark ? Colors.white : Colors.black;
     final textSec= isDark ? AppColors.darkTextSecondary : const Color(0xFF8E8E93);
 
+    // Back button is visible whenever the screen was pushed (fromTab == false)
+    // OR when it is a tab but a home-callback is available (fromTab == true,
+    // onGoHome != null). Either way, the icon is always rendered — it never
+    // disappears due to theme changes because it is driven by fromTab, not by
+    // the runtime Navigator stack.
+    final bool showBack = !fromTab || onGoHome != null;
+
     return PopScope(
-      // When the profile is a tab, intercept back and go to Home instead
-      canPop: Navigator.canPop(context),
+      // Allow normal system-back only when pushed; intercept when tab-embedded.
+      canPop: !fromTab,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && onGoHome != null) onGoHome!();
+        // didPop == false means canPop blocked it (tab context).
+        if (!didPop && fromTab && onGoHome != null) onGoHome!();
       },
       child: Scaffold(
         backgroundColor: bg,
@@ -514,22 +554,19 @@ class ProfileScreen extends StatelessWidget {
           title: Text('Profile & Settings',
             style: AppTextStyles.heading1.copyWith(
               fontWeight: FontWeight.bold, fontSize: 20,
-              // Explicitly adapt text color so it's always visible
               color: isDark ? Colors.white : Colors.black,
             )),
           centerTitle: true,
           elevation: 0,
           backgroundColor: Colors.transparent,
-          // Set foreground color so the icon inherits the right tint
           foregroundColor: isDark ? Colors.white : Colors.black,
           automaticallyImplyLeading: false,
-          leading: Navigator.canPop(context)
+          leading: showBack
             ? IconButton(
                 icon: Icon(Icons.arrow_back_ios_new_rounded,
                   size: 18,
-                  // Hardcode color from local isDark — avoids AppBar override
                   color: isDark ? Colors.white : Colors.black),
-                onPressed: () => Navigator.pop(context))
+                onPressed: () => _handleBack(context))
             : null,
         ),
       body: ListView(

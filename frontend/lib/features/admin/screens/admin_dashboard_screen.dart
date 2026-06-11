@@ -35,20 +35,12 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _navIndex = 0;
-  late final List<Widget> _pages;
   late final PageController _pageCtrl;
 
   @override
   void initState() {
     super.initState();
     _pageCtrl = PageController(initialPage: 0);
-    _pages = [
-      const _AdminHome(),
-      const SearchScreen(isAdmin: true),
-      const ReportsScreen(),
-      const CatalogueScreen(isAdmin: true),
-      const ProfileScreen(isAdmin: true),
-    ];
   }
 
   @override
@@ -66,6 +58,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Pages are built here (not in initState) so that _goTo can be
+    // passed as the onGoHome callback to ProfileScreen.
+    final pages = [
+      const _AdminHome(),
+      const SearchScreen(isAdmin: true),
+      const ReportsScreen(),
+      const CatalogueScreen(isAdmin: true),
+      ProfileScreen(
+        isAdmin: true,
+        fromTab: true,
+        onGoHome: () => _goTo(0),
+      ),
+    ];
+
     return Scaffold(
       body: PageView(
         controller: _pageCtrl,
@@ -73,7 +79,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         onPageChanged: (page) {
           setState(() => _navIndex = page);
         },
-        children: _pages,
+        children: pages,
       ),
       bottomNavigationBar: ShccBottomNav(
         currentIndex: _navIndex, isAdmin: true,
@@ -177,7 +183,10 @@ class _AdminHomeState extends State<_AdminHome> {
           userInitials: 'AD',
           onProfileTap: () => Navigator.push(context,
             MaterialPageRoute(
-              builder: (_) => const ProfileScreen(isAdmin: true))),
+              builder: (_) => const ProfileScreen(
+                isAdmin: true,
+                fromTab: false,
+              ))),
           actions: [
             IconButton(
               icon: Container(

@@ -6,6 +6,7 @@ import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../orders/screens/create_order_screen.dart';
+import '../../profile/screens/profile_screen.dart';
 import '../../tracking/order_tracking_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -134,7 +135,12 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       appBar: ShccAppBar(
         logoAsset: 'assets/images/logo.png',
-        onProfileTap: () {},
+        onProfileTap: () => Navigator.push(context,
+          MaterialPageRoute(
+            builder: (_) => ProfileScreen(
+              isAdmin: widget.isAdmin,
+              fromTab: false,
+            ))),
         userInitials: widget.isAdmin ? 'AD' : 'RS',
       ),
       body: Column(children: [

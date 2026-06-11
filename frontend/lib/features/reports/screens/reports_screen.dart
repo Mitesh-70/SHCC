@@ -7,6 +7,7 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../profile/screens/profile_screen.dart';
 
 // ── Static sample orders (replace with real data layer) ───────────────────────
 const _allOrders = [
@@ -323,7 +324,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
       appBar: ShccAppBar(
         logoAsset: 'assets/images/logo.png',
         userInitials: 'AD',
-        onProfileTap: () {},
+        onProfileTap: () => Navigator.push(context,
+          MaterialPageRoute(
+            builder: (_) => const ProfileScreen(
+              isAdmin: true,
+              fromTab: false,
+            ))),
         actions: [
           if (_pdfLoading)
             const Padding(

@@ -116,6 +116,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const CatalogueScreen(isAdmin: false),
           ProfileScreen(
             isAdmin: false,
+            fromTab: true,
             onGoHome: () => _goTo(0),
           ),
         ],
@@ -176,7 +177,10 @@ class _SalesHome extends StatelessWidget {
         logoAsset: 'assets/images/logo.png',
         onProfileTap: () => Navigator.push(context,
           MaterialPageRoute(
-            builder: (_) => const ProfileScreen(isAdmin: false))),
+            builder: (_) => const ProfileScreen(
+              isAdmin: false,
+              fromTab: false,
+            ))),
         userInitials: 'RS',
         actions: [
           NotificationBell(
