@@ -219,28 +219,6 @@ class _AdminHomeState extends State<_AdminHome> {
                     const ProfileScreen(isAdmin: true, fromTab: false),
               ),
             ),
-            actions: [
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryMuted,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.add_rounded,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                ),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const CreateOrderScreen(isAdmin: true),
-                  ),
-                ),
-              ),
-            ],
           ),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
@@ -324,50 +302,41 @@ class _AdminHomeState extends State<_AdminHome> {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.add_shopping_cart_rounded,
-                        color: Colors.white,
-                        size: 22,
+                    const SizedBox(width: 44), // Empty spacer to perfectly center the text
+                    Expanded(
+                      child: Text(
+                        'Create New Order',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.lightTextPrimary,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Create New Order',
-                            style: AppTextStyles.bodyMedium,
-                          ),
-                          Text(
-                            'Admin order entry',
-                            style: AppTextStyles.caption,
-                          ),
-                        ],
-                      ),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                      ),
-                      onPressed: () => Navigator.push(
+                    GestureDetector(
+                      onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              const CreateOrderScreen(isAdmin: true),
+                          builder: (_) => const CreateOrderScreen(isAdmin: true),
                         ),
                       ),
-                      child: const Text('Create'),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.add_shopping_cart_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
                     ),
                   ],
                 ),

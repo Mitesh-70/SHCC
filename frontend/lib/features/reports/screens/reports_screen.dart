@@ -91,9 +91,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
       }
       // Salesperson
       if (_salesperson != 'All' &&
-          o['sales_person_name'] != _salesperson) return false;
+          o['sales_person_name'] != _salesperson) {
+        return false;
+      }
       // Port
-      if (_port != 'All' && o['port_name'] != _port) return false;
+      if (_port != 'All' && o['port_name'] != _port) {
+        return false;
+      }
       return true;
     }).toList();
   }
@@ -127,6 +131,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   String _fmtNoSymbol(double v) {
     if (v >= 10000000) return '${(v / 10000000).toStringAsFixed(2)} Cr';
     if (v >= 100000)   return '${(v / 100000).toStringAsFixed(2)} L';
+    // ignore: unnecessary_string_interpolations
     return '${v.toStringAsFixed(0)}';
   }
 
@@ -648,36 +653,53 @@ class _InvoiceCard extends StatelessWidget {
             )),
           const SizedBox(height: 10),
           
-          // Salesperson, Port & Date Row with Icons
-          Wrap(
-            spacing: 12,
-            runSpacing: 6,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          // Salesperson, Port & Date Grid Layout
+          Row(
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.person_outline_rounded, size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text(order['sales_person_name'] as String, style: AppTextStyles.bodySecondary),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.person_outline_rounded, size: 16, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(order['sales_person_name'] as String, 
+                        style: AppTextStyles.bodySecondary, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.anchor_rounded, size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text(order['port_name'] as String, style: AppTextStyles.bodySecondary),
-                ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.anchor_rounded, size: 16, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(order['port_name'] as String, 
+                        style: AppTextStyles.bodySecondary, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text(displayDate, style: AppTextStyles.bodySecondary),
-                ],
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(displayDate, 
+                        style: AppTextStyles.bodySecondary, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
+              const Expanded(child: SizedBox()),
             ],
           ),
           
@@ -856,6 +878,7 @@ class _InvRow extends StatelessWidget {
   );
 }
 
+// ignore: unused_element
 class _InvBtn extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -863,6 +886,7 @@ class _InvBtn extends StatelessWidget {
   final bool primary;
   const _InvBtn({
     required this.icon, required this.label,
+    // ignore: unused_element_parameter
     required this.onTap, this.primary = false,
   });
   @override
@@ -1021,7 +1045,7 @@ class _FilterDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DropdownButtonFormField<String>(
-    value: selectedValue,
+    initialValue: selectedValue,
     dropdownColor: AppColors.bgCard,
     style: AppTextStyles.body,
     icon: Icon(Icons.keyboard_arrow_down_rounded,
