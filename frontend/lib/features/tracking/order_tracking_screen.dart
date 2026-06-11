@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
@@ -17,10 +18,44 @@ class OrderTrackingScreen extends StatefulWidget {
 }
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
-  final List<DeliveryEntry> _deliveries = [
-    DeliveryEntry(id: 'D-001', quantity: 80,  date: '20 Apr 2024', port: 'Mundra'),
-    DeliveryEntry(id: 'D-002', quantity: 60,  date: '24 Apr 2024', port: 'Mundra'),
-  ];
+  // Static deliveries cache map to persist tracking records between navigations
+  static final Map<String, List<DeliveryEntry>> _deliveriesCache = {};
+
+  late List<DeliveryEntry> _deliveries;
+  bool _isAdding = false;
+  final _qtyCtrl = TextEditingController();
+  final _dateCtrl = TextEditingController();
+  String? _selectedPort;
+
+  @override
+  void initState() {
+    super.initState();
+    final orderId = widget.order['id'] ?? '';
+    if (!_deliveriesCache.containsKey(orderId)) {
+      if (orderId == 'ORD-2024-048') {
+        _deliveriesCache[orderId] = [
+          DeliveryEntry(id: 'D-001', quantity: 80,  date: '20 Apr 2024', port: 'Mundra'),
+          DeliveryEntry(id: 'D-002', quantity: 60,  date: '24 Apr 2024', port: 'Mundra'),
+        ];
+      } else {
+        _deliveriesCache[orderId] = [];
+      }
+    }
+    _deliveries = _deliveriesCache[orderId]!;
+  }
+
+  @override
+  void dispose() {
+    _qtyCtrl.dispose();
+    _dateCtrl.dispose();
+    super.dispose();
+  }
+
+  void _resetForm() {
+    _qtyCtrl.clear();
+    _dateCtrl.clear();
+    _selectedPort = null;
+  }
 
   double get _ordered   => (widget.order['quantity'] as num).toDouble();
   double get _delivered => _deliveries.fold(0, (s, d) => s + d.quantity);
@@ -31,6 +66,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Widget build(BuildContext context) {
     final theme  = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isCompleted = _remaining <= 0;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -46,7 +82,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
         children: [
-
           // Order header card
           _Card(isDark: isDark, child: Column(
             crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -119,11 +154,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             Text('Delivery History',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600)),
-            if (widget.isAdmin)
-              TextButton.icon(
-                icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('Add Entry'),
-                onPressed: () => _showAddDelivery(context)),
           ]),
           const SizedBox(height: 12),
 
@@ -139,115 +169,338 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               child: _DeliveryCard(
                 entry: _deliveries[i], index: i + 1,
                 isAdmin: widget.isAdmin, isDark: isDark,
-                onDelete: () => setState(() => _deliveries.removeAt(i))))),
+                onDelete: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: isDark ? AppColors.darkBgCard : AppColors.lightBgCard,
+                      title: Text('Confirm Delete', style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary)),
+                      content: Text('Are you sure you want to delete this delivery entry?', style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancel', style: TextStyle(color: AppColors.primary)),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    setState(() => _deliveries.removeAt(i));
+                  }
+                }
+              ))),
+        ],
+      ),
+      bottomNavigationBar: isCompleted
+          ? null
+          : Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: (isDark ? AppColors.darkBorder : AppColors.lightBorder)
+                        .withValues(alpha: 0.5),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    color: isDark
+                        ? AppColors.darkBgSurface.withValues(alpha: 0.7)
+                        : AppColors.lightBgSurface.withValues(alpha: 0.8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: SafeArea(
+                      top: false,
+                      child: _isAdding
+                          ? _buildExpandedForm(context, isDark, theme)
+                          : _buildCollapsedBar(context, isDark, theme),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildCollapsedBar(BuildContext context, bool isDark, ThemeData theme) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        setState(() {
+          _isAdding = true;
+        });
+      },
+      child: Row(
+        children: [
+          GlowingAddButton(
+            onTap: () {
+              setState(() {
+                _isAdding = true;
+              });
+            },
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Add Dispatch Entry',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Log details for the next cargo shipment',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.keyboard_arrow_up_rounded,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+          ),
         ],
       ),
     );
   }
 
-  void _showAddDelivery(BuildContext context) {
-    final theme     = Theme.of(context);
-    final qtyCtrl   = TextEditingController();
-    final dateCtrl  = TextEditingController();
-    String? selectedPort;
-
-    showModalBottomSheet(
-      context: context, isScrollControlled: true,
-      backgroundColor: theme.cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModal) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 32),
-          child: Column(mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Center(child: Container(
-              width: 36, height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: theme.dividerColor,
-                borderRadius: BorderRadius.circular(2)))),
-            Text('Add Delivery Entry',
+  Widget _buildExpandedForm(BuildContext context, bool isDark, ThemeData theme) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Add Dispatch Entry',
               style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600)),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: qtyCtrl,
-              keyboardType: TextInputType.number,
-              style: theme.textTheme.bodyMedium,
-              decoration: InputDecoration(
-                labelText: 'Quantity Delivered (MT)',
-                prefixIcon: Icon(Icons.scale_rounded,
-                  size: 18, color: AppColors.textMuted),
-                suffixText: 'MT')),
-            const SizedBox(height: 14),
-            GestureDetector(
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: ctx, initialDate: DateTime.now(),
-                  firstDate: DateTime(2024),
-                  lastDate: DateTime.now().add(const Duration(days: 30)),
-                  builder: (c, child) => Theme(
-                    data: Theme.of(c).copyWith(
-                      colorScheme: const ColorScheme.dark(
-                        primary: AppColors.primary)),
-                    child: child!));
-                if (picked != null) {
-                  dateCtrl.text =
-                    '${picked.day} ${_month(picked.month)} ${picked.year}';
-                  setModal(() {});
-                }
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close_rounded, size: 20),
+              onPressed: () {
+                setState(() {
+                  _isAdding = false;
+                  _resetForm();
+                });
               },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: theme.inputDecorationTheme.fillColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: theme.dividerColor)),
-                child: Row(children: [
-                  Icon(Icons.calendar_month_rounded,
-                    size: 18,
-                    color: AppColors.textMutedColor(context)),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(
-                    dateCtrl.text.isEmpty
-                      ? 'Select Delivery Date' : dateCtrl.text,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: dateCtrl.text.isEmpty
-                        ? AppColors.textMutedColor(context) : null))),
-                ]))),
-            const SizedBox(height: 14),
-            DropdownButtonFormField<String>(
-              value: selectedPort,
-              dropdownColor: theme.cardColor,
-              style: theme.textTheme.bodyMedium,
-              decoration: InputDecoration(
-                labelText: 'Port',
-                prefixIcon: Icon(Icons.anchor_rounded,
-                  size: 18,
-                  color: AppColors.textMutedColor(context))),
-              items: AppConstants.ports.map((p) => DropdownMenuItem(
-                value: p,
-                child: Text(p, style: theme.textTheme.bodyMedium))).toList(),
-              onChanged: (v) => setModal(() => selectedPort = v)),
-            const SizedBox(height: 24),
-            SizedBox(width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  final q = double.tryParse(qtyCtrl.text) ?? 0;
-                  if (q <= 0 || dateCtrl.text.isEmpty ||
-                      selectedPort == null) return;
-                  setState(() => _deliveries.add(DeliveryEntry(
-                    id: 'D-00${_deliveries.length + 1}',
-                    quantity: q, date: dateCtrl.text, port: selectedPort!)));
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Save Delivery'))),
-          ]),
+            ),
+          ],
         ),
-      ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _qtyCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: theme.textTheme.bodyMedium,
+                decoration: InputDecoration(
+                  labelText: 'Qty (MT)',
+                  labelStyle: TextStyle(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    fontSize: 13,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  prefixIcon: const Icon(Icons.scale_rounded, size: 16, color: AppColors.primary),
+                  suffixText: 'MT',
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedPort,
+                dropdownColor: theme.cardColor,
+                style: theme.textTheme.bodyMedium,
+                decoration: InputDecoration(
+                  labelText: 'Port',
+                  labelStyle: TextStyle(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    fontSize: 13,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  prefixIcon: const Icon(Icons.anchor_rounded, size: 16, color: AppColors.primary),
+                ),
+                items: AppConstants.ports.map((p) => DropdownMenuItem(
+                  value: p,
+                  child: Text(p, style: theme.textTheme.bodyMedium))).toList(),
+                onChanged: (v) => setState(() => _selectedPort = v),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(2024),
+              lastDate: DateTime.now().add(const Duration(days: 30)),
+              builder: (c, child) => Theme(
+                data: Theme.of(c).copyWith(
+                  colorScheme: isDark
+                      ? const ColorScheme.dark(
+                          primary: AppColors.primary,
+                          onPrimary: Colors.white,
+                          surface: AppColors.darkBgSurface,
+                          onSurface: AppColors.darkTextPrimary,
+                        )
+                      : const ColorScheme.light(
+                          primary: AppColors.primary,
+                          onPrimary: Colors.white,
+                          surface: AppColors.lightBgSurface,
+                          onSurface: AppColors.lightTextPrimary,
+                        ),
+                ),
+                child: child!,
+              ),
+            );
+            if (picked != null) {
+              setState(() {
+                _dateCtrl.text =
+                  '${picked.day} ${_month(picked.month)} ${picked.year}';
+              });
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkBgInput : AppColors.lightBgInput,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_month_rounded, size: 16, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _dateCtrl.text.isEmpty ? 'Select Delivery Date' : _dateCtrl.text,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: _dateCtrl.text.isEmpty
+                          ? (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                          : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            GlowingAddButton(
+              onTap: () {
+                final q = double.tryParse(_qtyCtrl.text) ?? 0;
+                if (q <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid quantity.')),
+                  );
+                  return;
+                }
+                if (q > _remaining) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Quantity cannot exceed remaining quantity (${_remaining.toStringAsFixed(0)} MT).')),
+                  );
+                  return;
+                }
+                if (_selectedPort == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select a port.')),
+                  );
+                  return;
+                }
+                if (_dateCtrl.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select a delivery date.')),
+                  );
+                  return;
+                }
+                setState(() {
+                  _deliveries.add(DeliveryEntry(
+                    id: 'D-00${_deliveries.length + 1}',
+                    quantity: q,
+                    date: _dateCtrl.text,
+                    port: _selectedPort!,
+                  ));
+                  _isAdding = false;
+                  _resetForm();
+                });
+              },
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Submit Entry',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -255,6 +508,75 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ][m];
+}
+
+// ── Glowing Plus Button ───────────────────────────────────────────────────────
+class GlowingAddButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const GlowingAddButton({super.key, required this.onTap});
+
+  @override
+  State<GlowingAddButton> createState() => _GlowingAddButtonState();
+}
+
+class _GlowingAddButtonState extends State<GlowingAddButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _glowAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _glowAnimation = Tween<double>(begin: 2.0, end: 10.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _glowAnimation,
+      builder: (context, child) {
+        return GestureDetector(
+          onTap: widget.onTap,
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [AppColors.primary, AppColors.primaryLight],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.45),
+                  blurRadius: _glowAnimation.value * 1.5,
+                  spreadRadius: _glowAnimation.value * 0.4,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.add_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 // ── Shared card container ─────────────────────────────────────────────────────
