@@ -235,7 +235,7 @@ class _AdminHomeState extends State<_AdminHome> {
                         Expanded(
                           child: KpiCard(
                             label: 'Total Orders',
-                            value: '142',
+                            value: '149',
                             icon: Icons.receipt_long_rounded,
                             color: AppColors.primary,
                           ),
