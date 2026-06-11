@@ -29,7 +29,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Stock Analysis', path: 'stock-analysis', icon: <Package size={18} />, roles: ['admin', 'finance'] },
   { label: 'Reports', path: 'reports', icon: <FileText size={18} />, roles: ['admin', 'finance'] },
   { label: 'User Permissions', path: 'user-permissions', icon: <Shield size={18} />, roles: ['admin'] },
-  { label: 'Profile', path: 'profile', icon: <UserCircle size={18} />, roles: ['salesperson'] },
   { label: 'Notifications', path: 'notifications', icon: <Bell size={18} />, roles: ['salesperson'] },
 ];
 
@@ -55,6 +54,7 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const visibleItems = NAV_ITEMS.filter(item =>
     item.roles.includes(role) &&
@@ -62,9 +62,23 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
   );
 
   const handleLogout = () => {
+    setUserMenuOpen(false);
     logout();
     navigate('/login');
   };
+
+  const handleSettings = () => {
+    setUserMenuOpen(false);
+    if (role === 'admin') {
+      navigate(`${base}/settings`);
+    } else if (role === 'salesperson') {
+      navigate(`${base}/profile`);
+    } else {
+      navigate(`${base}/dashboard`);
+    }
+  };
+
+  const settingsLabel = role === 'admin' ? 'Settings' : 'Profile';
 
   const base = ROLE_BASE[role];
   const avatarUrl = user?.email
@@ -185,8 +199,11 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
 
       {/* User Info bottom widget */}
       {!collapsed ? (
-        <div className="border-t border-gray-100 p-3">
-          <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl p-2.5 cursor-pointer hover:bg-gray-100/55 transition-colors">
+        <div className="border-t border-gray-100 p-3 relative">
+          <div
+            className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl p-2.5 cursor-pointer hover:bg-gray-100/55 transition-colors"
+            onClick={() => setUserMenuOpen(prev => !prev)}
+          >
             <div className="flex items-center gap-2.5 min-w-0">
               <img
                 src={avatarUrl}
@@ -198,8 +215,30 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
                 <div className="text-[10px] text-gray-400 truncate mt-0.5">{user?.email ?? 'admin@shcc.co.in'}</div>
               </div>
             </div>
-            <ChevronDown size={14} className="text-gray-400 flex-shrink-0 ml-1" />
+            <ChevronDown
+              size={14}
+              className={`text-gray-400 flex-shrink-0 ml-1 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
+            />
           </div>
+
+          {userMenuOpen && (
+            <div className="absolute left-3 right-3 bottom-[72px] z-20 rounded-2xl border border-gray-200 bg-white shadow-xl p-2">
+              <button
+                type="button"
+                onClick={handleSettings}
+                className="w-full text-left rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                {settingsLabel}
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full text-left rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="border-t border-gray-100 p-3 flex justify-center">
