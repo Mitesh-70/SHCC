@@ -9,54 +9,53 @@ import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../profile/screens/profile_screen.dart';
 
-// ── Static sample orders (replace with real data layer) ───────────────────────
 const _allOrders = [
   {
     'id': 'ORD-2024-048', 'buyer_name': 'JSW Steel Ltd',
     'sales_person_name': 'Raj Sharma', 'product_type': 'Indonesian Coal',
-    'base_rate': 6200.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 200.0,
+    'base_rate': 6200.0, 'freight': 10000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 200.0,
     'port_name': 'Mundra', 'payment_terms': 'Advance',
     'status': 'confirmed', 'date': '2024-04-28',
   },
   {
     'id': 'ORD-2024-047', 'buyer_name': 'Ultratech Cement',
     'sales_person_name': 'Raj Sharma', 'product_type': 'South African Coal',
-    'base_rate': 6100.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 150.0,
+    'base_rate': 6100.0, 'freight': 15000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 150.0,
     'port_name': 'Kandla', 'payment_terms': 'Credit Line',
     'status': 'pending', 'date': '2024-04-27',
   },
   {
     'id': 'ORD-2024-046', 'buyer_name': 'Tata Steel',
     'sales_person_name': 'Amit Patel', 'product_type': 'Russian Coal',
-    'base_rate': 5600.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 500.0,
+    'base_rate': 5600.0, 'freight': 20000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 500.0,
     'port_name': 'Hazira', 'payment_terms': 'On Delivery',
     'status': 'processed', 'date': '2024-04-26',
   },
   {
     'id': 'ORD-2024-045', 'buyer_name': 'JSW Steel Ltd',
     'sales_person_name': 'Raj Sharma', 'product_type': 'US Coal',
-    'base_rate': 3500.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 100.0,
+    'base_rate': 3500.0, 'freight': 5000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 100.0,
     'port_name': 'Magdalla', 'payment_terms': 'Advance',
     'status': 'pending', 'date': '2024-04-25',
   },
   {
     'id': 'ORD-2024-044', 'buyer_name': 'ACC Cement',
     'sales_person_name': 'Priya Mehta', 'product_type': 'Indonesian Coal',
-    'base_rate': 8200.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 300.0,
+    'base_rate': 8200.0, 'freight': 25000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 300.0,
     'port_name': 'Navlakhi', 'payment_terms': 'LC',
     'status': 'completed', 'date': '2024-04-24',
   },
   {
     'id': 'ORD-2024-043', 'buyer_name': 'Essar Steel',
     'sales_person_name': 'Amit Patel', 'product_type': 'South African Coal',
-    'base_rate': 7200.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 420.0,
+    'base_rate': 7200.0, 'freight': 16000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 420.0,
     'port_name': 'Hazira', 'payment_terms': 'LC',
     'status': 'confirmed', 'date': '2024-04-20',
   },
   {
     'id': 'ORD-2024-042', 'buyer_name': 'Birla Cement',
     'sales_person_name': 'Priya Mehta', 'product_type': 'Indonesian Coal',
-    'base_rate': 6800.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 250.0,
+    'base_rate': 6800.0, 'freight': 12000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 250.0,
     'port_name': 'Mundra', 'payment_terms': 'Advance',
     'status': 'completed', 'date': '2024-04-15',
   },
@@ -109,8 +108,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
   double _total(Map<String, dynamic> o) {
     final b = (o['base_rate'] as num).toDouble()
       * (o['quantity'] as num).toDouble();
-    return b + b * ((o['gst'] as num) / 100)
-             + b * ((o['tcs'] as num) / 100);
+    final f = ((o['freight'] ?? 0.0) as num).toDouble();
+    return b + f + b * ((o['gst'] as num) / 100)
+                 + b * ((o['tcs'] as num) / 100);
   }
 
   double get _revenue  => _filtered.fold(0, (s, o) => s + _total(o));
@@ -746,6 +746,7 @@ class _InvoiceCard extends StatelessWidget {
             _InvRow('Port',         order['port_name'] as String),
             _InvRow('Quantity',     '${order['quantity']} MT'),
             _InvRow('Base Rate',    '₹${order['base_rate']}/MT'),
+            _InvRow('Freight',      '₹${((order['freight'] ?? 0.0) as num).toDouble().toStringAsFixed(2)}'),
             _InvRow('GST',          '${order['gst']}%'),
             _InvRow('TCS',          '${order['tcs']}%'),
             Divider(color: AppColors.border, height: 24),
@@ -798,6 +799,7 @@ class _InvoiceCard extends StatelessWidget {
               _pRow('Port',         order['port_name'] as String),
               _pRow('Quantity',     '${order['quantity']} MT'),
               _pRow('Base Rate',    '₹${order['base_rate']}/MT'),
+              _pRow('Freight',      '₹${((order['freight'] ?? 0.0) as num).toDouble().toStringAsFixed(2)}'),
               _pRow('GST',          '${order['gst']}%'),
               _pRow('TCS',          '${order['tcs']}%'),
               _pRow('Status',       (order['status'] as String).toUpperCase()),

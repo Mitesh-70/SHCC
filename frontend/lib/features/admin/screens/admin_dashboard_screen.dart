@@ -113,6 +113,7 @@ class _AdminHomeState extends State<_AdminHome> {
       'buyer_name': 'Birla Cement',
       'product_type': 'Indonesian Coal',
       'base_rate': 7100.0,
+      'freight': 12000.0,
       'gst': 18.0,
       'tcs': 0.1,
       'quantity': 300.0,
@@ -128,6 +129,7 @@ class _AdminHomeState extends State<_AdminHome> {
       'buyer_name': 'Essar Steel',
       'product_type': 'South African Coal',
       'base_rate': 6200.0,
+      'freight': 18000.0,
       'gst': 18.0,
       'tcs': 0.1,
       'quantity': 450.0,
@@ -143,6 +145,7 @@ class _AdminHomeState extends State<_AdminHome> {
       'buyer_name': 'ACC Cement',
       'product_type': 'Russian Coal',
       'base_rate': 4800.0,
+      'freight': 8000.0,
       'gst': 18.0,
       'tcs': 0.1,
       'quantity': 200.0,
@@ -419,7 +422,9 @@ class _ApprovalCardState extends State<_ApprovalCard> {
     final b =
         (widget.order['base_rate'] as num).toDouble() *
         (widget.order['quantity'] as num).toDouble();
+    final f = ((widget.order['freight'] ?? 0.0) as num).toDouble();
     return b +
+        f +
         b * ((widget.order['gst'] as num) / 100) +
         b * ((widget.order['tcs'] as num) / 100);
   }
@@ -647,21 +652,38 @@ class _ApprovalCardState extends State<_ApprovalCard> {
           ),
           const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: AppColors.primaryMuted,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
               children: [
-                Text('Total Amount', style: AppTextStyles.caption),
-                Text(
-                  _totalStr,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Freight', style: AppTextStyles.caption),
+                    Text(
+                      '₹${((widget.order['freight'] ?? 0.0) as num).toDouble().toStringAsFixed(2)}',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total Amount', style: AppTextStyles.caption),
+                    Text(
+                      _totalStr,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

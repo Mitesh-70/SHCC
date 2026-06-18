@@ -2,6 +2,7 @@ class OrderModel {
   final String uuid;
   final String salesPersonName;
   final double baseRate;
+  final double freight;
   final double gst;
   final double tcs;
   final double quantity;
@@ -22,6 +23,7 @@ class OrderModel {
     required this.uuid,
     required this.salesPersonName,
     required this.baseRate,
+    this.freight = 0.0,
     required this.gst,
     required this.tcs,
     required this.quantity,
@@ -46,7 +48,7 @@ class OrderModel {
   double get baseAmount  => baseRate * quantity;
   double get gstAmount   => baseAmount * (gst  / 100);
   double get tcsAmount   => baseAmount * (tcs  / 100);
-  double get totalAmount => baseAmount + gstAmount + tcsAmount;
+  double get totalAmount => baseAmount + freight + gstAmount + tcsAmount;
 
   // ── Delivery tracking ─────────────────────────────────────────────
   double get deliveredQty  => deliveries.fold(0, (s, d) => s + d.quantity);
@@ -57,6 +59,7 @@ class OrderModel {
     'uuid':              uuid,
     'sales_person_name': salesPersonName,
     'base_rate':         baseRate,
+    'freight':           freight,
     'gst':               gst,
     'tcs':               tcs,
     'quantity':          quantity,
@@ -77,6 +80,7 @@ class OrderModel {
     uuid:            m['uuid'],
     salesPersonName: m['sales_person_name'],
     baseRate:        (m['base_rate']  as num).toDouble(),
+    freight:         (m['freight']    as num?)?.toDouble() ?? 0.0,
     gst:             (m['gst']        as num).toDouble(),
     tcs:             (m['tcs']        as num).toDouble(),
     quantity:        (m['quantity']   as num).toDouble(),
@@ -97,6 +101,7 @@ class OrderModel {
     uuid:            uuid,
     salesPersonName: salesPersonName,
     baseRate:        baseRate,
+    freight:         freight,
     gst:             gst,
     tcs:             tcs,
     quantity:        quantity,

@@ -5,6 +5,7 @@ import '../../core/constants/app_text_styles.dart';
 class AmountSummaryCard extends StatelessWidget {
   final double baseRate;
   final double quantity;
+  final double freight;
   final double gst;
   final double tcs;
 
@@ -12,6 +13,7 @@ class AmountSummaryCard extends StatelessWidget {
     super.key,
     required this.baseRate,
     required this.quantity,
+    required this.freight,
     required this.gst,
     required this.tcs,
   });
@@ -19,7 +21,7 @@ class AmountSummaryCard extends StatelessWidget {
   double get baseAmount => baseRate * quantity;
   double get gstAmount  => baseAmount * (gst / 100);
   double get tcsAmount  => baseAmount * (tcs / 100);
-  double get total      => baseAmount + gstAmount + tcsAmount;
+  double get total      => baseAmount + freight + gstAmount + tcsAmount;
 
   String _fmt(double v) {
     if (v == 0) return '—';
@@ -42,6 +44,8 @@ class AmountSummaryCard extends StatelessWidget {
       ),
       child: Column(children: [
         _Row('Base Amount', _fmt(baseAmount), isHeader: false),
+        const SizedBox(height: 10),
+        _Row('Freight', _fmt(freight), isHeader: false),
         const SizedBox(height: 10),
         _Row('GST (${gst.toStringAsFixed(1)}%)', _fmt(gstAmount), isHeader: false),
         const SizedBox(height: 10),

@@ -145,13 +145,13 @@ class _SalesHome extends StatelessWidget {
   static const _recentOrders = [
     {
       'id': 'ORD-2024-048', 'buyer_name': 'JSW Steel Ltd',
-      'base_rate': 6200.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 200.0,
+      'base_rate': 6200.0, 'freight': 10000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 200.0,
       'type_of_sale': 'Spot', 'product_type': 'Indonesian Coal',
       'port_name': 'Mundra', 'status': 'processed', 'date': '28 Apr',
     },
     {
       'id': 'ORD-2024-047', 'buyer_name': 'Ultratech Cement',
-      'base_rate': 6100.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 150.0,
+      'base_rate': 6100.0, 'freight': 15000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 150.0,
       'type_of_sale': 'F.O.R.', 'product_type': 'South African Coal',
       'port_name': 'Kandla', 'status': 'pending', 'date': '27 Apr',
       'rejected': true,
@@ -159,7 +159,7 @@ class _SalesHome extends StatelessWidget {
     },
     {
       'id': 'ORD-2024-046', 'buyer_name': 'Tata Steel',
-      'base_rate': 5600.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 500.0,
+      'base_rate': 5600.0, 'freight': 20000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 500.0,
       'type_of_sale': 'Spot', 'product_type': 'Russian Coal',
       'port_name': 'Hazira', 'status': 'completed', 'date': '26 Apr',
     },

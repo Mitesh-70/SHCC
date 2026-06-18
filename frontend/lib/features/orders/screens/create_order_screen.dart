@@ -22,6 +22,7 @@ class CreateOrderScreen extends StatefulWidget {
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final _formKey      = GlobalKey<FormState>();
   final _baseRateCtrl = TextEditingController();
+  final _freightCtrl  = TextEditingController();
   final _gstCtrl      = TextEditingController(text: '18');
   final _tcsCtrl      = TextEditingController(text: '0.1');
   final _qtyCtrl      = TextEditingController();
@@ -38,6 +39,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final String _salesPerson = 'Raj Sharma';
 
   double get _baseRate => double.tryParse(_baseRateCtrl.text) ?? 0;
+  double get _freight  => double.tryParse(_freightCtrl.text)  ?? 0;
   double get _gst      => double.tryParse(_gstCtrl.text)      ?? 0;
   double get _tcs      => double.tryParse(_tcsCtrl.text)      ?? 0;
   double get _qty      => double.tryParse(_qtyCtrl.text)      ?? 0;
@@ -49,6 +51,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     final p = widget.prefill;
     if (p != null) {
       _baseRateCtrl.text = p['base_rate']?.toString()  ?? '';
+      _freightCtrl.text  = p['freight']?.toString()    ?? '';
       _gstCtrl.text      = p['gst']?.toString()        ?? '18';
       _tcsCtrl.text      = p['tcs']?.toString()        ?? '0.1';
       _qtyCtrl.text      = p['quantity']?.toString()   ?? '';
@@ -60,14 +63,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       _paymentTerms      = p['payment_terms']          ?? 'Advance';
       _remarkCtrl.text   = p['remark']?.toString()     ?? '';
     }
-    for (final c in [_baseRateCtrl, _gstCtrl, _tcsCtrl, _qtyCtrl]) {
+    for (final c in [_baseRateCtrl, _freightCtrl, _gstCtrl, _tcsCtrl, _qtyCtrl]) {
       c.addListener(() => setState(() {}));
     }
   }
 
   @override
   void dispose() {
-    for (final c in [_baseRateCtrl, _gstCtrl, _tcsCtrl, _qtyCtrl, _buyerCtrl, _remarkCtrl]) {
+    for (final c in [_baseRateCtrl, _freightCtrl, _gstCtrl, _tcsCtrl, _qtyCtrl, _buyerCtrl, _remarkCtrl]) {
       c.dispose();
     }
     super.dispose();
@@ -172,6 +175,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     validator: Validators.positiveNumber,
                   ),
                   const SizedBox(height: 14),
+                  _NumField(
+                    ctrl: _freightCtrl,
+                    label: 'Freight (₹)',
+                    icon: Icons.local_shipping_outlined,
+                    hint: 'e.g. 15000',
+                    validator: Validators.positiveNumber,
+                  ),
+                  const SizedBox(height: 14),
                   Row(children: [
                     Expanded(child: _NumField(
                       ctrl: _gstCtrl,
@@ -211,6 +222,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       child: AmountSummaryCard(
                         baseRate: _baseRate,
                         quantity: _qty,
+                        freight: _freight,
                         gst: _gst,
                         tcs: _tcs,
                       ),

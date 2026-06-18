@@ -66,6 +66,7 @@ class _SearchScreenState extends State<SearchScreen> {
       'sales_person_name': 'Raj Sharma',
       'product_type': 'Indonesian Coal',
       'base_rate': 6200.0,
+      'freight': 10000.0,
       'gst': 18.0,
       'tcs': 0.1,
       'quantity': 200.0,
@@ -83,6 +84,7 @@ class _SearchScreenState extends State<SearchScreen> {
       'sales_person_name': 'Raj Sharma',
       'product_type': 'South African Coal',
       'base_rate': 6100.0,
+      'freight': 15000.0,
       'gst': 18.0,
       'tcs': 0.1,
       'quantity': 150.0,
@@ -102,6 +104,7 @@ class _SearchScreenState extends State<SearchScreen> {
       'sales_person_name': 'Amit Patel',
       'product_type': 'Russian Coal',
       'base_rate': 5600.0,
+      'freight': 20000.0,
       'gst': 18.0,
       'tcs': 0.1,
       'quantity': 500.0,
@@ -119,6 +122,7 @@ class _SearchScreenState extends State<SearchScreen> {
       'sales_person_name': 'Raj Sharma',
       'product_type': 'US Coal',
       'base_rate': 3500.0,
+      'freight': 5000.0,
       'gst': 18.0,
       'tcs': 0.1,
       'quantity': 100.0,
@@ -136,6 +140,7 @@ class _SearchScreenState extends State<SearchScreen> {
       'sales_person_name': 'Priya Mehta',
       'product_type': 'Indonesian Coal',
       'base_rate': 8200.0,
+      'freight': 25000.0,
       'gst': 18.0,
       'tcs': 0.1,
       'quantity': 300.0,
@@ -492,7 +497,9 @@ class _OrderCard extends StatelessWidget {
     final b =
         (order['base_rate'] as num).toDouble() *
         (order['quantity'] as num).toDouble();
+    final f = ((order['freight'] ?? 0.0) as num).toDouble();
     return b +
+        f +
         b * ((order['gst'] as num) / 100) +
         b * ((order['tcs'] as num) / 100);
   }
@@ -734,9 +741,10 @@ class _OrderCard extends StatelessWidget {
     final b =
         (order['base_rate'] as num).toDouble() *
         (order['quantity'] as num).toDouble();
+    final f = ((order['freight'] ?? 0.0) as num).toDouble();
     final gstAmt = b * ((order['gst'] as num) / 100);
     final tcsAmt = b * ((order['tcs'] as num) / 100);
-    final total = b + gstAmt + tcsAmt;
+    final total = b + f + gstAmt + tcsAmt;
     String fmt(double v) {
       if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
       if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(2)} L';
@@ -889,6 +897,7 @@ class _OrderCard extends StatelessWidget {
             const SizedBox(height: 16),
             _DSection('Pricing', [
               ('Base Rate', '₹${order['base_rate']}/MT'),
+              ('Freight', fmt(f)),
               ('GST', '${order['gst']}%  →  ${fmt(gstAmt)}'),
               ('TCS', '${order['tcs']}%  →  ${fmt(tcsAmt)}'),
               ('Total', fmt(total)),

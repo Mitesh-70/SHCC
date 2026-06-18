@@ -11,7 +11,12 @@ class SqliteHelper {
 
   static Future<Database> _initDb() async {
     final path = join(await getDatabasesPath(), 'shcc_sales_v3.db');
-    return openDatabase(path, version: 1, onCreate: _onCreate);
+    return openDatabase(
+      path,
+      version: 2,
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
   }
 
   static Future<void> _onCreate(Database db, int version) async {
@@ -21,6 +26,7 @@ class SqliteHelper {
         uuid              TEXT UNIQUE NOT NULL,
         sales_person_name TEXT,
         base_rate         REAL,
+        freight           REAL DEFAULT 0.0,
         gst               REAL,
         tcs               REAL,
         quantity          REAL,
@@ -49,6 +55,12 @@ class SqliteHelper {
         synced_at  TEXT
       )
     ''');
+  }
+
+  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE orders ADD COLUMN freight REAL DEFAULT 0.0');
+    }
   }
 
   static Future<int> insertOrder(Map<String, dynamic> order) async {

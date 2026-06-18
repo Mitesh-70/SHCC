@@ -12,8 +12,9 @@ class RecentOrderTile extends StatelessWidget {
     final qty  = (order['quantity']  as num).toDouble();
     final gst  = (order['gst']       as num).toDouble();
     final tcs  = (order['tcs']       as num).toDouble();
+    final freight = ((order['freight'] ?? 0.0) as num).toDouble();
     final b    = base * qty;
-    return b + b * (gst / 100) + b * (tcs / 100);
+    return b + freight + b * (gst / 100) + b * (tcs / 100);
   }
 
   String get _totalStr {
@@ -64,9 +65,25 @@ class RecentOrderTile extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(_totalStr,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 20)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (order['freight'] != null && (order['freight'] as num) > 0)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Text(
+                    'Freight: ₹${((order['freight'] ?? 0.0) as num).toDouble().toStringAsFixed(0)}',
+                    style: AppTextStyles.caption.copyWith(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              Text(_totalStr,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 20)),
+            ],
+          ),
           Row(children: [
             Icon(Icons.calendar_today_outlined, size: 13, color: AppColors.textMuted),
             const SizedBox(width: 6),
