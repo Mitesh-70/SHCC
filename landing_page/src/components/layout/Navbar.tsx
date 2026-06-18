@@ -29,9 +29,9 @@ export function Navbar() {
           : 'bg-transparent shadow-none border border-transparent'
       }`}
     >
-      <div className={`px-4 md:px-6 flex items-center justify-between transition-all duration-300 ${scrolled ? 'py-2' : 'py-3'}`}>
-        <div className="flex items-center lg:gap-10">
-          <a href="#" className="flex items-center">
+      <div className={`px-4 md:px-6 flex flex-wrap items-center justify-between transition-all duration-300 gap-y-3 gap-x-2 ${scrolled ? 'py-2' : 'py-3'}`}>
+        <div className="flex flex-wrap items-center gap-x-6 lg:gap-10 gap-y-3">
+          <a href="#" className="flex items-center flex-shrink-0">
             <img 
               src="/logo.png" 
               alt="SHCC Logo" 
@@ -41,8 +41,8 @@ export function Navbar() {
               }} 
             />
             <span 
-              className={`font-bold text-[#2C2C2C] text-lg md:text-xl transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${scrolled ? 'max-w-[400px] opacity-100 ml-3' : 'max-w-0 opacity-0 ml-0'}`} 
-              style={{ fontFamily: 'Syne, sans-serif' }}
+              className={`font-bold text-[#2C2C2C] text-lg md:text-xl transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${scrolled ? 'max-w-[800px] opacity-100 ml-3' : 'max-w-0 opacity-0 ml-0'}`} 
+              style={{ fontFamily: 'Syne, sans-serif', textOverflow: 'ellipsis' }}
             >
               Shree Hari Coal Corporation
             </span>
