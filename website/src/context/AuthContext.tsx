@@ -22,12 +22,17 @@ const CREDENTIALS: Record<string, { password: string; user: User }> = {
     password: 'sales123',
     user: { id: '3', name: 'Rahul Verma', email: 'salesperson@shcc.co.in', role: 'salesperson', department: 'Sales' },
   },
+  'portadmin@shcc.co.in': {
+    password: 'port123',
+    user: { id: '4', name: 'Port Admin', email: 'portadmin@shcc.co.in', role: 'port_admin', department: 'Port Operations' },
+  },
 };
 
 const ROLE_DASHBOARD: Record<Role, string> = {
   admin: '/admin/dashboard',
   finance: '/finance/dashboard',
   salesperson: '/salesperson/dashboard',
+  port_admin: '/port-admin/dashboard',
 };
 
 export { ROLE_DASHBOARD };

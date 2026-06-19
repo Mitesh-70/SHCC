@@ -3,9 +3,10 @@ import { useAuth } from '../../context/AuthContext';
 import type { Role } from '../../types';
 import {
   LayoutDashboard, ShoppingCart, Package, FileText,
-  Users, Settings, LogOut, ChevronLeft, ChevronRight, Bell,
-  Search, Shield, UserCircle, TrendingUp, ChevronDown,
-  ChevronsLeft, ChevronsRight
+  ChevronRight, Bell,
+  Search, Shield, TrendingUp, ChevronDown,
+  ChevronsLeft, ChevronsRight,
+  Mail, Building2, Phone, MapPin, Calendar, LogOut, X
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -23,31 +24,45 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', path: 'dashboard', icon: <LayoutDashboard size={18} />, roles: ['admin', 'finance', 'salesperson'] },
-  { label: 'Orders', path: 'orders', icon: <ShoppingCart size={18} />, roles: ['admin', 'finance', 'salesperson'] },
-  { label: 'Sales Analysis', path: 'sales-analysis', icon: <TrendingUp size={18} />, roles: ['admin', 'finance', 'salesperson'] },
-  { label: 'Stock Analysis', path: 'stock-analysis', icon: <Package size={18} />, roles: ['admin', 'finance'] },
-  { label: 'Reports', path: 'reports', icon: <FileText size={18} />, roles: ['admin', 'finance'] },
-  { label: 'User Permissions', path: 'user-permissions', icon: <Shield size={18} />, roles: ['admin'] },
-  { label: 'Notifications', path: 'notifications', icon: <Bell size={18} />, roles: ['salesperson'] },
+  { label: 'Dashboard',        path: 'dashboard',        icon: <LayoutDashboard size={18} />, roles: ['admin', 'finance', 'salesperson', 'port_admin'] },
+  { label: 'Orders',           path: 'orders',           icon: <ShoppingCart size={18} />,    roles: ['admin', 'finance', 'salesperson', 'port_admin'] },
+  { label: 'Sales Analysis',   path: 'sales-analysis',   icon: <TrendingUp size={18} />,      roles: ['admin', 'finance', 'salesperson'] },
+  { label: 'Stock Analysis',   path: 'stock-analysis',   icon: <Package size={18} />,         roles: ['admin', 'finance'] },
+  { label: 'Reports',          path: 'reports',          icon: <FileText size={18} />,        roles: ['admin', 'finance', 'port_admin'] },
+  { label: 'User Permissions', path: 'user-permissions', icon: <Shield size={18} />,         roles: ['admin'] },
+  { label: 'Notifications',    path: 'notifications',    icon: <Bell size={18} />,            roles: ['salesperson', 'port_admin'] },
 ];
 
 const ROLE_LABELS: Record<Role, string> = {
-  admin: 'Admin Portal',
-  finance: 'Finance Portal',
+  admin:       'Admin Portal',
+  finance:     'Finance Portal',
   salesperson: 'Sales Portal',
+  port_admin:  'Port Admin Portal',
 };
 
 const ROLE_BASE: Record<Role, string> = {
-  admin: '/admin',
-  finance: '/finance',
+  admin:       '/admin',
+  finance:     '/finance',
   salesperson: '/salesperson',
+  port_admin:  '/port-admin',
 };
 
+const LOGO_SRC = '/logo.png';
+
 const USER_AVATARS: Record<string, string> = {
-  'admin@shcc.co.in': 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&h=100&q=80',
-  'finance@shcc.co.in': 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=100&h=100&q=80',
+  'admin@shcc.co.in':       'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&h=100&q=80',
+  'finance@shcc.co.in':     'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=100&h=100&q=80',
   'salesperson@shcc.co.in': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80',
+  'portadmin@shcc.co.in':   'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=100&h=100&q=80',
+};
+
+// Port Admin static profile details
+const PORT_ADMIN_META = {
+  phone:    '+91 98765 43210',
+  location: 'Gujarat, India',
+  joined:   'Jan 2024',
+  userId:   'USR-0004',
+  ports:    ['Mundra', 'Kandla', 'Hazira'],
 };
 
 export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
@@ -55,6 +70,9 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  const base = ROLE_BASE[role];
 
   const visibleItems = NAV_ITEMS.filter(item =>
     item.roles.includes(role) &&
@@ -73,100 +91,187 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
       navigate(`${base}/settings`);
     } else if (role === 'salesperson') {
       navigate(`${base}/profile`);
+    } else if (role === 'port_admin') {
+      setShowProfileModal(true);
     } else {
       navigate(`${base}/dashboard`);
     }
   };
 
-  const settingsLabel = role === 'admin' ? 'Settings' : 'Profile';
-
-  const base = ROLE_BASE[role];
   const avatarUrl = user?.email
     ? USER_AVATARS[user.email.toLowerCase()] || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&h=100&q=80'
     : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&h=100&q=80';
 
-  return (
-    <aside
-      className={`flex flex-col bg-white border-r border-gray-100 transition-all duration-300 ease-in-out ${
-        collapsed ? 'w-[72px]' : 'w-[240px]'
-      } min-h-screen relative`}
-    >
-      {/* Logo and Collapse Toggle */}
-      <div className={`flex items-center justify-between px-4 py-5 border-b border-gray-100 ${collapsed ? 'flex-col gap-2' : ''}`}>
-        <div className="flex items-center gap-3">
-          <img src="/logo.svg" alt="SHCC Logo" className="flex-shrink-0 w-14 h-14 object-contain" />
-          {!collapsed && (
-            <div className="leading-tight overflow-hidden text-left max-w-[140px]">
-              <div className="text-base font-extrabold text-gray-900 tracking-tight">SHREE HARI</div>
-              <div className="text-xs font-extrabold text-orange-600 tracking-wide uppercase -mt-0.5 truncate">COAL CORPORATION</div>
+  // ── Profile Modal for Port Admin ──────────────────────────────────────────
+  const ProfileModal = () => {
+    if (!showProfileModal) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative">
+          <button 
+            onClick={() => setShowProfileModal(false)}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-white/50 rounded-full p-1 z-10"
+          >
+            <X size={20} />
+          </button>
+          
+          {/* Avatar + name header */}
+          <div className="bg-gradient-to-br from-orange-500 to-orange-700 px-6 py-8">
+            <div className="flex flex-col items-center gap-3">
+              <img
+                src={avatarUrl}
+                alt={user?.name ?? 'Port Admin'}
+                className="w-20 h-20 rounded-2xl object-cover border-4 border-white/30 flex-shrink-0 shadow-lg"
+              />
+              <div className="text-center">
+                <div className="text-xl font-bold text-white">{user?.name ?? 'Port Admin'}</div>
+                <span className="inline-block mt-1 bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  Port Admin
+                </span>
+              </div>
             </div>
+          </div>
+
+          {/* Info rows */}
+          <div className="px-6 py-6 space-y-4 border-b border-gray-100">
+            <div className="grid grid-cols-2 gap-y-4 gap-x-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Mail size={14} className="text-gray-500" /></div>
+                <div className="text-xs text-gray-700 truncate">{user?.email ?? 'portadmin@shcc.co.in'}</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Building2 size={14} className="text-gray-500" /></div>
+                <div className="text-xs text-gray-700 truncate">{user?.department ?? 'Port Operations'}</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Phone size={14} className="text-gray-500" /></div>
+                <div className="text-xs text-gray-700 truncate">{PORT_ADMIN_META.phone}</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><MapPin size={14} className="text-gray-500" /></div>
+                <div className="text-xs text-gray-700 truncate">{PORT_ADMIN_META.location}</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Calendar size={14} className="text-gray-500" /></div>
+                <div className="text-xs text-gray-700 truncate">Joined {PORT_ADMIN_META.joined}</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Shield size={14} className="text-gray-500" /></div>
+                <div className="text-xs text-gray-700 truncate">ID: {PORT_ADMIN_META.userId}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Assigned ports */}
+          <div className="px-6 py-5 bg-gray-50">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Assigned Ports</div>
+            <div className="flex gap-2 flex-wrap">
+              {PORT_ADMIN_META.ports.map(p => (
+                <span key={p} className="text-xs font-bold text-orange-700 bg-white border border-orange-200 px-3 py-1.5 rounded-full shadow-sm">
+                  {p}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── Standard popup (All Roles) ───────────────────────────────────────────
+  const StandardPopup = () => (
+    <div className="absolute left-3 right-3 bottom-[72px] z-20 rounded-2xl border border-gray-200 bg-white shadow-xl p-2">
+      <button
+        type="button"
+        onClick={handleSettings}
+        className="w-full text-left rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        {role === 'admin' ? 'Settings' : 'Profile'}
+      </button>
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="w-full text-left rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+      >
+        Logout
+      </button>
+    </div>
+  );
+
+  return (
+    <>
+      <ProfileModal />
+      <aside
+        className={`flex flex-col bg-white border-r border-gray-100 transition-all duration-300 ease-in-out ${
+          collapsed ? 'w-[72px]' : 'w-[240px]'
+        } min-h-screen relative`}
+      >
+        {/* Logo and Collapse Toggle */}
+        <div className={`flex items-center justify-between px-4 py-5 border-b border-gray-100 ${collapsed ? 'flex-col gap-2' : ''}`}>
+          <div className="flex items-center gap-3">
+            <img src={LOGO_SRC} alt="SHCC Logo" className="flex-shrink-0 w-14 h-14 object-contain" />
+            {!collapsed && (
+              <div className="leading-tight overflow-hidden text-left max-w-[140px]">
+                <div className="text-base font-extrabold text-gray-900 tracking-tight">SHREE HARI</div>
+                <div className="text-xs font-extrabold text-orange-600 tracking-wide uppercase -mt-0.5 truncate">COAL CORPORATION</div>
+              </div>
+            )}
+          </div>
+          {!collapsed ? (
+            <button
+              onClick={onToggle}
+              className="text-gray-400 hover:text-orange-600 transition-colors p-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-orange-50 shadow-sm"
+              aria-label="Collapse sidebar"
+            >
+              <ChevronsLeft size={12} />
+            </button>
+          ) : (
+            <button
+              onClick={onToggle}
+              className="absolute -right-3 top-6 z-10 bg-white border border-gray-200 rounded-full p-1 shadow-sm hover:shadow-md transition-shadow text-gray-500 hover:text-orange-600"
+              aria-label="Expand sidebar"
+            >
+              <ChevronsRight size={12} />
+            </button>
           )}
         </div>
-        {!collapsed ? (
-          <button
-            onClick={onToggle}
-            className="text-gray-400 hover:text-orange-600 transition-colors p-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-orange-50 shadow-sm"
-            aria-label="Collapse sidebar"
-          >
-            <ChevronsLeft size={12} />
-          </button>
-        ) : (
-          <button
-            onClick={onToggle}
-            className="absolute -right-3 top-6 z-10 bg-white border border-gray-200 rounded-full p-1 shadow-sm hover:shadow-md transition-shadow text-gray-500 hover:text-orange-600"
-            aria-label="Expand sidebar"
-          >
-            <ChevronsRight size={12} />
-          </button>
-        )}
-      </div>
 
-      {/* Role Badge / Portal Selector */}
-      {!collapsed && (
-        <div className="px-3 mt-3 mb-1">
-          <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm text-gray-700 cursor-pointer hover:bg-gray-50 transition-colors">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-              <span className="text-xs font-bold text-gray-800">{ROLE_LABELS[role]}</span>
+        {/* Role Badge */}
+        {!collapsed && (
+          <div className="px-3 mt-3 mb-1">
+            <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm text-gray-700 cursor-pointer hover:bg-gray-50 transition-colors">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                <span className="text-xs font-bold text-gray-800">{ROLE_LABELS[role]}</span>
+              </div>
+              <ChevronDown size={12} className="text-gray-400" />
             </div>
-            <ChevronDown size={12} className="text-gray-400" />
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Search */}
-      {!collapsed && (
-        <div className="px-3 mt-2 mb-1">
-          <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-            <Search size={13} className="text-gray-400 flex-shrink-0" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="bg-transparent text-xs text-gray-600 outline-none w-full placeholder-gray-400"
-            />
-            <span className="text-[10px] text-gray-300 font-mono flex-shrink-0">⌘K</span>
+        {/* Search */}
+        {!collapsed && (
+          <div className="px-3 mt-2 mb-1">
+            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+              <Search size={13} className="text-gray-400 flex-shrink-0" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="bg-transparent text-xs text-gray-600 outline-none w-full placeholder-gray-400"
+              />
+              <span className="text-[10px] text-gray-300 font-mono flex-shrink-0">⌘K</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Nav */}
-      <nav className="flex-1 px-2 py-2 overflow-y-auto">
-        {!collapsed && <div className="text-[10px] font-semibold text-gray-400 px-2 py-1.5 uppercase tracking-widest text-left">Menu</div>}
-        <ul className="space-y-0.5">
-          {visibleItems.map(item => (
-            <li key={item.path}>
-              {item.path === 'logout' ? (
-                <button
-                  onClick={handleLogout}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer w-full text-left text-gray-600 hover:bg-red-50 hover:text-red-600 ${collapsed ? 'justify-center' : ''}`}
-                  title={collapsed ? item.label : undefined}
-                >
-                  <span className="flex-shrink-0">{item.icon}</span>
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                </button>
-              ) : (
+        {/* Nav */}
+        <nav className="flex-1 px-2 py-2 overflow-y-auto">
+          {!collapsed && <div className="text-[10px] font-semibold text-gray-400 px-2 py-1.5 uppercase tracking-widest text-left">Menu</div>}
+          <ul className="space-y-0.5">
+            {visibleItems.map(item => (
+              <li key={item.path}>
                 <NavLink
                   to={`${base}/${item.path}`}
                   className={({ isActive }) =>
@@ -191,64 +296,48 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
                     </>
                   )}
                 </NavLink>
-              )}
-            </li>
-          ))}
-        </ul>
-      </nav>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-      {/* User Info bottom widget */}
-      {!collapsed ? (
-        <div className="border-t border-gray-100 p-3 relative">
-          <div
-            className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl p-2.5 cursor-pointer hover:bg-gray-100/55 transition-colors"
-            onClick={() => setUserMenuOpen(prev => !prev)}
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <img
-                src={avatarUrl}
-                alt={user?.name ?? 'User'}
-                className="w-9 h-9 rounded-full object-cover border border-gray-200"
-              />
-              <div className="flex-1 min-w-0 text-left">
-                <div className="text-xs font-bold text-gray-800 truncate">{user?.name ?? 'Admin User'}</div>
-                <div className="text-[10px] text-gray-400 truncate mt-0.5">{user?.email ?? 'admin@shcc.co.in'}</div>
+        {/* User Info bottom widget */}
+        {!collapsed ? (
+          <div className="border-t border-gray-100 p-3 relative">
+            <div
+              className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl p-2.5 cursor-pointer hover:bg-gray-100/55 transition-colors"
+              onClick={() => setUserMenuOpen(prev => !prev)}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <img
+                  src={avatarUrl}
+                  alt={user?.name ?? 'User'}
+                  className="w-9 h-9 rounded-full object-cover border border-gray-200"
+                />
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-xs font-bold text-gray-800 truncate">{user?.name ?? 'Admin User'}</div>
+                  <div className="text-[10px] text-gray-400 truncate mt-0.5">{user?.email ?? 'admin@shcc.co.in'}</div>
+                </div>
               </div>
+              <ChevronDown
+                size={14}
+                className={`text-gray-400 flex-shrink-0 ml-1 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
+              />
             </div>
-            <ChevronDown
-              size={14}
-              className={`text-gray-400 flex-shrink-0 ml-1 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
+
+            {/* Standard menu popup */}
+            {userMenuOpen && <StandardPopup />}
+          </div>
+        ) : (
+          <div className="border-t border-gray-100 p-3 flex justify-center">
+            <img
+              src={avatarUrl}
+              alt={user?.name ?? 'User'}
+              className="w-8 h-8 rounded-full object-cover border border-gray-200"
             />
           </div>
-
-          {userMenuOpen && (
-            <div className="absolute left-3 right-3 bottom-[72px] z-20 rounded-2xl border border-gray-200 bg-white shadow-xl p-2">
-              <button
-                type="button"
-                onClick={handleSettings}
-                className="w-full text-left rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                {settingsLabel}
-              </button>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full text-left rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="border-t border-gray-100 p-3 flex justify-center">
-          <img
-            src={avatarUrl}
-            alt={user?.name ?? 'User'}
-            className="w-8 h-8 rounded-full object-cover border border-gray-200"
-          />
-        </div>
-      )}
-    </aside>
+        )}
+      </aside>
+    </>
   );
 }

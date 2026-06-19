@@ -34,6 +34,13 @@ import SalespersonCustomers from './pages/salesperson/Customers';
 import SalespersonProfile from './pages/salesperson/Profile';
 import SalespersonNotifications from './pages/salesperson/Notifications';
 
+// Port Admin
+import PortAdminDashboard from './pages/port_admin/Dashboard';
+import PortAdminOrders from './pages/port_admin/Orders';
+import PortAdminReports from './pages/port_admin/Reports';
+import PortAdminNotifications from './pages/port_admin/Notifications';
+import PortAdminProfile from './pages/port_admin/Profile';
+
 function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; allowedRole: Role }) {
   const { user, isAuthenticated } = useAuth();
   if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
@@ -42,6 +49,7 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
       admin: '/admin/dashboard',
       finance: '/finance/dashboard',
       salesperson: '/salesperson/dashboard',
+      port_admin: '/port-admin/dashboard',
     };
     return <Navigate to={redirectMap[user.role]} replace />;
   }
@@ -55,6 +63,7 @@ function RootRedirect() {
     admin: '/admin/dashboard',
     finance: '/finance/dashboard',
     salesperson: '/salesperson/dashboard',
+    port_admin: '/port-admin/dashboard',
   };
   return <Navigate to={map[user.role]} replace />;
 }
@@ -98,6 +107,16 @@ function AppRoutes() {
         <Route path="customers" element={<SalespersonCustomers />} />
         <Route path="profile" element={<SalespersonProfile />} />
         <Route path="notifications" element={<SalespersonNotifications />} />
+      </Route>
+
+      {/* Port Admin Routes */}
+      <Route path="/port-admin" element={<ProtectedRoute allowedRole="port_admin"><AdminLayout role="port_admin" /></ProtectedRoute>}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<PortAdminDashboard />} />
+        <Route path="orders" element={<PortAdminOrders />} />
+        <Route path="reports" element={<PortAdminReports />} />
+        <Route path="notifications" element={<PortAdminNotifications />} />
+        <Route path="profile" element={<PortAdminProfile />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

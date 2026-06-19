@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
+// Points to the website app. Override VITE_APP_URL in .env for different environments.
+const APP_URL = (import.meta.env.VITE_APP_URL as string) || 'http://localhost:5174'
+
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -64,7 +67,7 @@ export function Navbar() {
 
         <div className="hidden lg:flex items-center">
           <a
-            href="/login"
+            href={`${APP_URL}/login`}
             className="inline-flex items-center gap-2 bg-[#1A1A1A] text-white font-semibold px-6 py-2.5 rounded-full hover:bg-black transition-all duration-300 text-sm shadow-sm"
           >
             Login
@@ -96,8 +99,14 @@ export function Navbar() {
               </a>
             ))}
             <a
+              href={`${APP_URL}/login`}
+              className="inline-flex justify-center items-center bg-[#1A1A1A] text-white font-semibold px-6 py-2.5 rounded-full hover:bg-black transition-all duration-300 text-sm mt-2"
+            >
+              Login
+            </a>
+            <a
               href="#contact"
-              className="inline-flex justify-center items-center bg-[#F5821F] text-white font-semibold px-6 py-2.5 rounded-full hover:bg-[#E8941A] transition-all duration-300 text-sm mt-2"
+              className="inline-flex justify-center items-center bg-[#F5821F] text-white font-semibold px-6 py-2.5 rounded-full hover:bg-[#E8941A] transition-all duration-300 text-sm mt-1"
             >
               Get a Quote
             </a>

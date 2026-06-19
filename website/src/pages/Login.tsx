@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth, ROLE_DASHBOARD } from '../context/AuthContext';
 import { Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 
+const LOGO_SRC = '/logo.png';
+
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -19,8 +21,6 @@ export default function Login() {
     try {
       const res = await login(email, password);
       if (res.success) {
-        // Redirect will happen inside App.tsx or we can redirect directly
-        // Fetch user again or just redirect to root which does role-based redirect
         navigate('/');
       } else {
         setError(res.error || 'Authentication failed');
@@ -64,7 +64,7 @@ export default function Login() {
 
             {/* Brand */}
             <div className="flex flex-col items-center gap-4 text-center relative z-10 w-full">
-              <img src="/logo.svg" alt="SHCC Logo" className="w-24 h-24 rounded-3xl p-3 shadow-xl object-contain bg-white/10 mx-auto" />
+              <img src={LOGO_SRC} alt="SHCC Logo" className="w-24 h-24 object-contain mx-auto" />
               <div>
                 <div className="text-lg font-bold tracking-wide">SHREE HARI</div>
                 <div className="text-xs font-bold text-orange-200 tracking-widest uppercase mt-1">COAL CORPORATION</div>
@@ -92,7 +92,7 @@ export default function Login() {
             <div className="w-full max-w-md mx-auto">
               {/* Logo (for small screens) */}
               <div className="lg:hidden flex items-center gap-2.5 mb-8">
-                <img src="/logo.svg" alt="SHCC Logo" className="w-12 h-12 rounded-lg p-2 shadow-sm object-contain" />
+                <img src={LOGO_SRC} alt="SHCC Logo" className="w-12 h-12 object-contain" />
                 <div>
                   <div className="text-xs font-bold text-gray-900 tracking-wide">SHREE HARI</div>
                   <div className="text-[9px] font-bold text-orange-600 tracking-widest uppercase">COAL CORPORATION</div>
@@ -159,6 +159,7 @@ export default function Login() {
                   Quick Role Login (Click to Fill)
                 </span>
                 <div className="mt-3 space-y-2">
+                  {/* Admin */}
                   <button
                     type="button"
                     onClick={() => autofill('admin@shcc.co.in', 'admin123')}
@@ -171,6 +172,7 @@ export default function Login() {
                     <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-medium">Admin</span>
                   </button>
 
+                  {/* Finance */}
                   <button
                     type="button"
                     onClick={() => autofill('finance@shcc.co.in', 'finance123')}
@@ -183,6 +185,7 @@ export default function Login() {
                     <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">Finance</span>
                   </button>
 
+                  {/* Salesperson */}
                   <button
                     type="button"
                     onClick={() => autofill('salesperson@shcc.co.in', 'sales123')}
@@ -193,6 +196,19 @@ export default function Login() {
                       <span className="text-gray-400">salesperson@shcc.co.in</span>
                     </div>
                     <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded font-medium">Sales</span>
+                  </button>
+
+                  {/* Port Admin */}
+                  <button
+                    type="button"
+                    onClick={() => autofill('portadmin@shcc.co.in', 'port123')}
+                    className="w-full flex items-center justify-between p-2.5 border border-gray-100 rounded-lg text-left hover:bg-orange-50/50 hover:border-orange-200 transition-all text-xs"
+                  >
+                    <div>
+                      <span className="font-semibold text-gray-700 block">Port Admin</span>
+                      <span className="text-gray-400">portadmin@shcc.co.in</span>
+                    </div>
+                    <span className="bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-medium">Port</span>
                   </button>
                 </div>
               </div>

@@ -1,0 +1,17 @@
+{
+  "name": "shcc-root",
+  "private": true,
+  "version": "1.0.0",
+  "description": "SHCC monorepo root — runs landing page and website together",
+  "scripts": {
+    "dev": "concurrently --names \"landing,website\" --prefix-colors \"cyan,magenta\" \"npm run dev --prefix landing_page\" \"npm run dev --prefix website\"",
+    "dev:landing": "npm run dev --prefix landing_page",
+    "dev:website": "npm run dev --prefix website",
+    "build": "npm run build --prefix landing_page && npm run build --prefix website",
+    "build:landing": "npm run build --prefix landing_page",
+    "build:website": "npm run build --prefix website"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
