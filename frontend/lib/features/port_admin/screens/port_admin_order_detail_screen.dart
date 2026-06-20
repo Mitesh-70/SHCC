@@ -79,13 +79,17 @@ class _PortAdminOrderDetailScreenState
     required NotifType type,
     required String title,
     required String description,
+    String? adminDesc,
+    String? spDesc,
+    String? paDesc,
   }) {
     final id = _order['id'] as String;
     final salesman = _order['sales_person_name'] as String;
+    
     NotificationStore.add(
       person: salesman,
       title: title,
-      description: description,
+      description: spDesc ?? description,
       type: type,
       orderId: id,
     );
@@ -93,9 +97,15 @@ class _PortAdminOrderDetailScreenState
       person: 'Admin',
       roles: ['admin'],
       title: title,
-      description: description,
+      description: adminDesc ?? description,
       type: type,
       orderId: id,
+    );
+    NotificationStore.notifyPortAdminsForOrder(
+      order: _order,
+      title: title,
+      description: paDesc ?? description,
+      type: type,
     );
   }
 
@@ -143,8 +153,10 @@ class _PortAdminOrderDetailScreenState
     _notify(
       type: NotifType.orderOnHold,
       title: 'Order On Hold',
-      description:
-          'Order ${_order['id']} placed on hold. Reason: $reason',
+      description: 'Order ${_order['id']} placed on hold. Reason: $reason',
+      adminDesc: 'Port Admin placed order ${_order['id']} on hold. Reason: $reason',
+      spDesc: 'Your order ${_order['id']} has been placed on hold. Reason: $reason',
+      paDesc: 'Order ${_order['id']} placed on hold. Reason: $reason',
     );
     setState(_refresh);
   }
@@ -158,6 +170,9 @@ class _PortAdminOrderDetailScreenState
       type: NotifType.holdReleased,
       title: 'Hold Released',
       description: 'Order ${_order['id']} hold has been released.',
+      adminDesc: 'Port Admin released hold for order ${_order['id']}.',
+      spDesc: 'Your order ${_order['id']} hold has been released.',
+      paDesc: 'Order ${_order['id']} hold has been released.',
     );
     setState(_refresh);
   }
@@ -169,8 +184,11 @@ class _PortAdminOrderDetailScreenState
     );
     _notify(
       type: NotifType.dispatchUpdated,
-      title: 'Order Completed',
+      title: 'Delivery Completed',
       description: 'Order ${_order['id']} marked as completed.',
+      adminDesc: 'Delivery completed for order ${_order['id']}.',
+      spDesc: 'Your order ${_order['id']} delivery has been completed.',
+      paDesc: 'Delivery completed for order ${_order['id']}.',
     );
     setState(_refresh);
   }
@@ -184,6 +202,7 @@ class _PortAdminOrderDetailScreenState
       return;
     }
     final id = _order['id'] as String;
+    final isFirstDispatch = OrderStore.getDispatchEntries(id).isEmpty;
     OrderStore.addDispatchEntry(
       id,
       DeliveryEntry(
@@ -195,8 +214,17 @@ class _PortAdminOrderDetailScreenState
     );
     _notify(
       type: NotifType.dispatchUpdated,
-      title: 'Dispatch Updated',
+      title: isFirstDispatch ? 'Dispatch Started' : 'Dispatch Updated',
       description: 'Dispatch entry added for order $id ($q MT).',
+      adminDesc: isFirstDispatch
+          ? 'Port Admin started dispatch process for order $id ($q MT).'
+          : 'Dispatch entry added for order $id ($q MT).',
+      spDesc: isFirstDispatch
+          ? 'Dispatch started for your order $id ($q MT).'
+          : 'Dispatch updated for your order $id ($q MT).',
+      paDesc: isFirstDispatch
+          ? 'Dispatch started for order $id ($q MT).'
+          : 'Dispatch entry added for order $id ($q MT).',
     );
     _qtyCtrl.clear();
     _dateCtrl.clear();
@@ -316,17 +344,6 @@ class _PortAdminOrderDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.lock_outline_rounded,
-                    size: 16, color: AppColors.textMuted),
-                const SizedBox(width: 6),
-                Text('Commercial Details (Locked)',
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(fontWeight: FontWeight.w600)),
-              ],
-            ),
-            const SizedBox(height: 14),
             _lockedRow('Buyer', _order['buyer_name'] as String),
             _lockedRow('Base Rate', '₹${_order['base_rate']}/MT'),
             _lockedRow('Quantity', '${_order['quantity']} MT'),

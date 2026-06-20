@@ -11,6 +11,7 @@ import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/form_section.dart';
 import '../../../shared/widgets/amount_summary_card.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../admin/screens/admin_dashboard_screen.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   final Map<String, dynamic>? prefill;
@@ -353,25 +354,68 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         'remark': _remarkCtrl.text.trim(),
         'status': widget.isAdmin ? AppConstants.statusApproved : AppConstants.statusPendingApproval,
       });
-      NotificationStore.add(
-        person: 'Admin',
-        roles: ['admin'],
-        title: 'New Order Created',
-        description: widget.isAdmin
-            ? 'Order ${order['id']} created and auto-approved by Admin.'
-            : 'Order ${order['id']} submitted by $_salesPerson.',
-        type: widget.isAdmin ? NotifType.orderApproved : NotifType.orderCreated,
-        orderId: order['id'] as String,
-      );
+      if (widget.isAdmin) {
+        final salesmanName = _salesPerson;
+        final double qty = double.tryParse(_qtyCtrl.text) ?? 0.0;
+        final double rate = double.tryParse(_baseRateCtrl.text) ?? 0.0;
+        final double freight = double.tryParse(_freightCtrl.text) ?? 0.0;
+        final double gst = double.tryParse(_gstCtrl.text) ?? 18.0;
+        final double tcs = double.tryParse(_tcsCtrl.text) ?? 0.1;
+        final double subtotal = qty * rate;
+        final double gstAmount = subtotal * (gst / 100);
+        final double tcsAmount = subtotal * (tcs / 100);
+        final double totalValue = subtotal + freight + gstAmount + tcsAmount;
+
+        final previousAchieved = TargetStore.achieved[salesmanName] ?? 0.0;
+        final target = TargetStore.targets[salesmanName] ?? 0.0;
+        final newAchieved = previousAchieved + totalValue;
+        TargetStore.achieved[salesmanName] = newAchieved;
+
+        NotificationStore.add(
+          person: 'Admin',
+          roles: ['admin'],
+          title: 'Order Approved Successfully',
+          description: 'Order ${order['id']} created and approved successfully.',
+          type: NotifType.orderApproved,
+          orderId: order['id'] as String,
+        );
+
+        if (previousAchieved < target && newAchieved >= target) {
+          NotificationStore.add(
+            person: salesmanName,
+            title: 'Target Completed!',
+            description: 'Congratulations! You have achieved your monthly target of ₹${target.toStringAsFixed(0)}.',
+            type: NotifType.targetCompleted,
+          );
+          NotificationStore.add(
+            person: 'Admin',
+            roles: ['admin'],
+            title: 'Target Completed',
+            description: 'Sales Person $salesmanName has achieved their monthly target of ₹${target.toStringAsFixed(0)}.',
+            type: NotifType.targetCompleted,
+          );
+        }
+      } else {
+        NotificationStore.add(
+          person: 'Admin',
+          roles: ['admin'],
+          title: 'New Order Submitted',
+          description: 'New order ${order['id']} submitted by $_salesPerson.',
+          type: NotifType.orderCreated,
+          orderId: order['id'] as String,
+        );
+      }
+
       if (_portName != null) {
         for (final pa in PortAdminStore.users) {
           if (pa.isActive && pa.assignedPorts.contains(_portName)) {
             NotificationStore.add(
               person: pa.name,
-              title: widget.isAdmin ? 'New Order Approved' : 'New Order Created',
+              roles: ['port_admin'],
+              title: widget.isAdmin ? 'New approved order available for action' : 'New order assigned to managed port',
               description: widget.isAdmin
-                  ? 'Order ${order['id']} for $_portName has been approved by Admin.'
-                  : 'Order ${order['id']} for $_portName submitted.',
+                  ? 'Order ${order['id']} for $_portName is ready for dispatch.'
+                  : 'New order ${order['id']} for $_portName has been assigned.',
               type: widget.isAdmin ? NotifType.orderApproved : NotifType.orderCreated,
               orderId: order['id'] as String,
             );

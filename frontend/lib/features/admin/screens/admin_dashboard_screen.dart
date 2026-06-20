@@ -15,7 +15,8 @@ import '../../orders/screens/create_order_screen.dart';
 import '../../notifications/notifications_screen.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/order_store.dart';
-import 'port_admin_management_screen.dart';
+
+
 
 // ── Shared target store ───────────────────────────────────────────────────────
 class TargetStore {
@@ -153,26 +154,6 @@ class _AdminHomeState extends State<_AdminHome> {
 
   List<Map<String, dynamic>> get _pending => OrderStore.getPendingApproval();
 
-  void _notifyPortAdminsForOrder(
-    Map<String, dynamic> order,
-    String title,
-    String description,
-    NotifType type,
-  ) {
-    final port = order['port_name'] as String;
-    for (final pa in PortAdminStore.users) {
-      if (pa.isActive && pa.assignedPorts.contains(port)) {
-        NotificationStore.add(
-          person: pa.name,
-          title: title,
-          description: description,
-          type: type,
-          orderId: order['id'] as String,
-        );
-      }
-    }
-  }
-
   Future<void> _act(Map<String, dynamic> order, bool approve, {String? comment}) async {
     final id = order['id'] as String;
     final salesman = order['sales_person_name'] as String? ??
@@ -187,6 +168,23 @@ class _AdminHomeState extends State<_AdminHome> {
 
     if (approve) {
       OrderStore.updateOrderStatus(id, AppConstants.statusApproved);
+      final updatedOrder = OrderStore.getOrderById(id) ?? order;
+
+      final double qty = double.tryParse(updatedOrder['quantity'].toString()) ?? 0.0;
+      final double rate = double.tryParse(updatedOrder['base_rate'].toString()) ?? 0.0;
+      final double freight = double.tryParse(updatedOrder['freight'].toString()) ?? 0.0;
+      final double gst = double.tryParse(updatedOrder['gst'].toString()) ?? 18.0;
+      final double tcs = double.tryParse(updatedOrder['tcs'].toString()) ?? 0.1;
+      final double subtotal = qty * rate;
+      final double gstAmount = subtotal * (gst / 100);
+      final double tcsAmount = subtotal * (tcs / 100);
+      final double totalValue = subtotal + freight + gstAmount + tcsAmount;
+
+      final previousAchieved = TargetStore.achieved[salesman] ?? 0.0;
+      final target = TargetStore.targets[salesman] ?? 0.0;
+      final newAchieved = previousAchieved + totalValue;
+      TargetStore.achieved[salesman] = newAchieved;
+
       NotificationStore.add(
         person: salesman,
         title: 'Order Approved',
@@ -194,18 +192,45 @@ class _AdminHomeState extends State<_AdminHome> {
         type: NotifType.orderApproved,
         orderId: id,
       );
-      _notifyPortAdminsForOrder(
-        OrderStore.getOrderById(id) ?? order,
-        'New Approved Order',
-        'Order $id for ${order['port_name']} is ready for dispatch.',
-        NotifType.orderApproved,
+
+      NotificationStore.add(
+        person: 'Admin',
+        roles: ['admin'],
+        title: 'Order Approved Successfully',
+        description: 'Order $id approved successfully.',
+        type: NotifType.orderApproved,
+        orderId: id,
       );
+
+      NotificationStore.notifyPortAdminsForOrder(
+        order: updatedOrder,
+        title: 'New approved order available for action',
+        description: 'Order $id for ${order['port_name']} is ready for dispatch.',
+        type: NotifType.orderApproved,
+      );
+
+      if (previousAchieved < target && newAchieved >= target) {
+        NotificationStore.add(
+          person: salesman,
+          title: 'Target Completed!',
+          description: 'Congratulations! You have achieved your monthly target of ₹${target.toStringAsFixed(0)}.',
+          type: NotifType.targetCompleted,
+        );
+        NotificationStore.add(
+          person: 'Admin',
+          roles: ['admin'],
+          title: 'Target Completed',
+          description: 'Sales Person $salesman has achieved their monthly target of ₹${target.toStringAsFixed(0)}.',
+          type: NotifType.targetCompleted,
+        );
+      }
     } else {
       OrderStore.updateOrderStatus(
         id,
         AppConstants.statusRejected,
         comment: comment,
       );
+
       NotificationStore.add(
         person: salesman,
         title: 'Order Rejected',
@@ -214,11 +239,21 @@ class _AdminHomeState extends State<_AdminHome> {
         type: NotifType.orderRejected,
         orderId: id,
       );
-      _notifyPortAdminsForOrder(
-        order,
-        'Order Rejected',
-        'Order $id was rejected by Admin.',
-        NotifType.orderRejected,
+
+      NotificationStore.add(
+        person: 'Admin',
+        roles: ['admin'],
+        title: 'Order Rejected Successfully',
+        description: 'Order $id rejected successfully.',
+        type: NotifType.orderRejected,
+        orderId: id,
+      );
+
+      NotificationStore.notifyPortAdminsForOrder(
+        order: order,
+        title: 'Order Rejected',
+        description: 'Order $id was rejected by Admin.',
+        type: NotifType.orderRejected,
       );
     }
 
@@ -334,53 +369,6 @@ class _AdminHomeState extends State<_AdminHome> {
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 24),
-
-              // Manage Port Admins quick link
-              GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PortAdminManagementScreen(),
-                  ),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.info.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.anchor_rounded,
-                            color: AppColors.info),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Manage Port Admins',
-                                style: AppTextStyles.bodyMedium),
-                            Text('Assign ports & manage users',
-                                style: AppTextStyles.caption),
-                          ],
-                        ),
-                      ),
-                      Icon(Icons.chevron_right_rounded,
-                          color: AppColors.textMuted),
-                    ],
-                  ),
-                ),
               ),
               const SizedBox(height: 24),
 

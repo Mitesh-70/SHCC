@@ -92,10 +92,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final id = widget.order['id'] as String;
     OrderStore.updateOrderStatus(id, AppConstants.statusOnHold, holdReason: reason);
     final salesman = widget.order['sales_person_name'] as String? ?? 'Raj Sharma';
+    
     NotificationStore.add(
       person: salesman,
       title: 'Order On Hold',
-      description: 'Order $id placed on hold. Reason: $reason',
+      description: 'Your order $id has been placed on hold. Reason: $reason',
       type: NotifType.orderOnHold,
       orderId: id,
     );
@@ -103,9 +104,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       person: 'Admin',
       roles: ['admin'],
       title: 'Order On Hold',
-      description: 'Order $id placed on hold by Port Admin.',
+      description: 'Port Admin placed order $id on hold. Reason: $reason',
       type: NotifType.orderOnHold,
       orderId: id,
+    );
+    NotificationStore.notifyPortAdminsForOrder(
+      order: widget.order,
+      title: 'Order On Hold',
+      description: 'Order $id placed on hold. Reason: $reason',
+      type: NotifType.orderOnHold,
     );
     setState(() {});
   }
@@ -114,10 +121,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final id = widget.order['id'] as String;
     OrderStore.updateOrderStatus(id, AppConstants.statusApproved);
     final salesman = widget.order['sales_person_name'] as String? ?? 'Raj Sharma';
+    
     NotificationStore.add(
       person: salesman,
       title: 'Hold Released',
-      description: 'Order $id hold has been released.',
+      description: 'Your order $id hold has been released.',
       type: NotifType.holdReleased,
       orderId: id,
     );
@@ -125,29 +133,69 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       person: 'Admin',
       roles: ['admin'],
       title: 'Hold Released',
-      description: 'Order $id hold released by Port Admin.',
+      description: 'Port Admin released hold for order $id.',
       type: NotifType.holdReleased,
       orderId: id,
+    );
+    NotificationStore.notifyPortAdminsForOrder(
+      order: widget.order,
+      title: 'Hold Released',
+      description: 'Order $id hold has been released.',
+      type: NotifType.holdReleased,
     );
     setState(() {});
   }
 
   void _notifyDispatch(String orderId, double qty) {
     final salesman = widget.order['sales_person_name'] as String? ?? 'Raj Sharma';
+    final entries = OrderStore.getDispatchEntries(orderId);
+    final isFirstDispatch = entries.length <= 1;
+    final isCompleted = _remaining <= 0;
+
+    final title = isCompleted
+        ? 'Delivery Completed'
+        : (isFirstDispatch ? 'Dispatch Started' : 'Dispatch Updated');
+
+
+
+    final adminDesc = isCompleted
+        ? 'Delivery completed for order $orderId.'
+        : (isFirstDispatch
+            ? 'Port Admin started dispatch process for order $orderId ($qty MT).'
+            : 'Dispatch entry added for order $orderId ($qty MT).');
+
+    final spDesc = isCompleted
+        ? 'Your order $orderId delivery has been completed.'
+        : (isFirstDispatch
+            ? 'Dispatch started for your order $orderId ($qty MT).'
+            : 'Dispatch updated for your order $orderId ($qty MT).');
+
+    final paDesc = isCompleted
+        ? 'Delivery completed for order $orderId.'
+        : (isFirstDispatch
+            ? 'Dispatch started for order $orderId ($qty MT).'
+            : 'Dispatch entry added for order $orderId ($qty MT).');
+
     NotificationStore.add(
       person: salesman,
-      title: 'Dispatch Updated',
-      description: 'Dispatch entry added for order $orderId ($qty MT).',
+      title: title,
+      description: spDesc,
       type: NotifType.dispatchUpdated,
       orderId: orderId,
     );
     NotificationStore.add(
       person: 'Admin',
       roles: ['admin'],
-      title: 'Dispatch Updated',
-      description: 'Dispatch entry added for order $orderId ($qty MT).',
+      title: title,
+      description: adminDesc,
       type: NotifType.dispatchUpdated,
       orderId: orderId,
+    );
+    NotificationStore.notifyPortAdminsForOrder(
+      order: widget.order,
+      title: title,
+      description: paDesc,
+      type: NotifType.dispatchUpdated,
     );
   }
 
@@ -620,6 +668,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ),
                     );
                     _deliveries = List.from(OrderStore.getDispatchEntries(orderId));
+                    if (_remaining <= 0) {
+                      OrderStore.updateOrderStatus(orderId, AppConstants.statusCompleted);
+                    }
                     _notifyDispatch(orderId, q);
                     _isAdding = false;
                     _resetForm();

@@ -4,6 +4,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../notifications/notifications_screen.dart';
 
 class PortAdminManagementScreen extends StatefulWidget {
   const PortAdminManagementScreen({super.key});
@@ -57,13 +58,31 @@ class _PortAdminManagementScreenState extends State<PortAdminManagementScreen> {
 
     if (data != null) {
       final id = 'pa-${DateTime.now().millisecondsSinceEpoch}';
+      final name = data['name'] as String;
+      final assigned = data['assignedPorts'] as List<String>;
       PortAdminStore.users.add(PortAdminUser(
         id: id,
-        name: data['name'] as String,
+        name: name,
         username: data['username'] as String,
-        assignedPorts: data['assignedPorts'] as List<String>,
+        assignedPorts: assigned,
       ));
       setState(() {});
+      
+      NotificationStore.add(
+        person: 'Admin',
+        roles: ['admin'],
+        title: 'Port Assignment Changed',
+        description: 'New Port Admin $name registered with ports: ${assigned.join(', ')}.',
+        type: NotifType.catalogueUpdated,
+      );
+
+      NotificationStore.add(
+        person: name,
+        roles: ['port_admin'],
+        title: 'Port Reassignment Updates',
+        description: 'Welcome! You have been assigned the following ports: ${assigned.join(', ')}.',
+        type: NotifType.catalogueUpdated,
+      );
     }
   }
 }
@@ -125,6 +144,22 @@ class _PortAdminCard extends StatelessWidget {
         ..clear()
         ..addAll(selected);
       onChanged();
+
+      NotificationStore.add(
+        person: 'Admin',
+        roles: ['admin'],
+        title: 'Port Assignment Changed',
+        description: 'Ports reassigned for ${user.name}: ${selected.join(', ')}.',
+        type: NotifType.catalogueUpdated,
+      );
+
+      NotificationStore.add(
+        person: user.name,
+        roles: ['port_admin'],
+        title: 'Port Reassignment Updates',
+        description: 'Your managed ports have been updated to: ${selected.join(', ')}.',
+        type: NotifType.catalogueUpdated,
+      );
     }
   }
 
