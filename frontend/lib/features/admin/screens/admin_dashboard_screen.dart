@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/session/app_session.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/shcc_bottom_nav.dart';
 import '../../../shared/widgets/section_header.dart';
@@ -12,6 +13,9 @@ import '../../profile/screens/profile_screen.dart';
 import '../../reports/screens/reports_screen.dart';
 import '../../orders/screens/create_order_screen.dart';
 import '../../notifications/notifications_screen.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../data/order_store.dart';
+import 'port_admin_management_screen.dart';
 
 // ── Shared target store ───────────────────────────────────────────────────────
 class TargetStore {
@@ -36,6 +40,7 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _navIndex = 0;
   late final PageController _pageCtrl;
+  String? _highlightOrder;
 
   @override
   void initState() {
@@ -58,13 +63,52 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  void _onNotifNav(NotifType type, {String? orderId}) {
+    switch (type) {
+      case NotifType.orderApproved:
+      case NotifType.orderAccepted:
+      case NotifType.orderRejected:
+      case NotifType.orderCreated:
+      case NotifType.dispatchUpdated:
+      case NotifType.orderOnHold:
+      case NotifType.holdReleased:
+        setState(() {
+          _highlightOrder = orderId;
+          _navIndex = 1;
+        });
+        _pageCtrl.animateToPage(1,
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeInOut);
+        break;
+      case NotifType.catalogueUpdated:
+        setState(() {
+          _highlightOrder = null;
+          _navIndex = 3;
+        });
+        _pageCtrl.animateToPage(3,
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeInOut);
+        break;
+      case NotifType.targetModified:
+      case NotifType.targetCompleted:
+        setState(() {
+          _highlightOrder = null;
+          _navIndex = 4;
+        });
+        _pageCtrl.animateToPage(4,
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeInOut);
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Pages are built here (not in initState) so that _goTo can be
     // passed as the onGoHome callback to ProfileScreen.
     final pages = [
-      const _AdminHome(),
-      const SearchScreen(isAdmin: true),
+      _AdminHome(onNotifNav: _onNotifNav),
+      SearchScreen(isAdmin: true, highlightOrderId: _highlightOrder),
       const ReportsScreen(),
       const CatalogueScreen(isAdmin: true),
       ProfileScreen(isAdmin: true, fromTab: true, onGoHome: () => _goTo(0)),
@@ -97,7 +141,8 @@ class _SwipePhysics extends PageScrollPhysics {
 }
 
 class _AdminHome extends StatefulWidget {
-  const _AdminHome();
+  final NotifNavCallback onNotifNav;
+  const _AdminHome({required this.onNotifNav});
   @override
   State<_AdminHome> createState() => _AdminHomeState();
 }
@@ -106,81 +151,81 @@ class _AdminHomeState extends State<_AdminHome> {
   bool _processing = false;
   String? _processingId;
 
-  final List<Map<String, dynamic>> _pending = [
-    {
-      'id': 'ORD-2024-049',
-      'salesman': 'Raj Sharma',
-      'buyer_name': 'Birla Cement',
-      'product_type': 'Indonesian Coal',
-      'base_rate': 7100.0,
-      'freight': 12000.0,
-      'gst': 18.0,
-      'tcs': 0.1,
-      'quantity': 300.0,
-      'type_of_sale': 'F.O.R.',
-      'quality': '4000 GAR',
-      'port_name': 'Mundra',
-      'payment_terms': 'Advance',
-      'time': '10 min ago',
-    },
-    {
-      'id': 'ORD-2024-050',
-      'salesman': 'Amit Patel',
-      'buyer_name': 'Essar Steel',
-      'product_type': 'South African Coal',
-      'base_rate': 6200.0,
-      'freight': 18000.0,
-      'gst': 18.0,
-      'tcs': 0.1,
-      'quantity': 450.0,
-      'type_of_sale': 'Spot',
-      'quality': '5000 GAR',
-      'port_name': 'Hazira',
-      'payment_terms': 'LC',
-      'time': '25 min ago',
-    },
-    {
-      'id': 'ORD-2024-051',
-      'salesman': 'Priya Mehta',
-      'buyer_name': 'ACC Cement',
-      'product_type': 'Russian Coal',
-      'base_rate': 4800.0,
-      'freight': 8000.0,
-      'gst': 18.0,
-      'tcs': 0.1,
-      'quantity': 200.0,
-      'type_of_sale': 'Spot',
-      'quality': '4200 GAR',
-      'port_name': 'Kandla',
-      'payment_terms': 'On Delivery',
-      'time': '1 hr ago',
-    },
-  ];
+  List<Map<String, dynamic>> get _pending => OrderStore.getPendingApproval();
 
-  Future<void> _act(int index, bool approve, {String? comment}) async {
-    final id = _pending[index]['id'] as String;
-    final salesman = _pending[index]['salesman'] as String;
+  void _notifyPortAdminsForOrder(
+    Map<String, dynamic> order,
+    String title,
+    String description,
+    NotifType type,
+  ) {
+    final port = order['port_name'] as String;
+    for (final pa in PortAdminStore.users) {
+      if (pa.isActive && pa.assignedPorts.contains(port)) {
+        NotificationStore.add(
+          person: pa.name,
+          title: title,
+          description: description,
+          type: type,
+          orderId: order['id'] as String,
+        );
+      }
+    }
+  }
+
+  Future<void> _act(Map<String, dynamic> order, bool approve, {String? comment}) async {
+    final id = order['id'] as String;
+    final salesman = order['sales_person_name'] as String? ??
+        order['salesman'] as String? ??
+        'Raj Sharma';
     setState(() {
       _processing = true;
       _processingId = id;
     });
     await Future.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
+
+    if (approve) {
+      OrderStore.updateOrderStatus(id, AppConstants.statusApproved);
+      NotificationStore.add(
+        person: salesman,
+        title: 'Order Approved',
+        description: 'Your order $id has been approved by Admin.',
+        type: NotifType.orderApproved,
+        orderId: id,
+      );
+      _notifyPortAdminsForOrder(
+        OrderStore.getOrderById(id) ?? order,
+        'New Approved Order',
+        'Order $id for ${order['port_name']} is ready for dispatch.',
+        NotifType.orderApproved,
+      );
+    } else {
+      OrderStore.updateOrderStatus(
+        id,
+        AppConstants.statusRejected,
+        comment: comment,
+      );
+      NotificationStore.add(
+        person: salesman,
+        title: 'Order Rejected',
+        description:
+            'Your order $id was rejected.${comment != null && comment.isNotEmpty ? ' Comment: $comment' : ''}',
+        type: NotifType.orderRejected,
+        orderId: id,
+      );
+      _notifyPortAdminsForOrder(
+        order,
+        'Order Rejected',
+        'Order $id was rejected by Admin.',
+        NotifType.orderRejected,
+      );
+    }
+
     setState(() {
       _processing = false;
       _processingId = null;
-      _pending.removeAt(index);
     });
-
-    // ── Trigger notification to salesperson ───────────────────────
-    NotificationStore.add(
-      person: salesman,
-      title: approve ? 'Order Approved' : 'Order Rejected',
-      description: approve
-          ? 'Your order $id has been approved by Admin.'
-          : 'Your order $id was rejected.${comment != null && comment.isNotEmpty ? ' Comment: $comment' : ''}',
-      type: approve ? NotifType.orderAccepted : NotifType.orderRejected,
-    );
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -214,7 +259,15 @@ class _AdminHomeState extends State<_AdminHome> {
         Scaffold(
           appBar: ShccAppBar(
             logoAsset: 'assets/images/logo.png',
-            userInitials: 'AD',
+            userInitials: AppSession.isLoggedIn ? AppSession.instance.initials : 'AD',
+            actions: [
+              NotificationBell(
+                person: AppSession.isLoggedIn ? AppSession.instance.name : 'Admin',
+                role: AppSession.isLoggedIn ? AppSession.instance.role : 'admin',
+                onNavigate: widget.onNotifNav,
+              ),
+              const SizedBox(width: 4),
+            ],
             onProfileTap: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -281,6 +334,53 @@ class _AdminHomeState extends State<_AdminHome> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 24),
+
+              // Manage Port Admins quick link
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PortAdminManagementScreen(),
+                  ),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.info.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.anchor_rounded,
+                            color: AppColors.info),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Manage Port Admins',
+                                style: AppTextStyles.bodyMedium),
+                            Text('Assign ports & manage users',
+                                style: AppTextStyles.caption),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded,
+                          color: AppColors.textMuted),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -381,10 +481,16 @@ class _AdminHomeState extends State<_AdminHome> {
                   (i) => Padding(
                     padding: const EdgeInsets.only(bottom: 14),
                     child: _ApprovalCard(
-                      order: _pending[i],
+                      order: {
+                        ..._pending[i],
+                        'salesman': _pending[i]['sales_person_name'] ??
+                            _pending[i]['salesman'] ??
+                            'Unknown',
+                      },
                       isProcessing: _processingId == _pending[i]['id'],
-                      onApprove: () => _act(i, true),
-                      onReject: (comment) => _act(i, false, comment: comment),
+                      onApprove: () => _act(_pending[i], true),
+                      onReject: (comment) =>
+                          _act(_pending[i], false, comment: comment),
                     ),
                   ),
                 ),
@@ -482,7 +588,10 @@ class _ApprovalCardState extends State<_ApprovalCard> {
                       o['salesman'] as String,
                       style: AppTextStyles.bodyMedium,
                     ),
-                    Text(o['time'] as String, style: AppTextStyles.caption),
+                    Text(
+                      o['time'] as String? ?? o['date'] as String? ?? '',
+                      style: AppTextStyles.caption,
+                    ),
                   ],
                 ),
               ),

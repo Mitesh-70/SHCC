@@ -13,11 +13,15 @@ class OrderModel {
   final String buyerName;
   final String paymentTerms;
   final String syncStatus;
-  final String status;        // pending | processed | completed | confirmed
+  final String status;
   final String createdAt;
   final String updatedAt;
   final List<DeliveryEntry> deliveries;
   final String? remark;
+  final String? rejectionComment;
+  final String? holdReason;
+  final String? portAdminId;
+  final String? salesPersonId;
 
   OrderModel({
     required this.uuid,
@@ -39,10 +43,14 @@ class OrderModel {
     required this.updatedAt,
     this.deliveries = const [],
     this.remark,
+    this.rejectionComment,
+    this.holdReason,
+    this.portAdminId,
+    this.salesPersonId,
   });
 
-  // ── Once admin confirms, order is locked ──────────────────────────
-  bool get isLocked => status == 'confirmed';
+  bool get isLocked =>
+      status == 'approved' || status == 'dispatched' || status == 'on_hold';
 
   // ── Computed financials ───────────────────────────────────────────
   double get baseAmount  => baseRate * quantity;
@@ -71,9 +79,13 @@ class OrderModel {
     'payment_terms':     paymentTerms,
     'sync_status':       syncStatus,
     'status':            status,
-    'remark':            remark,
-    'created_at':        createdAt,
-    'updated_at':        updatedAt,
+    'remark':              remark,
+    'rejection_comment':   rejectionComment,
+    'hold_reason':         holdReason,
+    'port_admin_id':       portAdminId,
+    'sales_person_id':     salesPersonId,
+    'created_at':          createdAt,
+    'updated_at':          updatedAt,
   };
 
   factory OrderModel.fromMap(Map<String, dynamic> m) => OrderModel(
@@ -95,9 +107,20 @@ class OrderModel {
     createdAt:       m['created_at'],
     updatedAt:       m['updated_at'],
     remark:          m['remark'],
+    rejectionComment: m['rejection_comment'],
+    holdReason:      m['hold_reason'],
+    portAdminId:     m['port_admin_id'],
+    salesPersonId:   m['sales_person_id'],
   );
 
-  OrderModel copyWith({String? status, List<DeliveryEntry>? deliveries, String? remark}) => OrderModel(
+  OrderModel copyWith({
+    String? status,
+    List<DeliveryEntry>? deliveries,
+    String? remark,
+    String? rejectionComment,
+    String? holdReason,
+    String? portAdminId,
+  }) => OrderModel(
     uuid:            uuid,
     salesPersonName: salesPersonName,
     baseRate:        baseRate,
@@ -115,8 +138,12 @@ class OrderModel {
     status:          status      ?? this.status,
     createdAt:       createdAt,
     updatedAt:       updatedAt,
-    deliveries:      deliveries  ?? this.deliveries,
-    remark:          remark      ?? this.remark,
+    deliveries:        deliveries        ?? this.deliveries,
+    remark:            remark            ?? this.remark,
+    rejectionComment:  rejectionComment  ?? this.rejectionComment,
+    holdReason:        holdReason        ?? this.holdReason,
+    portAdminId:       portAdminId       ?? this.portAdminId,
+    salesPersonId:     salesPersonId,
   );
 }
 

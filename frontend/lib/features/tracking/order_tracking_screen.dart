@@ -3,51 +3,48 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/session/app_session.dart';
 import '../../data/models/order_model.dart';
+import '../../data/order_store.dart';
 import '../../shared/widgets/shcc_app_bar.dart';
+import '../notifications/notifications_screen.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final Map<String, dynamic> order;
   final bool isAdmin;
+  final bool isPortAdmin;
 
   const OrderTrackingScreen({
-    super.key, required this.order, this.isAdmin = false});
+    super.key,
+    required this.order,
+    this.isAdmin = false,
+    this.isPortAdmin = false,
+  });
 
   @override
   State<OrderTrackingScreen> createState() => _OrderTrackingScreenState();
 }
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
-  // Static deliveries cache map to persist tracking records between navigations
-  static final Map<String, List<DeliveryEntry>> _deliveriesCache = {};
-
   late List<DeliveryEntry> _deliveries;
   bool _isAdding = false;
   final _qtyCtrl = TextEditingController();
   final _dateCtrl = TextEditingController();
+  final _holdReasonCtrl = TextEditingController();
   String? _selectedPort;
 
   @override
   void initState() {
     super.initState();
     final orderId = widget.order['id'] ?? '';
-    if (!_deliveriesCache.containsKey(orderId)) {
-      if (orderId == 'ORD-2024-048') {
-        _deliveriesCache[orderId] = [
-          DeliveryEntry(id: 'D-001', quantity: 80,  date: '20 Apr 2024', port: 'Mundra'),
-          DeliveryEntry(id: 'D-002', quantity: 60,  date: '24 Apr 2024', port: 'Mundra'),
-        ];
-      } else {
-        _deliveriesCache[orderId] = [];
-      }
-    }
-    _deliveries = _deliveriesCache[orderId]!;
+    _deliveries = List.from(OrderStore.getDispatchEntries(orderId));
   }
 
   @override
   void dispose() {
     _qtyCtrl.dispose();
     _dateCtrl.dispose();
+    _holdReasonCtrl.dispose();
     super.dispose();
   }
 
@@ -61,6 +58,98 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   double get _delivered => _deliveries.fold(0, (s, d) => s + d.quantity);
   double get _remaining => (_ordered - _delivered).clamp(0, double.infinity);
   double get _pct       => _ordered == 0 ? 0 : (_delivered / _ordered).clamp(0, 1);
+  bool get _canAddDispatch => widget.isAdmin || widget.isPortAdmin;
+  bool get _canDeleteDispatch => widget.isAdmin || widget.isPortAdmin;
+
+  String get _status => widget.order['status'] as String? ?? '';
+  bool get _canHold => widget.isPortAdmin && _status == AppConstants.statusApproved;
+  bool get _canRelease => widget.isPortAdmin && _status == AppConstants.statusOnHold;
+
+  Future<void> _putOnHold() async {
+    _holdReasonCtrl.clear();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Put Order On Hold'),
+        content: TextField(
+          controller: _holdReasonCtrl,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: 'Hold Reason (required)'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              if (_holdReasonCtrl.text.trim().isEmpty) return;
+              Navigator.pop(ctx, _holdReasonCtrl.text.trim());
+            },
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+    if (reason == null || reason.isEmpty) return;
+    final id = widget.order['id'] as String;
+    OrderStore.updateOrderStatus(id, AppConstants.statusOnHold, holdReason: reason);
+    final salesman = widget.order['sales_person_name'] as String? ?? 'Raj Sharma';
+    NotificationStore.add(
+      person: salesman,
+      title: 'Order On Hold',
+      description: 'Order $id placed on hold. Reason: $reason',
+      type: NotifType.orderOnHold,
+      orderId: id,
+    );
+    NotificationStore.add(
+      person: 'Admin',
+      roles: ['admin'],
+      title: 'Order On Hold',
+      description: 'Order $id placed on hold by Port Admin.',
+      type: NotifType.orderOnHold,
+      orderId: id,
+    );
+    setState(() {});
+  }
+
+  void _releaseHold() {
+    final id = widget.order['id'] as String;
+    OrderStore.updateOrderStatus(id, AppConstants.statusApproved);
+    final salesman = widget.order['sales_person_name'] as String? ?? 'Raj Sharma';
+    NotificationStore.add(
+      person: salesman,
+      title: 'Hold Released',
+      description: 'Order $id hold has been released.',
+      type: NotifType.holdReleased,
+      orderId: id,
+    );
+    NotificationStore.add(
+      person: 'Admin',
+      roles: ['admin'],
+      title: 'Hold Released',
+      description: 'Order $id hold released by Port Admin.',
+      type: NotifType.holdReleased,
+      orderId: id,
+    );
+    setState(() {});
+  }
+
+  void _notifyDispatch(String orderId, double qty) {
+    final salesman = widget.order['sales_person_name'] as String? ?? 'Raj Sharma';
+    NotificationStore.add(
+      person: salesman,
+      title: 'Dispatch Updated',
+      description: 'Dispatch entry added for order $orderId ($qty MT).',
+      type: NotifType.dispatchUpdated,
+      orderId: orderId,
+    );
+    NotificationStore.add(
+      person: 'Admin',
+      roles: ['admin'],
+      title: 'Dispatch Updated',
+      description: 'Dispatch entry added for order $orderId ($qty MT).',
+      type: NotifType.dispatchUpdated,
+      orderId: orderId,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +246,28 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     ]),
                   ]),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+
+                if (widget.isPortAdmin) ...[
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      if (_canHold)
+                        ActionChip(
+                          label: const Text('On Hold'),
+                          avatar: const Icon(Icons.pause_circle_outline, size: 16),
+                          onPressed: _putOnHold,
+                        ),
+                      if (_canRelease)
+                        ActionChip(
+                          label: const Text('Release Hold'),
+                          avatar: const Icon(Icons.play_circle_outline, size: 16),
+                          onPressed: _releaseHold,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // History header
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -178,7 +288,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _DeliveryCard(
                       entry: _deliveries[i], index: i + 1,
-                      isAdmin: widget.isAdmin, isDark: isDark,
+                      isAdmin: _canDeleteDispatch, isDark: isDark,
                       onDelete: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
@@ -200,20 +310,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           ),
                         );
                         if (confirm == true) {
-                          setState(() => _deliveries.removeAt(i));
+                          final orderId = widget.order['id'] as String;
+                          OrderStore.removeDispatchEntry(orderId, i);
+                          setState(() => _deliveries = List.from(
+                              OrderStore.getDispatchEntries(orderId)));
                         }
                       }
                     ))),
               ],
             ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: keyboardHeight,
-            child: isCompleted
-                ? const SizedBox.shrink()
-                : Container(
+          if (_canAddDispatch && !isCompleted)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: keyboardHeight,
+              child: Container(
                     decoration: BoxDecoration(
                       border: Border(
                         top: BorderSide(
@@ -241,7 +353,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ),
                     ),
                   ),
-          ),
+            ),
         ],
       ),
     );
@@ -393,9 +505,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     ),
                     prefixIcon: const Icon(Icons.anchor_rounded, size: 16, color: AppColors.primary),
                   ),
-                  items: AppConstants.ports.map((p) => DropdownMenuItem(
-                    value: p,
-                    child: Text(p, style: theme.textTheme.bodyMedium))).toList(),
+                  items: (widget.isPortAdmin && AppSession.isLoggedIn
+                          ? AppSession.instance.assignedPorts
+                          : AppConstants.ports)
+                      .map((p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(p, style: theme.textTheme.bodyMedium)))
+                      .toList(),
                   onChanged: (v) => setState(() => _selectedPort = v),
                 ),
               ),
@@ -493,12 +609,18 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     return;
                   }
                   setState(() {
-                    _deliveries.add(DeliveryEntry(
-                      id: 'D-00${_deliveries.length + 1}',
-                      quantity: q,
-                      date: _dateCtrl.text,
-                      port: _selectedPort!,
-                    ));
+                    final orderId = widget.order['id'] as String;
+                    OrderStore.addDispatchEntry(
+                      orderId,
+                      DeliveryEntry(
+                        id: 'D-00${_deliveries.length + 1}',
+                        quantity: q,
+                        date: _dateCtrl.text,
+                        port: _selectedPort!,
+                      ),
+                    );
+                    _deliveries = List.from(OrderStore.getDispatchEntries(orderId));
+                    _notifyDispatch(orderId, q);
                     _isAdding = false;
                     _resetForm();
                   });

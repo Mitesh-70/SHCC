@@ -2,18 +2,30 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../core/session/app_session.dart';
+import '../../../data/order_store.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../orders/screens/create_order_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../tracking/order_tracking_screen.dart';
+import '../../port_admin/screens/port_admin_order_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final bool isAdmin;
+  final bool isPortAdmin;
+  final List<String>? assignedPorts;
   final String? highlightOrderId;
 
-  const SearchScreen({super.key, this.isAdmin = false, this.highlightOrderId});
+  const SearchScreen({
+    super.key,
+    this.isAdmin = false,
+    this.isPortAdmin = false,
+    this.assignedPorts,
+    this.highlightOrderId,
+  });
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -38,6 +50,27 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  List<Map<String, dynamic>> get _orders {
+    if (widget.isAdmin) return OrderStore.getAllOrders();
+    if (widget.isPortAdmin && widget.assignedPorts != null) {
+      return OrderStore.getOrdersForPorts(widget.assignedPorts!);
+    }
+    final name = AppSession.isLoggedIn
+        ? AppSession.instance.name
+        : 'Raj Sharma';
+    return OrderStore.getOrdersForSalesPerson(name);
+  }
+
+  static const _filterOptions = [
+    ('All', null),
+    ('Pending', AppConstants.statusPendingApproval),
+    ('Approved', AppConstants.statusApproved),
+    ('On Hold', AppConstants.statusOnHold),
+    ('Dispatched', AppConstants.statusDispatched),
+    ('Completed', AppConstants.statusCompleted),
+    ('Rejected', AppConstants.statusRejected),
+  ];
+
   @override
   void didUpdateWidget(SearchScreen old) {
     super.didUpdateWidget(old);
@@ -59,116 +92,31 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  static const _orders = [
-    {
-      'id': 'ORD-2024-048',
-      'buyer_name': 'JSW Steel Ltd',
-      'sales_person_name': 'Raj Sharma',
-      'product_type': 'Indonesian Coal',
-      'base_rate': 6200.0,
-      'freight': 10000.0,
-      'gst': 18.0,
-      'tcs': 0.1,
-      'quantity': 200.0,
-      'type_of_sale': 'Spot',
-      'quality': '5000 GAR',
-      'port_name': 'Mundra',
-      'payment_terms': 'Advance',
-      'status': 'processed',
-      'date': '28 Apr 2024',
-      'remark': 'ASAP Delivery Needed',
-    },
-    {
-      'id': 'ORD-2024-047',
-      'buyer_name': 'Ultratech Cement',
-      'sales_person_name': 'Raj Sharma',
-      'product_type': 'South African Coal',
-      'base_rate': 6100.0,
-      'freight': 15000.0,
-      'gst': 18.0,
-      'tcs': 0.1,
-      'quantity': 150.0,
-      'type_of_sale': 'F.O.R.',
-      'quality': '4200 GAR',
-      'port_name': 'Kandla',
-      'payment_terms': 'Credit Line',
-      'status': 'pending',
-      'date': '27 Apr 2024',
-      'rejected': true,
-      'admin_comment': 'Quantity too high for this port. Reduce to 100 MT.',
-      'remark': 'Urgent requirement',
-    },
-    {
-      'id': 'ORD-2024-046',
-      'buyer_name': 'Tata Steel',
-      'sales_person_name': 'Amit Patel',
-      'product_type': 'Russian Coal',
-      'base_rate': 5600.0,
-      'freight': 20000.0,
-      'gst': 18.0,
-      'tcs': 0.1,
-      'quantity': 500.0,
-      'type_of_sale': 'Spot',
-      'quality': '4800 GAR',
-      'port_name': 'Hazira',
-      'payment_terms': 'On Delivery',
-      'status': 'processed',
-      'date': '26 Apr 2024',
-      'remark': '89012',
-    },
-    {
-      'id': 'ORD-2024-045',
-      'buyer_name': 'JSW Steel Ltd',
-      'sales_person_name': 'Raj Sharma',
-      'product_type': 'US Coal',
-      'base_rate': 3500.0,
-      'freight': 5000.0,
-      'gst': 18.0,
-      'tcs': 0.1,
-      'quantity': 100.0,
-      'type_of_sale': 'F.O.R.',
-      'quality': '3800 GAR',
-      'port_name': 'Magdalla',
-      'payment_terms': 'Advance',
-      'status': 'pending',
-      'date': '25 Apr 2024',
-      'remark': '',
-    },
-    {
-      'id': 'ORD-2024-044',
-      'buyer_name': 'ACC Cement',
-      'sales_person_name': 'Priya Mehta',
-      'product_type': 'Indonesian Coal',
-      'base_rate': 8200.0,
-      'freight': 25000.0,
-      'gst': 18.0,
-      'tcs': 0.1,
-      'quantity': 300.0,
-      'type_of_sale': 'Spot',
-      'quality': '4500 GAR',
-      'port_name': 'Navlakhi',
-      'payment_terms': 'LC',
-      'status': 'completed',
-      'date': '24 Apr 2024',
-      'remark': 'Order #4423',
-    },
-  ];
+  List<Map<String, dynamic>> get _filtered {
+    final list = _orders.where((o) {
+      final q = _query.toLowerCase().trim();
+      final status = o['status'] as String;
+      final filterStatus = _filterOptions
+          .firstWhere((e) => e.$1 == _filter, orElse: () => ('All', null))
+          .$2;
+      final matchStatus =
+          filterStatus == null || status == filterStatus;
+      if (!matchStatus) return false;
+      if (q.isEmpty) return true;
+      return [
+        o['buyer_name'] as String,
+        o['id'] as String,
+        o['sales_person_name'] as String,
+        o['port_name'] as String,
+        o['product_type'] as String,
+      ].any((f) => f.toLowerCase().contains(q));
+    }).toList();
 
-  List<Map<String, dynamic>> get _filtered => _orders.where((o) {
-    final q = _query.toLowerCase().trim();
-    final matchStatus =
-        _filter == 'All' ||
-        (o['status'] as String).toLowerCase() == _filter.toLowerCase();
-    if (!matchStatus) return false;
-    if (q.isEmpty) return true;
-    return [
-      o['buyer_name'] as String,
-      o['id'] as String,
-      o['sales_person_name'] as String,
-      o['port_name'] as String,
-      o['product_type'] as String,
-    ].any((f) => f.toLowerCase().contains(q));
-  }).toList();
+    for (final o in list) {
+      _cardKeys.putIfAbsent(o['id'] as String, () => GlobalKey());
+    }
+    return list;
+  }
 
   bool get _isGrouped => _query.isNotEmpty;
 
@@ -181,11 +129,18 @@ class _SearchScreenState extends State<SearchScreen> {
         onProfileTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) =>
-                ProfileScreen(isAdmin: widget.isAdmin, fromTab: false),
+            builder: (_) => ProfileScreen(
+              isAdmin: widget.isAdmin,
+              isPortAdmin: widget.isPortAdmin,
+              fromTab: false,
+            ),
           ),
         ),
-        userInitials: widget.isAdmin ? 'AD' : 'RS',
+        userInitials: widget.isPortAdmin
+            ? (AppSession.isLoggedIn ? AppSession.instance.initials : 'PA')
+            : widget.isAdmin
+                ? 'AD'
+                : (AppSession.isLoggedIn ? AppSession.instance.initials : 'RS'),
       ),
       body: Column(
         children: [
@@ -238,14 +193,14 @@ class _SearchScreenState extends State<SearchScreen> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              children: ['All', 'Pending', 'Processed', 'Completed']
+              children: _filterOptions
                   .map(
                     (f) => Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: _FChip(
-                        label: f,
-                        selected: _filter == f,
-                        onTap: () => setState(() => _filter = f),
+                        label: f.$1,
+                        selected: _filter == f.$1,
+                        onTap: () => setState(() => _filter = f.$1),
                       ),
                     ),
                   )
@@ -266,12 +221,14 @@ class _SearchScreenState extends State<SearchScreen> {
                 ? _GroupedList(
                     orders: filtered,
                     isAdmin: widget.isAdmin,
+                    isPortAdmin: widget.isPortAdmin,
                     highlightOrderId: widget.highlightOrderId,
                     cardKeys: _cardKeys,
                   )
                 : _FlatList(
                     orders: filtered,
                     isAdmin: widget.isAdmin,
+                    isPortAdmin: widget.isPortAdmin,
                     highlightOrderId: widget.highlightOrderId,
                     cardKeys: _cardKeys,
                   ),
@@ -287,12 +244,14 @@ class _SearchScreenState extends State<SearchScreen> {
 class _FlatList extends StatelessWidget {
   final List<Map<String, dynamic>> orders;
   final bool isAdmin;
+  final bool isPortAdmin;
   final String? highlightOrderId;
   final Map<String, GlobalKey> cardKeys;
 
   const _FlatList({
     required this.orders,
     required this.isAdmin,
+    this.isPortAdmin = false,
     required this.highlightOrderId,
     required this.cardKeys,
   });
@@ -310,6 +269,7 @@ class _FlatList extends StatelessWidget {
           key: cardKeys[id],
           order: o,
           isAdmin: isAdmin,
+          isPortAdmin: isPortAdmin,
           isHighlighted: id == highlightOrderId,
         );
       },
@@ -320,12 +280,14 @@ class _FlatList extends StatelessWidget {
 class _GroupedList extends StatefulWidget {
   final List<Map<String, dynamic>> orders;
   final bool isAdmin;
+  final bool isPortAdmin;
   final String? highlightOrderId;
   final Map<String, GlobalKey> cardKeys;
 
   const _GroupedList({
     required this.orders,
     required this.isAdmin,
+    this.isPortAdmin = false,
     required this.highlightOrderId,
     required this.cardKeys,
   });
@@ -426,6 +388,7 @@ class _GroupedListState extends State<_GroupedList> {
                           key: widget.cardKeys[id],
                           order: o,
                           isAdmin: widget.isAdmin,
+                          isPortAdmin: widget.isPortAdmin,
                           isHighlighted: id == widget.highlightOrderId,
                         ),
                       );
@@ -471,26 +434,30 @@ class _SmallBadge extends StatelessWidget {
 class _OrderCard extends StatelessWidget {
   final Map<String, dynamic> order;
   final bool isAdmin;
+  final bool isPortAdmin;
   final bool isHighlighted;
 
   const _OrderCard({
     super.key,
     required this.order,
     required this.isAdmin,
+    this.isPortAdmin = false,
     this.isHighlighted = false,
   });
 
-  // ── Edit allowed ONLY when status == pending ──────────────────────
-  bool get _canEdit => (order['status'] as String) == 'pending';
+  bool get _canEdit =>
+      !isPortAdmin &&
+      (order['status'] as String) == AppConstants.statusPendingApproval;
 
-  // ── Rejected = pending + rejected flag ────────────────────────────
   bool get _isRejected =>
-      order['rejected'] == true && (order['status'] as String) == 'pending';
+      (order['status'] as String) == AppConstants.statusRejected;
 
-  // ── Delivery tracking for processed/completed ─────────────────────
   bool get _showTracking {
     final s = order['status'] as String;
-    return s == 'processed' || s == 'completed';
+    return s == AppConstants.statusDispatched ||
+        s == AppConstants.statusCompleted ||
+        s == AppConstants.statusApproved ||
+        s == AppConstants.statusOnHold;
   }
 
   double get _total {
@@ -670,7 +637,8 @@ class _OrderCard extends StatelessWidget {
             ),
 
             // ── Admin comment for rejected orders ─────────────────────
-            if (_isRejected && order['admin_comment'] != null) ...[
+            if (_isRejected &&
+                (order['rejection_comment'] ?? order['admin_comment']) != null) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -701,7 +669,7 @@ class _OrderCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      order['admin_comment'] as String,
+                      (order['rejection_comment'] ?? order['admin_comment']) as String,
                       style: AppTextStyles.body.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -806,15 +774,26 @@ class _OrderCard extends StatelessWidget {
                           ),
                           onPressed: () {
                             Navigator.pop(context);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => OrderTrackingScreen(
-                                  order: order,
-                                  isAdmin: isAdmin,
+                            if (isPortAdmin) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      PortAdminOrderDetailScreen(order: order),
                                 ),
-                              ),
-                            );
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => OrderTrackingScreen(
+                                    order: order,
+                                    isAdmin: isAdmin,
+                                    isPortAdmin: isPortAdmin,
+                                  ),
+                                ),
+                              );
+                            }
                           },
                         ),
                       ),
@@ -835,7 +814,8 @@ class _OrderCard extends StatelessWidget {
             ),
 
             // Admin comment in detail view
-            if (_isRejected && order['admin_comment'] != null) ...[
+            if (_isRejected &&
+                (order['rejection_comment'] ?? order['admin_comment']) != null) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -867,7 +847,7 @@ class _OrderCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            order['admin_comment'] as String,
+                            (order['rejection_comment'] ?? order['admin_comment']) as String,
                             style: AppTextStyles.body.copyWith(
                               color: AppColors.textSecondary,
                             ),

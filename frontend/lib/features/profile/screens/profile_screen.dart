@@ -4,7 +4,11 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../settings/settings_screen.dart';
 import '../../admin/screens/admin_dashboard_screen.dart';
+import '../../admin/screens/port_admin_management_screen.dart';
 import '../../notifications/notifications_screen.dart';
+import '../../../core/session/app_session.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../data/order_store.dart';
 
 // ── Edit Profile Screen ───────────────────────────────────────────────────────
 class EditProfileScreen extends StatefulWidget {
@@ -479,6 +483,7 @@ class _TargetManagementScreenState extends State<TargetManagementScreen> {
 // ── Main Profile Screen ───────────────────────────────────────────────────────
 class ProfileScreen extends StatelessWidget {
   final bool isAdmin;
+  final bool isPortAdmin;
 
   /// Set to [true] when ProfileScreen is embedded as a PageView tab.
   /// Set to [false] (default) when pushed via Navigator.push.
@@ -494,12 +499,28 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
     super.key,
     this.isAdmin = false,
+    this.isPortAdmin = false,
     this.fromTab = false,
     this.onGoHome,
   });
 
-  static const String _name     = 'Sarah Jenkins';
-  static const String _email    = 'sarah.jenkins@email.com';
+  String get _name => AppSession.isLoggedIn
+      ? AppSession.instance.name
+      : (isAdmin ? 'Admin' : 'Sarah Jenkins');
+
+  String get _email {
+    if (!AppSession.isLoggedIn) {
+      return isAdmin ? 'admin@shcc.co.in' : 'sarah.jenkins@email.com';
+    }
+    final role = AppSession.instance.role;
+    if (role == 'admin') return 'admin@shcc.co.in';
+    if (role == 'port_admin') return 'portadmin@shcc.co.in';
+    return 'salesperson@shcc.co.in';
+  }
+
+  String get _initials => AppSession.isLoggedIn
+      ? AppSession.instance.initials
+      : 'SJ';
   static const String _imageUrl =
     'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80';
 
@@ -592,8 +613,8 @@ class ProfileScreen extends StatelessWidget {
                         _imageUrl, fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
                           color: AppColors.primaryMuted,
-                          child: const Center(child: Text('SJ',
-                            style: TextStyle(color: AppColors.primary,
+                          child: Center(child: Text(_initials,
+                            style: const TextStyle(color: AppColors.primary,
                               fontSize: 32, fontWeight: FontWeight.bold))),
                         ),
                       ),
@@ -637,7 +658,24 @@ class ProfileScreen extends StatelessWidget {
                 fontSize: 14, color: textSec)),
             ]),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
+
+          // ── Port Admin section ─────────────────────────────────
+          if (isPortAdmin && AppSession.isLoggedIn) ...[
+            _sectionHeader('Port Assignment', isDark),
+            const SizedBox(height: 8),
+            _buildCardGroup(card, divCol, [
+              _infoTile('Assigned Ports',
+                  AppSession.instance.assignedPorts.join(', '), textPri),
+              _infoTile('Active Orders',
+                  '${OrderStore.getOrdersForPorts(AppSession.instance.assignedPorts).where((o) => o['status'] != AppConstants.statusCompleted && o['status'] != AppConstants.statusRejected).length}',
+                  textPri),
+              _infoTile('Completed Orders',
+                  '${OrderStore.getOrdersForPorts(AppSession.instance.assignedPorts).where((o) => o['status'] == AppConstants.statusCompleted).length}',
+                  textPri),
+            ]),
+            const SizedBox(height: 24),
+          ],
 
           // ── Group 1: Navigation Actions ───────────────────────
           _buildCardGroup(card, divCol, [
@@ -656,7 +694,8 @@ class ProfileScreen extends StatelessWidget {
               leading: CupertinoIcons.settings,
               iconBg: const Color(0xFF10B981),
               onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => SettingsScreen(isAdmin: isAdmin)))),
+                builder: (_) => SettingsScreen(
+                  isAdmin: isAdmin || isPortAdmin)))),
             _tile(context, card, textPri,
               title: 'Help',
               leading: CupertinoIcons.question_circle,
@@ -664,7 +703,7 @@ class ProfileScreen extends StatelessWidget {
           ]),
           const SizedBox(height: 24),
 
-          // ── Group 2: Account (Admin only – Target Management) ──
+          // ── Group 2: Account (Admin only) ──
           if (isAdmin) ...[
             _sectionHeader('Account', isDark),
             const SizedBox(height: 8),
@@ -675,15 +714,23 @@ class ProfileScreen extends StatelessWidget {
                 iconBg: const Color(0xFF0EA5E9),
                 onTap: () => Navigator.push(context, MaterialPageRoute(
                   builder: (_) => const TargetManagementScreen()))),
+              _tile(context, card, textPri,
+                title: 'Port Admin Management',
+                leading: Icons.anchor_rounded,
+                iconBg: const Color(0xFF6366F1),
+                onTap: () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => const PortAdminManagementScreen()))),
             ]),
             const SizedBox(height: 32),
-          ] else
+          ] else if (!isPortAdmin)
             const SizedBox(height: 12),
 
           // ── Logout ────────────────────────────────────────────
           TextButton(
-            onPressed: () =>
-              Navigator.pushReplacementNamed(context, '/login'),
+            onPressed: () {
+              AppSession.clear();
+              Navigator.pushReplacementNamed(context, '/login');
+            },
             child: Text('Log Out', style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.error,
               fontWeight: FontWeight.bold,
@@ -729,6 +776,22 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     );
+
+  Widget _infoTile(String title, String value, Color textPri) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    child: Row(
+      children: [
+        Expanded(child: Text(title,
+            style: AppTextStyles.bodyMedium.copyWith(
+                fontSize: 16, fontWeight: FontWeight.w500, color: textPri))),
+        Flexible(
+          child: Text(value,
+              style: AppTextStyles.caption,
+              textAlign: TextAlign.right),
+        ),
+      ],
+    ),
+  );
 
   Widget _tile(
     BuildContext context, Color card, Color textPri, {

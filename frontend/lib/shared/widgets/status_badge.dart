@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 
-enum OrderStatus { pending, processed, completed, confirmed, rejected }
+enum OrderStatus {
+  pendingApproval,
+  rejected,
+  approved,
+  onHold,
+  dispatched,
+  completed,
+  // Legacy aliases for backward compatibility
+  pending,
+  processed,
+  confirmed,
+}
 
 class StatusBadge extends StatelessWidget {
   final OrderStatus status;
@@ -10,11 +22,23 @@ class StatusBadge extends StatelessWidget {
 
   factory StatusBadge.fromString(String s) {
     switch (s.toLowerCase()) {
-      case 'processed':  return const StatusBadge(status: OrderStatus.processed);
-      case 'completed':  return const StatusBadge(status: OrderStatus.completed);
-      case 'confirmed':  return const StatusBadge(status: OrderStatus.confirmed);
-      case 'rejected':   return const StatusBadge(status: OrderStatus.rejected);
-      default:           return const StatusBadge(status: OrderStatus.pending);
+      case AppConstants.statusPendingApproval:
+      case 'pending':
+        return const StatusBadge(status: OrderStatus.pendingApproval);
+      case AppConstants.statusRejected:
+        return const StatusBadge(status: OrderStatus.rejected);
+      case AppConstants.statusApproved:
+      case 'confirmed':
+        return const StatusBadge(status: OrderStatus.approved);
+      case AppConstants.statusOnHold:
+        return const StatusBadge(status: OrderStatus.onHold);
+      case AppConstants.statusDispatched:
+      case 'processed':
+        return const StatusBadge(status: OrderStatus.dispatched);
+      case AppConstants.statusCompleted:
+        return const StatusBadge(status: OrderStatus.completed);
+      default:
+        return const StatusBadge(status: OrderStatus.pendingApproval);
     }
   }
 
@@ -29,7 +53,7 @@ class StatusBadge extends StatelessWidget {
         border: Border.all(color: c.withValues(alpha: 0.35)),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if (status == OrderStatus.confirmed)
+        if (status == OrderStatus.approved)
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: Icon(Icons.lock_rounded, size: 9, color: c),
@@ -41,21 +65,41 @@ class StatusBadge extends StatelessWidget {
 
   Color _color() {
     switch (status) {
-      case OrderStatus.processed:  return AppColors.statusProcessed;
-      case OrderStatus.completed:  return AppColors.statusCompleted;
-      case OrderStatus.confirmed:  return const Color(0xFF9B59B6);
-      case OrderStatus.rejected:   return AppColors.statusRejected;
-      default:                     return AppColors.statusPending;
+      case OrderStatus.pendingApproval:
+      case OrderStatus.pending:
+        return const Color(0xFFEAB308); // amber
+      case OrderStatus.approved:
+      case OrderStatus.confirmed:
+        return const Color(0xFF3B82F6); // blue
+      case OrderStatus.onHold:
+        return const Color(0xFFF97316); // orange
+      case OrderStatus.dispatched:
+      case OrderStatus.processed:
+        return const Color(0xFF14B8A6); // teal
+      case OrderStatus.completed:
+        return AppColors.statusCompleted;
+      case OrderStatus.rejected:
+        return AppColors.statusRejected;
     }
   }
 
   String _label() {
     switch (status) {
-      case OrderStatus.processed:  return 'Processed';
-      case OrderStatus.completed:  return 'Completed';
-      case OrderStatus.confirmed:  return 'Confirmed';
-      case OrderStatus.rejected:   return 'Rejected';
-      default:                     return 'Pending';
+      case OrderStatus.pendingApproval:
+      case OrderStatus.pending:
+        return 'Pending Approval';
+      case OrderStatus.rejected:
+        return 'Rejected';
+      case OrderStatus.approved:
+      case OrderStatus.confirmed:
+        return 'Approved';
+      case OrderStatus.onHold:
+        return 'On Hold';
+      case OrderStatus.dispatched:
+      case OrderStatus.processed:
+        return 'Dispatched';
+      case OrderStatus.completed:
+        return 'Completed';
     }
   }
 }

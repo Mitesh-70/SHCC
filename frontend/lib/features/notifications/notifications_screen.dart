@@ -4,10 +4,15 @@ import '../../core/constants/app_text_styles.dart';
 import '../../shared/widgets/shcc_app_bar.dart';
 import '../../shared/widgets/empty_state.dart';
 
-// ── Notification types (only the 5 required) ──────────────────────────────────
+// ── Notification types ────────────────────────────────────────────────────────
 enum NotifType {
   orderAccepted,
   orderRejected,
+  orderCreated,
+  orderApproved,
+  orderOnHold,
+  holdReleased,
+  dispatchUpdated,
   targetModified,
   targetCompleted,
   catalogueUpdated,
@@ -21,8 +26,9 @@ class AppNotification {
   final String description;
   final String timestamp;
   final NotifType type;
-  final String? orderId;       // for order-related notifications
-  final String? catalogueNote; // "Price updated" or "Availability updated"
+  final String? orderId;
+  final String? catalogueNote;
+  final List<String>? roles;
   bool isRead;
   final DateTime createdAt;
 
@@ -35,6 +41,7 @@ class AppNotification {
     required this.type,
     this.orderId,
     this.catalogueNote,
+    this.roles,
     this.isRead = false,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
@@ -95,9 +102,18 @@ class NotificationStore {
     ),
   ];
 
-  /// Returns notifications for a person, unread first then read, each group newest first.
-  static List<AppNotification> forPerson(String person) {
-    final all = _items.where((n) => n.person == person).toList();
+  /// Returns notifications for a person and/or role.
+  static List<AppNotification> forRecipient({
+    required String person,
+    String? role,
+  }) {
+    final all = _items.where((n) {
+      if (n.person == person) return true;
+      if (role != null && n.roles != null && n.roles!.contains(role)) {
+        return true;
+      }
+      return false;
+    }).toList();
     final unread = all.where((n) => !n.isRead).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final read = all.where((n) => n.isRead).toList()
@@ -105,8 +121,22 @@ class NotificationStore {
     return [...unread, ...read];
   }
 
+  /// Backward-compatible alias.
+  static List<AppNotification> forPerson(String person) =>
+      forRecipient(person: person);
+
+  static int unreadCountFor({required String person, String? role}) =>
+    _items.where((n) {
+      if (n.isRead) return false;
+      if (n.person == person) return true;
+      if (role != null && n.roles != null && n.roles!.contains(role)) {
+        return true;
+      }
+      return false;
+    }).length;
+
   static int unreadCount(String person) =>
-    _items.where((n) => n.person == person && !n.isRead).length;
+      unreadCountFor(person: person);
 
   static void add({
     required String person,
@@ -115,13 +145,23 @@ class NotificationStore {
     required NotifType type,
     String? orderId,
     String? catalogueNote,
+    List<String>? roles,
   }) {
     _items.insert(0, AppNotification(
       id: 'N${DateTime.now().millisecondsSinceEpoch}',
       person: person, title: title, description: description,
       timestamp: 'Just now', type: type,
-      orderId: orderId, catalogueNote: catalogueNote,
+      orderId: orderId, catalogueNote: catalogueNote, roles: roles,
     ));
+  }
+
+  static void markAllReadFor({required String person, String? role}) {
+    for (final n in _items) {
+      if (n.person == person) n.isRead = true;
+      if (role != null && n.roles != null && n.roles!.contains(role)) {
+        n.isRead = true;
+      }
+    }
   }
 
   static void markRead(String id) {
@@ -129,11 +169,7 @@ class NotificationStore {
     if (idx != -1) _items[idx].isRead = true;
   }
 
-  static void markAllRead(String person) {
-    for (final n in _items) {
-      if (n.person == person) n.isRead = true;
-    }
-  }
+  static void markAllRead(String person) => markAllReadFor(person: person);
 }
 
 // ── Navigation callback type ──────────────────────────────────────────────────
@@ -142,11 +178,13 @@ typedef NotifNavCallback = void Function(NotifType type, {String? orderId});
 // ── Notifications Screen ──────────────────────────────────────────────────────
 class NotificationsScreen extends StatefulWidget {
   final String person;
+  final String? role;
   final NotifNavCallback? onNavigate;
 
   const NotificationsScreen({
     super.key,
     required this.person,
+    this.role,
     this.onNavigate,
   });
 
@@ -156,7 +194,7 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   List<AppNotification> get _notifs =>
-    NotificationStore.forPerson(widget.person);
+    NotificationStore.forRecipient(person: widget.person, role: widget.role);
 
   int get _unread =>
     _notifs.where((n) => !n.isRead).length;
@@ -190,7 +228,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ? [
               TextButton(
                 onPressed: () => setState(() =>
-                  NotificationStore.markAllRead(widget.person)),
+                  NotificationStore.markAllReadFor(
+                    person: widget.person, role: widget.role)),
                 child: Text('Mark all read',
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.primary)),
@@ -270,8 +309,14 @@ class _NotifCard extends StatelessWidget {
 
   IconData get _icon {
     switch (notif.type) {
-      case NotifType.orderAccepted:   return Icons.check_circle_outline_rounded;
+      case NotifType.orderAccepted:
+      case NotifType.orderApproved:
+        return Icons.check_circle_outline_rounded;
       case NotifType.orderRejected:   return Icons.cancel_outlined;
+      case NotifType.orderCreated:    return Icons.add_shopping_cart_outlined;
+      case NotifType.orderOnHold:     return Icons.pause_circle_outline;
+      case NotifType.holdReleased:    return Icons.play_circle_outline;
+      case NotifType.dispatchUpdated: return Icons.local_shipping_outlined;
       case NotifType.targetModified:  return Icons.track_changes_rounded;
       case NotifType.targetCompleted: return Icons.emoji_events_outlined;
       case NotifType.catalogueUpdated:return Icons.inventory_2_outlined;
@@ -280,8 +325,14 @@ class _NotifCard extends StatelessWidget {
 
   Color get _color {
     switch (notif.type) {
-      case NotifType.orderAccepted:   return AppColors.success;
+      case NotifType.orderAccepted:
+      case NotifType.orderApproved:
+      case NotifType.holdReleased:
+        return AppColors.success;
       case NotifType.orderRejected:   return AppColors.error;
+      case NotifType.orderCreated:    return AppColors.info;
+      case NotifType.orderOnHold:     return AppColors.warning;
+      case NotifType.dispatchUpdated: return const Color(0xFF14B8A6);
       case NotifType.targetModified:  return AppColors.primary;
       case NotifType.targetCompleted: return const Color(0xFFFFCC00);
       case NotifType.catalogueUpdated:return AppColors.info;
@@ -291,7 +342,13 @@ class _NotifCard extends StatelessWidget {
   String get _navHint {
     switch (notif.type) {
       case NotifType.orderAccepted:
-      case NotifType.orderRejected:   return '→ View Order';
+      case NotifType.orderApproved:
+      case NotifType.orderRejected:
+      case NotifType.orderCreated:
+      case NotifType.orderOnHold:
+      case NotifType.holdReleased:
+      case NotifType.dispatchUpdated:
+        return '→ View Order';
       case NotifType.targetModified:
       case NotifType.targetCompleted: return '→ View Profile';
       case NotifType.catalogueUpdated:return '→ View Catalogue';
@@ -412,11 +469,13 @@ class _NotifCard extends StatelessWidget {
 // ── Bell icon widget ──────────────────────────────────────────────────────────
 class NotificationBell extends StatefulWidget {
   final String person;
+  final String? role;
   final NotifNavCallback? onNavigate;
 
   const NotificationBell({
     super.key,
     required this.person,
+    this.role,
     this.onNavigate,
   });
 
@@ -427,13 +486,15 @@ class NotificationBell extends StatefulWidget {
 class _NotificationBellState extends State<NotificationBell> {
   @override
   Widget build(BuildContext context) {
-    final count = NotificationStore.unreadCount(widget.person);
+    final count = NotificationStore.unreadCountFor(
+      person: widget.person, role: widget.role);
 
     return GestureDetector(
       onTap: () async {
         await Navigator.push(context, MaterialPageRoute(
           builder: (_) => NotificationsScreen(
             person: widget.person,
+            role: widget.role,
             onNavigate: widget.onNavigate,
           ),
         ));

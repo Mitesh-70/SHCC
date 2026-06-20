@@ -10,6 +10,9 @@ import '../../search/screens/search_screen.dart';
 import '../../catalogue/screens/catalogue_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../notifications/notifications_screen.dart';
+import '../../../core/session/app_session.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../data/order_store.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -73,7 +76,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _onNotifNav(NotifType type, {String? orderId}) {
     switch (type) {
       case NotifType.orderAccepted:
+      case NotifType.orderApproved:
       case NotifType.orderRejected:
+      case NotifType.orderCreated:
+      case NotifType.dispatchUpdated:
+      case NotifType.orderOnHold:
+      case NotifType.holdReleased:
         setState(() { _highlightOrder = orderId; _navIndex = 1; });
         _pageCtrl.animateToPage(1,
           duration: const Duration(milliseconds: 280),
@@ -142,32 +150,25 @@ class _SalesHome extends StatelessWidget {
   final NotifNavCallback onNotifNav;
   const _SalesHome({required this.onNavTap, required this.onNotifNav});
 
-  static const _recentOrders = [
-    {
-      'id': 'ORD-2024-048', 'buyer_name': 'JSW Steel Ltd',
-      'base_rate': 6200.0, 'freight': 10000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 200.0,
-      'type_of_sale': 'Spot', 'product_type': 'Indonesian Coal',
-      'port_name': 'Mundra', 'status': 'processed', 'date': '28 Apr',
-    },
-    {
-      'id': 'ORD-2024-047', 'buyer_name': 'Ultratech Cement',
-      'base_rate': 6100.0, 'freight': 15000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 150.0,
-      'type_of_sale': 'F.O.R.', 'product_type': 'South African Coal',
-      'port_name': 'Kandla', 'status': 'pending', 'date': '27 Apr',
-      'rejected': true,
-      'admin_comment': 'Quantity too high. Reduce to 100 MT.',
-    },
-    {
-      'id': 'ORD-2024-046', 'buyer_name': 'Tata Steel',
-      'base_rate': 5600.0, 'freight': 20000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 500.0,
-      'type_of_sale': 'Spot', 'product_type': 'Russian Coal',
-      'port_name': 'Hazira', 'status': 'completed', 'date': '26 Apr',
-    },
-  ];
+  static List<Map<String, dynamic>> get _recentOrders {
+    final name = AppSession.isLoggedIn
+        ? AppSession.instance.name
+        : 'Raj Sharma';
+    return OrderStore.getOrdersForSalesPerson(name).take(3).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final personName = AppSession.isLoggedIn
+        ? AppSession.instance.name
+        : 'Raj Sharma';
+    final initials = AppSession.isLoggedIn
+        ? AppSession.instance.initials
+        : 'RS';
+    final pendingCount = OrderStore.getOrdersForSalesPerson(personName)
+        .where((o) => o['status'] == AppConstants.statusPendingApproval)
+        .length;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -179,10 +180,10 @@ class _SalesHome extends StatelessWidget {
               isAdmin: false,
               fromTab: false,
             ))),
-        userInitials: 'RS',
+        userInitials: initials,
         actions: [
           NotificationBell(
-            person: 'Raj Sharma',
+            person: personName,
             onNavigate: onNotifNav,
           ),
           const SizedBox(width: 4),
@@ -194,7 +195,7 @@ class _SalesHome extends StatelessWidget {
           // Welcome
           Text('Good morning,', style: theme.textTheme.bodySmall),
           const SizedBox(height: 2),
-          Text('Raj Sharma',
+          Text(personName,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w700, letterSpacing: -0.3)),
           const SizedBox(height: 4),
@@ -227,14 +228,14 @@ class _SalesHome extends StatelessWidget {
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: const [
+                  children: [
                     Expanded(
-                      child: KpiCard(label: 'Pending', value: '6',
+                      child: KpiCard(label: 'Pending', value: '$pendingCount',
                         icon: Icons.hourglass_top_rounded,
                         color: AppColors.warning),
                     ),
-                    SizedBox(width: 12),
-                    Expanded(
+                    const SizedBox(width: 12),
+                    const Expanded(
                       child: KpiCard(
                         label: 'Target Achieved',
                         value: '62%',

@@ -5,19 +5,25 @@ class ShccBottomNav extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
   final bool isAdmin;
+  final bool isPortAdmin;
 
   const ShccBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTap,
     this.isAdmin = false,
+    this.isPortAdmin = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme  = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final items  = isAdmin ? _adminItems() : _salesItems();
+    final items  = isPortAdmin
+        ? _portAdminItems()
+        : isAdmin
+            ? _adminItems()
+            : _salesItems();
     final bg     = isDark ? const Color(0xFF111111) : Colors.white;
     final shadow = isDark
       ? const Color(0x40000000)
@@ -88,6 +94,15 @@ class ShccBottomNav extends StatelessWidget {
     _BottomNavData(icon: Icons.person_outline_rounded,
       activeIcon: Icons.person_rounded, label: 'Profile'),
   ];
+
+  List<_BottomNavData> _portAdminItems() => const [
+    _BottomNavData(icon: Icons.grid_view_rounded,
+      activeIcon: Icons.grid_view_rounded, label: 'Home'),
+    _BottomNavData(icon: Icons.search_rounded,
+      activeIcon: Icons.search_rounded, label: 'Search'),
+    _BottomNavData(icon: Icons.person_outline_rounded,
+      activeIcon: Icons.person_rounded, label: 'Profile'),
+  ];
 }
 
 // ── Nav item data ─────────────────────────────────────────────────────────────
@@ -119,7 +134,6 @@ class _NavItem extends StatelessWidget {
       ? const Color(0xFF5A5A5A)
       : const Color(0xFFAAAAAA);
 
-    // Center "Order" button gets special treatment
     if (item.isCenter) {
       return GestureDetector(
         onTap: onTap,

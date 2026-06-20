@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/session/app_session.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -51,13 +53,41 @@ class _LoginScreenState extends State<LoginScreen> {
     await Future.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
 
-    final email = '${_emailCtrl.text.trim().toLowerCase()}@shcc.co.in';
+    final username = _emailCtrl.text.trim().toLowerCase();
     final password = _passCtrl.text;
-    final route = switch ((email, password)) {
-      ('salesperson@shcc.co.in', 'sales123') => '/dashboard',
-      ('admin@shcc.co.in', 'admin123') => '/admin_dashboard',
-      _ => null,
-    };
+
+    String? route;
+    String? customError;
+
+    if (username == 'salesperson' && password == 'sales123') {
+      AppSession.setSalesPerson(name: 'Raj Sharma', id: 'sp-001');
+      route = '/dashboard';
+    } else if (username == 'admin' && password == 'admin123') {
+      AppSession.setAdmin(name: 'Admin', id: 'admin-001');
+      route = '/admin_dashboard';
+    } else {
+      final pa = PortAdminStore.findByUsername(username);
+      if (pa != null && password == 'port123') {
+        if (!pa.isActive) {
+          customError = 'This account has been deactivated.';
+        } else {
+          AppSession.setPortAdmin(
+            name: pa.name,
+            id: pa.id,
+            assignedPorts: pa.assignedPorts,
+          );
+          route = '/port_admin_dashboard';
+        }
+      }
+    }
+
+    if (customError != null) {
+      setState(() {
+        _loading = false;
+        _authError = customError;
+      });
+      return;
+    }
 
     if (route == null) {
       setState(() {

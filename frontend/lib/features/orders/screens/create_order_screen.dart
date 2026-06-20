@@ -4,6 +4,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/session/app_session.dart';
+import '../../../data/order_store.dart';
+import '../../notifications/notifications_screen.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/form_section.dart';
 import '../../../shared/widgets/amount_summary_card.dart';
@@ -36,7 +39,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   String  _paymentTerms = 'Advance';
   bool    _loading      = false;
 
-  final String _salesPerson = 'Raj Sharma';
+  final String _salesPerson = AppSession.isLoggedIn
+      ? AppSession.instance.name
+      : 'Raj Sharma';
 
   double get _baseRate => double.tryParse(_baseRateCtrl.text) ?? 0;
   double get _freight  => double.tryParse(_freightCtrl.text)  ?? 0;
@@ -313,6 +318,68 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     setState(() => _loading = true);
     await Future.delayed(const Duration(milliseconds: 1200));
     if (!mounted) return;
+
+    final isEdit = widget.prefill != null;
+    if (isEdit) {
+      OrderStore.updateOrder(widget.prefill!['id'] as String, {
+        'buyer_name': _buyerCtrl.text.trim(),
+        'base_rate': _baseRate,
+        'freight': _freight,
+        'gst': _gst,
+        'tcs': _tcs,
+        'quantity': _qty,
+        'type_of_sale': _typeOfSale,
+        'product_type': _productType,
+        'quality': _quality,
+        'port_name': _portName,
+        'payment_terms': _paymentTerms,
+        'remark': _remarkCtrl.text.trim(),
+      });
+    } else {
+      final order = OrderStore.addOrder({
+        'buyer_name': _buyerCtrl.text.trim(),
+        'sales_person_name': _salesPerson,
+        'sales_person_id': AppSession.isLoggedIn ? AppSession.instance.id : 'sp-001',
+        'base_rate': _baseRate,
+        'freight': _freight,
+        'gst': _gst,
+        'tcs': _tcs,
+        'quantity': _qty,
+        'type_of_sale': _typeOfSale,
+        'product_type': _productType,
+        'quality': _quality,
+        'port_name': _portName,
+        'payment_terms': _paymentTerms,
+        'remark': _remarkCtrl.text.trim(),
+        'status': widget.isAdmin ? AppConstants.statusApproved : AppConstants.statusPendingApproval,
+      });
+      NotificationStore.add(
+        person: 'Admin',
+        roles: ['admin'],
+        title: 'New Order Created',
+        description: widget.isAdmin
+            ? 'Order ${order['id']} created and auto-approved by Admin.'
+            : 'Order ${order['id']} submitted by $_salesPerson.',
+        type: widget.isAdmin ? NotifType.orderApproved : NotifType.orderCreated,
+        orderId: order['id'] as String,
+      );
+      if (_portName != null) {
+        for (final pa in PortAdminStore.users) {
+          if (pa.isActive && pa.assignedPorts.contains(_portName)) {
+            NotificationStore.add(
+              person: pa.name,
+              title: widget.isAdmin ? 'New Order Approved' : 'New Order Created',
+              description: widget.isAdmin
+                  ? 'Order ${order['id']} for $_portName has been approved by Admin.'
+                  : 'Order ${order['id']} for $_portName submitted.',
+              type: widget.isAdmin ? NotifType.orderApproved : NotifType.orderCreated,
+              orderId: order['id'] as String,
+            );
+          }
+        }
+      }
+    }
+
     setState(() => _loading = false);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Row(children: [

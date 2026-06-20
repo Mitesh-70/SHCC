@@ -7,64 +7,16 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../core/session/app_session.dart';
+import '../../../data/order_store.dart';
 import '../../profile/screens/profile_screen.dart';
-
-const _allOrders = [
-  {
-    'id': 'ORD-2024-048', 'buyer_name': 'JSW Steel Ltd',
-    'sales_person_name': 'Raj Sharma', 'product_type': 'Indonesian Coal',
-    'base_rate': 6200.0, 'freight': 10000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 200.0,
-    'port_name': 'Mundra', 'payment_terms': 'Advance',
-    'status': 'confirmed', 'date': '2024-04-28',
-  },
-  {
-    'id': 'ORD-2024-047', 'buyer_name': 'Ultratech Cement',
-    'sales_person_name': 'Raj Sharma', 'product_type': 'South African Coal',
-    'base_rate': 6100.0, 'freight': 15000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 150.0,
-    'port_name': 'Kandla', 'payment_terms': 'Credit Line',
-    'status': 'pending', 'date': '2024-04-27',
-  },
-  {
-    'id': 'ORD-2024-046', 'buyer_name': 'Tata Steel',
-    'sales_person_name': 'Amit Patel', 'product_type': 'Russian Coal',
-    'base_rate': 5600.0, 'freight': 20000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 500.0,
-    'port_name': 'Hazira', 'payment_terms': 'On Delivery',
-    'status': 'processed', 'date': '2024-04-26',
-  },
-  {
-    'id': 'ORD-2024-045', 'buyer_name': 'JSW Steel Ltd',
-    'sales_person_name': 'Raj Sharma', 'product_type': 'US Coal',
-    'base_rate': 3500.0, 'freight': 5000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 100.0,
-    'port_name': 'Magdalla', 'payment_terms': 'Advance',
-    'status': 'pending', 'date': '2024-04-25',
-  },
-  {
-    'id': 'ORD-2024-044', 'buyer_name': 'ACC Cement',
-    'sales_person_name': 'Priya Mehta', 'product_type': 'Indonesian Coal',
-    'base_rate': 8200.0, 'freight': 25000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 300.0,
-    'port_name': 'Navlakhi', 'payment_terms': 'LC',
-    'status': 'completed', 'date': '2024-04-24',
-  },
-  {
-    'id': 'ORD-2024-043', 'buyer_name': 'Essar Steel',
-    'sales_person_name': 'Amit Patel', 'product_type': 'South African Coal',
-    'base_rate': 7200.0, 'freight': 16000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 420.0,
-    'port_name': 'Hazira', 'payment_terms': 'LC',
-    'status': 'confirmed', 'date': '2024-04-20',
-  },
-  {
-    'id': 'ORD-2024-042', 'buyer_name': 'Birla Cement',
-    'sales_person_name': 'Priya Mehta', 'product_type': 'Indonesian Coal',
-    'base_rate': 6800.0, 'freight': 12000.0, 'gst': 18.0, 'tcs': 0.1, 'quantity': 250.0,
-    'port_name': 'Mundra', 'payment_terms': 'Advance',
-    'status': 'completed', 'date': '2024-04-15',
-  },
-];
 
 const _salesPersons = ['All', 'Raj Sharma', 'Amit Patel', 'Priya Mehta'];
 
 class ReportsScreen extends StatefulWidget {
-  const ReportsScreen({super.key});
+  final String userRole;
+
+  const ReportsScreen({super.key, this.userRole = 'admin'});
   @override
   State<ReportsScreen> createState() => _ReportsScreenState();
 }
@@ -73,33 +25,55 @@ class _ReportsScreenState extends State<ReportsScreen> {
   // ── Filter state ───────────────────────────────────────────────────
   DateTime? _fromDate;
   DateTime? _toDate;
-  String _salesperson = 'All';
-  String _port        = 'All';
+  late String _salesperson;
+  late String _port;
   bool   _pdfLoading     = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _salesperson = widget.userRole == 'sales_person' && AppSession.isLoggedIn
+        ? AppSession.instance.name
+        : 'All';
+    _port = 'All';
+  }
 
   bool get _hasActiveFilters => 
     _fromDate != null || _toDate != null || _salesperson != 'All' || _port != 'All';
 
   // ── Filtered orders ────────────────────────────────────────────────
+  List<Map<String, dynamic>> get _baseOrders {
+    switch (widget.userRole) {
+      case 'port_admin':
+        return OrderStore.getOrdersForPorts(AppSession.instance.assignedPorts);
+      case 'sales_person':
+        return OrderStore.getOrdersForSalesPerson(AppSession.instance.name);
+      default:
+        return OrderStore.getAllOrders();
+    }
+  }
+
   List<Map<String, dynamic>> get _filtered {
-    return _allOrders.where((o) {
-      // Date range
+    return _baseOrders.where((o) {
       if (_fromDate != null || _toDate != null) {
-        final parts = (o['date'] as String).split('-');
-        final d = DateTime(
-          int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
-        if (_fromDate != null && d.isBefore(_fromDate!)) return false;
-        if (_toDate   != null && d.isAfter(_toDate!))    return false;
+        final dateStr = (o['date_iso'] ?? o['date']) as String;
+        final parts = dateStr.contains('-')
+            ? dateStr.split('-')
+            : dateStr.split(' ').reversed.toList();
+        DateTime? d;
+        if (parts.length >= 3 && parts[0].length == 4) {
+          d = DateTime(
+            int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+        }
+        if (d != null) {
+          if (_fromDate != null && d.isBefore(_fromDate!)) return false;
+          if (_toDate != null && d.isAfter(_toDate!)) return false;
+        }
       }
-      // Salesperson
-      if (_salesperson != 'All' &&
-          o['sales_person_name'] != _salesperson) {
+      if (_salesperson != 'All' && o['sales_person_name'] != _salesperson) {
         return false;
       }
-      // Port
-      if (_port != 'All' && o['port_name'] != _port) {
-        return false;
-      }
+      if (_port != 'All' && o['port_name'] != _port) return false;
       return true;
     }).toList();
   }
@@ -116,13 +90,41 @@ class _ReportsScreenState extends State<ReportsScreen> {
   double get _revenue  => _filtered.fold(0, (s, o) => s + _total(o));
   double get _qty      => _filtered.fold(
     0, (s, o) => s + (o['quantity'] as num).toDouble());
-  int    get _pending  => _filtered.where((o) => o['status'] == 'pending').length;
-  int    get _completed =>
-    _filtered.where((o) => o['status'] == 'completed').length;
-  int    get _processed =>
-    _filtered.where((o) => o['status'] == 'processed').length;
-  int    get _confirmed =>
-    _filtered.where((o) => o['status'] == 'confirmed').length;
+  int get _pendingApproval => _filtered
+      .where((o) => o['status'] == AppConstants.statusPendingApproval).length;
+  int get _approved => _filtered
+      .where((o) => o['status'] == AppConstants.statusApproved).length;
+  int get _dispatched => _filtered
+      .where((o) => o['status'] == AppConstants.statusDispatched).length;
+  int get _onHold => _filtered
+      .where((o) => o['status'] == AppConstants.statusOnHold).length;
+  int get _completed => _filtered
+      .where((o) => o['status'] == AppConstants.statusCompleted).length;
+
+  Map<String, Map<String, dynamic>> get _portStats {
+    final stats = <String, Map<String, dynamic>>{};
+    for (final o in _filtered) {
+      final port = o['port_name'] as String;
+      stats.putIfAbsent(port, () => {
+        'orders': 0,
+        'revenue': 0.0,
+        'dispatched': 0,
+        'completed': 0,
+      });
+      stats[port]!['orders'] = (stats[port]!['orders'] as int) + 1;
+      stats[port]!['revenue'] =
+          (stats[port]!['revenue'] as double) + _total(o);
+      if (o['status'] == AppConstants.statusDispatched) {
+        stats[port]!['dispatched'] =
+            (stats[port]!['dispatched'] as int) + 1;
+      }
+      if (o['status'] == AppConstants.statusCompleted) {
+        stats[port]!['completed'] =
+            (stats[port]!['completed'] as int) + 1;
+      }
+    }
+    return stats;
+  }
 
   String _fmt(double v) {
     if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
@@ -217,10 +219,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
             _pdfRow(['Total Revenue', _fmt(_revenue)]),
             _pdfRow(['Total Orders',  '${orders.length}']),
             _pdfRow(['Total Quantity','${_qty.toStringAsFixed(0)} MT']),
-            _pdfRow(['Confirmed',     '$_confirmed']),
+            _pdfRow(['Approved',      '$_approved']),
+            _pdfRow(['Dispatched',    '$_dispatched']),
             _pdfRow(['Completed',     '$_completed']),
-            _pdfRow(['Processed',     '$_processed']),
-            _pdfRow(['Pending',       '$_pending']),
+            _pdfRow(['On Hold',       '$_onHold']),
+            _pdfRow(['Pending',       '$_pendingApproval']),
           ],
         ),
         pw.SizedBox(height: 20),
@@ -331,8 +334,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Scaffold(
       appBar: ShccAppBar(
         logoAsset: 'assets/images/logo.png',
-        userInitials: 'AD',
-        onProfileTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen(isAdmin: true, fromTab: false))),
+        userInitials: AppSession.isLoggedIn
+            ? AppSession.instance.initials
+            : 'AD',
+        onProfileTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProfileScreen(
+              isAdmin: widget.userRole == 'admin',
+              isPortAdmin: widget.userRole == 'port_admin',
+              fromTab: false,
+            ),
+          ),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
@@ -403,8 +417,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   label: 'Sales Person',
                   icon: Icons.person_outline_rounded,
                   selectedValue: _salesperson,
-                  items: _salesPersons,
-                  onChanged: (v) => setState(() => _salesperson = v ?? 'All'),
+                  items: widget.userRole == 'sales_person' && AppSession.isLoggedIn
+                      ? [AppSession.instance.name]
+                      : _salesPersons,
+                  onChanged: widget.userRole == 'sales_person'
+                      ? null
+                      : (v) => setState(() => _salesperson = v ?? 'All'),
                 ),
                 const SizedBox(height: 12),
 
@@ -413,7 +431,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   label: 'Port',
                   icon: Icons.anchor_rounded,
                   selectedValue: _port,
-                  items: ['All', ...AppConstants.ports],
+                  items: widget.userRole == 'port_admin' && AppSession.isLoggedIn
+                      ? ['All', ...AppSession.instance.assignedPorts]
+                      : ['All', ...AppConstants.ports],
                   onChanged: (v) => setState(() => _port = v ?? 'All'),
                 ),
                 const SizedBox(height: 16),
@@ -470,8 +490,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 color: const Color(0xFF9B59B6),
               ),
               _MetricCard(
-                label: 'Pending',
-                value: '$_pending',
+                label: 'Pending Approval',
+                value: '$_pendingApproval',
                 icon: Icons.hourglass_top_rounded,
                 color: AppColors.warning,
               ),
@@ -492,20 +512,68 @@ class _ReportsScreenState extends State<ReportsScreen> {
               children: [
                 Text('Status Breakdown', style: AppTextStyles.heading3),
                 const SizedBox(height: 14),
-                _StatusRow('Confirmed', _confirmed,
-                  filtered.length, const Color(0xFF9B59B6)),
+                _StatusRow('Approved', _approved,
+                  filtered.length, const Color(0xFF3B82F6)),
+                const SizedBox(height: 8),
+                _StatusRow('Dispatched', _dispatched,
+                  filtered.length, const Color(0xFF14B8A6)),
+                const SizedBox(height: 8),
+                _StatusRow('On Hold', _onHold,
+                  filtered.length, AppColors.warning),
                 const SizedBox(height: 8),
                 _StatusRow('Completed', _completed,
                   filtered.length, AppColors.success),
                 const SizedBox(height: 8),
-                _StatusRow('Processed', _processed,
-                  filtered.length, AppColors.info),
-                const SizedBox(height: 8),
-                _StatusRow('Pending', _pending,
-                  filtered.length, AppColors.warning),
+                _StatusRow('Pending Approval', _pendingApproval,
+                  filtered.length, const Color(0xFFEAB308)),
               ],
             ),
           ),
+          if (widget.userRole == 'admin' || widget.userRole == 'port_admin') ...[
+            const SizedBox(height: 24),
+            _SectionLabel('Port-wise Report', '${_portStats.length} ports'),
+            const SizedBox(height: 12),
+            ..._portStats.entries.map((e) {
+              final orders = e.value['orders'] as int;
+              final completed = e.value['completed'] as int;
+              final rate = orders == 0 ? 0.0 : completed / orders;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgCard,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(e.key, style: AppTextStyles.bodyMedium),
+                      const SizedBox(height: 8),
+                      Text('Orders: $orders  ·  Revenue: ${_fmt(e.value['revenue'] as double)}',
+                          style: AppTextStyles.caption),
+                      Text('Dispatched: ${e.value['dispatched']}  ·  Completed: $completed',
+                          style: AppTextStyles.caption),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: rate,
+                          minHeight: 6,
+                          backgroundColor: AppColors.border,
+                          valueColor: const AlwaysStoppedAnimation(AppColors.success),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text('Completion Rate: ${(rate * 100).toStringAsFixed(0)}%',
+                          style: AppTextStyles.caption),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
           const SizedBox(height: 24),
 
           // ── Invoice list ──────────────────────────────────────────
@@ -579,9 +647,11 @@ class _InvoiceCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final status = order['status'] as String;
     final color  = _statusColor(status);
-    final dateParts = (order['date'] as String).split('-');
-    final displayDate =
-      '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}';
+    final dateStr = (order['date_iso'] ?? '') as String;
+    final dateParts = dateStr.contains('-') ? dateStr.split('-') : [];
+    final displayDate = dateParts.length >= 3
+        ? '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}'
+        : (order['date'] as String? ?? 'Unknown');
 
     return GestureDetector(
       onTap: () => _showInvoice(context),
@@ -1012,7 +1082,7 @@ class _FilterDropdown extends StatelessWidget {
   final String label, selectedValue;
   final IconData icon;
   final List<String> items;
-  final void Function(String?) onChanged;
+  final void Function(String?)? onChanged;
 
   const _FilterDropdown({
     required this.label, required this.selectedValue,
