@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import Topbar from '../../components/layout/Topbar';
-import { Search, Filter, Eye, Check, Clock, Truck, XCircle, ShoppingCart, X, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Search, Filter, Eye, Check, Clock, Truck, XCircle, ShoppingCart, X, MessageSquare, CheckCircle2, Info } from 'lucide-react';
 import type { Order, OrderStatus } from '../../types';
+import OrderInfoModal from '../../components/ui/OrderInfoModal';
 
 const INITIAL_ORDERS: Order[] = [
-  { id: 'SHCC-1248', customer: 'Adani Power Ltd', product: 'Indonesian Coal (5500 GAR)', quantity: 2500, unit: 'MT', amount: 13750000, status: 'delivered', date: '2026-06-10', salesperson: 'Rahul Verma' },
-  { id: 'SHCC-1247', customer: 'Tata Power Company', product: 'South African Coal (6000 NAR)', quantity: 1800, unit: 'MT', amount: 11700000, status: 'shipped', date: '2026-06-09', salesperson: 'Rahul Verma' },
-  { id: 'SHCC-1246', customer: 'Jindal Steel & Power', product: 'US Coal (6800 NAR)', quantity: 1200, unit: 'MT', amount: 9600000, status: 'processing', date: '2026-06-08', salesperson: 'Neha Sharma' },
-  { id: 'SHCC-1245', customer: 'Vedanta Aluminium', product: 'Russian Coal (6000 NAR)', quantity: 3000, unit: 'MT', amount: 19500000, status: 'pending', date: '2026-06-07', salesperson: 'Vikram Singh' },
-  { id: 'SHCC-1244', customer: 'Ultratech Cement', product: 'Indonesian Coal (3800 GAR)', quantity: 4500, unit: 'MT', amount: 20250000, status: 'delivered', date: '2026-06-05', salesperson: 'Rahul Verma' },
-  { id: 'SHCC-1243', customer: 'Ambuja Cements', product: 'South African Coal (5500 NAR)', quantity: 1500, unit: 'MT', amount: 9000000, status: 'pending', date: '2026-06-03', salesperson: 'Neha Sharma' },
+  { id: 'SHCC-1248', customer: 'Adani Power Ltd', product: 'Indonesian Coal (5500 GAR)', quantity: 2500, unit: 'MT', amount: 13750000, status: 'delivered', date: '2026-06-10', updatedDate: '2026-06-14', salesperson: 'Rahul Verma', port: 'Mundra Port', baseAmount: 11500000, freight: 875000, gst: 1237500, tcs: 137500, portAdminRemarks: 'Delivered in 3 batches.', dispatchDetails: [{ date: '2026-06-12', quantity: 1000, unit: 'MT', vehicleNo: 'GJ01-AB1234', remark: 'First batch' }, { date: '2026-06-13', quantity: 900, unit: 'MT', vehicleNo: 'GJ01-CD5678', remark: 'Second batch' }, { date: '2026-06-14', quantity: 600, unit: 'MT', vehicleNo: 'GJ02-EF9012', remark: 'Final batch' }] },
+  { id: 'SHCC-1247', customer: 'Tata Power Company', product: 'South African Coal (6000 NAR)', quantity: 1800, unit: 'MT', amount: 11700000, status: 'shipped', date: '2026-06-09', updatedDate: '2026-06-12', salesperson: 'Rahul Verma', port: 'Kandla Port', baseAmount: 9800000, freight: 720000, gst: 1052400, tcs: 127600 },
+  { id: 'SHCC-1246', customer: 'Jindal Steel & Power', product: 'US Coal (6800 NAR)', quantity: 1200, unit: 'MT', amount: 9600000, status: 'processing', date: '2026-06-08', salesperson: 'Neha Sharma', port: 'Paradip Port', baseAmount: 8100000, freight: 600000, gst: 768000, tcs: 132000 },
+  { id: 'SHCC-1245', customer: 'Vedanta Aluminium', product: 'Russian Coal (6000 NAR)', quantity: 3000, unit: 'MT', amount: 19500000, status: 'pending', date: '2026-06-07', salesperson: 'Vikram Singh', port: 'Vizag Port', baseAmount: 16500000, freight: 1200000, gst: 1575000, tcs: 225000 },
+  { id: 'SHCC-1244', customer: 'Ultratech Cement', product: 'Indonesian Coal (3800 GAR)', quantity: 4500, unit: 'MT', amount: 20250000, status: 'delivered', date: '2026-06-05', updatedDate: '2026-06-11', salesperson: 'Rahul Verma', port: 'Mundra Port', baseAmount: 17000000, freight: 1575000, gst: 1822500, tcs: 202500 },
+  { id: 'SHCC-1243', customer: 'Ambuja Cements', product: 'South African Coal (5500 NAR)', quantity: 1500, unit: 'MT', amount: 9000000, status: 'cancelled', date: '2026-06-03', salesperson: 'Neha Sharma', port: 'Hazira Port', rejectRemark: 'Price negotiation failed. Customer requested revision.', adminRemarks: 'Escalated to accounts team for review.' },
 ];
 
 export default function AdminOrders() {
@@ -19,6 +20,7 @@ export default function AdminOrders() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectRemark, setRejectRemark] = useState('');
   const [orderToReject, setOrderToReject] = useState<Order | null>(null);
+  const [infoOrder, setInfoOrder] = useState<Order | null>(null);
 
   const filteredOrders = orders.filter(o => {
     const matchesSearch = o.customer.toLowerCase().includes(search.toLowerCase()) ||
@@ -132,26 +134,38 @@ export default function AdminOrders() {
                     <td className="table-cell font-medium">₹{(o.amount / 10000000).toFixed(2)} Cr</td>
                     <td className="table-cell">{getStatusBadge(o.status)}</td>
                     <td className="table-cell text-right">
-                      {o.status === 'pending' ? (
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openRejectModal(o)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg text-xs font-semibold transition-colors"
-                            title="Reject Order"
-                          >
-                            <X size={14} /> Reject
-                          </button>
-                          <button
-                            onClick={() => handleAccept(o)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-green-700 bg-green-50 hover:bg-green-100 rounded-lg text-xs font-bold transition-colors shadow-sm"
-                            title="Accept Order"
-                          >
-                            <Check size={14} /> Accept
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-gray-400 font-medium">No actions</span>
-                      )}
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* Info button — always visible */}
+                        <button
+                          onClick={() => setInfoOrder(o)}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          title="View Order Details"
+                          aria-label={`View details for ${o.id}`}
+                        >
+                          <Info size={15} />
+                        </button>
+                        {/* Action buttons — only for pending */}
+                        {o.status === 'pending' ? (
+                          <>
+                            <button
+                              onClick={() => openRejectModal(o)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg text-xs font-semibold transition-colors"
+                              title="Reject Order"
+                            >
+                              <X size={14} /> Reject
+                            </button>
+                            <button
+                              onClick={() => handleAccept(o)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-green-700 bg-green-50 hover:bg-green-100 rounded-lg text-xs font-bold transition-colors shadow-sm"
+                              title="Accept Order"
+                            >
+                              <Check size={14} /> Accept
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-[10px] text-gray-400 font-medium">No actions</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -209,6 +223,8 @@ export default function AdminOrders() {
           </div>
         </div>
       )}
+      {/* Order Info Modal */}
+      <OrderInfoModal order={infoOrder} onClose={() => setInfoOrder(null)} />
     </div>
   );
 }

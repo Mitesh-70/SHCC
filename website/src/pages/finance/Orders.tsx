@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import Topbar from '../../components/layout/Topbar';
-import { Search } from 'lucide-react';
+import { Search, Info } from 'lucide-react';
 import type { Order } from '../../types';
+import OrderInfoModal from '../../components/ui/OrderInfoModal';
 
 const INITIAL_ORDERS: Order[] = [
-  { id: 'SHCC-1248', customer: 'Adani Power Ltd', product: 'Indonesian Coal (5500 GAR)', quantity: 2500, unit: 'MT', amount: 13750000, status: 'delivered', date: '2026-06-10' },
-  { id: 'SHCC-1247', customer: 'Tata Power Company', product: 'South African Coal (6000 NAR)', quantity: 1800, unit: 'MT', amount: 11700000, status: 'shipped', date: '2026-06-09' },
-  { id: 'SHCC-1246', customer: 'Jindal Steel & Power', product: 'US Coal (6800 NAR)', quantity: 1200, unit: 'MT', amount: 9600000, status: 'processing', date: '2026-06-08' },
-  { id: 'SHCC-1245', customer: 'Vedanta Aluminium', product: 'Russian Coal (6000 NAR)', quantity: 3000, unit: 'MT', amount: 19500000, status: 'pending', date: '2026-06-07' },
+  { id: 'SHCC-1248', customer: 'Adani Power Ltd', product: 'Indonesian Coal (5500 GAR)', quantity: 2500, unit: 'MT', amount: 13750000, status: 'delivered', date: '2026-06-10', updatedDate: '2026-06-14', salesperson: 'Rahul Verma', port: 'Mundra Port', baseAmount: 11500000, freight: 875000, gst: 1237500, tcs: 137500 },
+  { id: 'SHCC-1247', customer: 'Tata Power Company', product: 'South African Coal (6000 NAR)', quantity: 1800, unit: 'MT', amount: 11700000, status: 'shipped', date: '2026-06-09', updatedDate: '2026-06-12', salesperson: 'Rahul Verma', port: 'Kandla Port', baseAmount: 9800000, freight: 720000, gst: 1052400, tcs: 127600 },
+  { id: 'SHCC-1246', customer: 'Jindal Steel & Power', product: 'US Coal (6800 NAR)', quantity: 1200, unit: 'MT', amount: 9600000, status: 'processing', date: '2026-06-08', salesperson: 'Neha Sharma', port: 'Paradip Port', baseAmount: 8100000, freight: 600000, gst: 768000, tcs: 132000 },
+  { id: 'SHCC-1245', customer: 'Vedanta Aluminium', product: 'Russian Coal (6000 NAR)', quantity: 3000, unit: 'MT', amount: 19500000, status: 'pending', date: '2026-06-07', salesperson: 'Vikram Singh', port: 'Vizag Port', baseAmount: 16500000, freight: 1200000, gst: 1575000, tcs: 225000 },
 ];
 
 export default function FinanceOrders() {
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [search, setSearch] = useState('');
+  const [infoOrder, setInfoOrder] = useState<Order | null>(null);
 
   const filtered = orders.filter(o =>
     o.customer.toLowerCase().includes(search.toLowerCase()) ||
@@ -59,6 +61,7 @@ export default function FinanceOrders() {
                   <th className="table-header py-3 px-4">Quantity</th>
                   <th className="table-header py-3 px-4">Invoiced Amount</th>
                   <th className="table-header py-3 px-4">Status</th>
+                  <th className="table-header py-3 px-4 text-right">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -76,6 +79,16 @@ export default function FinanceOrders() {
                         {o.status}
                       </span>
                     </td>
+                    <td className="table-cell text-right">
+                      <button
+                        onClick={() => setInfoOrder(o)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        title="View Order Details"
+                        aria-label={`View details for ${o.id}`}
+                      >
+                        <Info size={15} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -83,6 +96,8 @@ export default function FinanceOrders() {
           </div>
         </div>
       </div>
+      {/* Order Info Modal */}
+      <OrderInfoModal order={infoOrder} onClose={() => setInfoOrder(null)} />
     </div>
   );
 }

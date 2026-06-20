@@ -18,6 +18,14 @@ export interface AuthState {
 // Orders
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
+export interface DispatchEntry {
+  date: string;
+  quantity: number;
+  unit: string;
+  vehicleNo?: string;
+  remark?: string;
+}
+
 export interface Order {
   id: string;
   customer: string;
@@ -27,7 +35,17 @@ export interface Order {
   amount: number;
   status: OrderStatus;
   date: string;
+  updatedDate?: string;
   salesperson?: string;
+  port?: string;
+  baseAmount?: number;
+  freight?: number;
+  gst?: number;
+  tcs?: number;
+  adminRemarks?: string;
+  portAdminRemarks?: string;
+  rejectRemark?: string;
+  dispatchDetails?: DispatchEntry[];
 }
 
 // Stock

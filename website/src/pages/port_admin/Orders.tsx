@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import Topbar from '../../components/layout/Topbar';
-import { Search, Eye, Download, Check, Truck } from 'lucide-react';
+import { Search, Eye, Download, Check, Truck, Info } from 'lucide-react';
 import type { Order } from '../../types';
+import OrderInfoModal from '../../components/ui/OrderInfoModal';
 
 const INITIAL_ORDERS: Order[] = [
-  { id: 'SHCC-1248', customer: 'Adani Power Ltd', product: 'Indonesian Coal (5500 GAR)', quantity: 2500, unit: 'MT', amount: 13750000, status: 'Pending Approval', date: '2026-06-10' },
-  { id: 'SHCC-1249', customer: 'Reliance Industries', product: 'South African Coal (6000 NAR)', quantity: 1800, unit: 'MT', amount: 11700000, status: 'Rejected', date: '2026-06-09' },
-  { id: 'SHCC-1250', customer: 'Tata Power Company', product: 'US Coal (6800 NAR)', quantity: 4500, unit: 'MT', amount: 20250000, status: 'Approved', date: '2026-06-09' },
-  { id: 'SHCC-1247', customer: 'JSW Energy', product: 'Russian Coal (6000 NAR)', quantity: 1200, unit: 'MT', amount: 9600000, status: 'On Hold', date: '2026-06-08' },
-  { id: 'SHCC-1246', customer: 'Vedanta Aluminium', product: 'Indonesian Coal (4200 GAR)', quantity: 3000, unit: 'MT', amount: 19500000, status: 'Dispatched', date: '2026-06-07' },
-  { id: 'SHCC-1245', customer: 'NTPC Ltd', product: 'US Coal (6800 NAR)', quantity: 5000, unit: 'MT', amount: 35000000, status: 'Completed', date: '2026-06-05' },
+  { id: 'SHCC-1248', customer: 'Adani Power Ltd', product: 'Indonesian Coal (5500 GAR)', quantity: 2500, unit: 'MT', amount: 13750000, status: 'pending', date: '2026-06-10', salesperson: 'Rahul Verma', port: 'Mundra Port', baseAmount: 11500000, freight: 875000, gst: 1237500, tcs: 137500 },
+  { id: 'SHCC-1249', customer: 'Reliance Industries', product: 'South African Coal (6000 NAR)', quantity: 1800, unit: 'MT', amount: 11700000, status: 'cancelled', date: '2026-06-09', salesperson: 'Neha Sharma', port: 'Mundra Port', baseAmount: 9800000, freight: 720000, rejectRemark: 'Vessel berthing slot not available.', portAdminRemarks: 'Rescheduling required.' },
+  { id: 'SHCC-1250', customer: 'Tata Power Company', product: 'US Coal (6800 NAR)', quantity: 4500, unit: 'MT', amount: 20250000, status: 'processing', date: '2026-06-09', salesperson: 'Vikram Singh', port: 'Mundra Port', baseAmount: 17000000, freight: 1575000, gst: 1822500, tcs: 202500 },
+  { id: 'SHCC-1247', customer: 'JSW Energy', product: 'Russian Coal (6000 NAR)', quantity: 1200, unit: 'MT', amount: 9600000, status: 'pending', date: '2026-06-08', salesperson: 'Rahul Verma', port: 'Mundra Port', baseAmount: 8100000, freight: 600000, gst: 768000, tcs: 132000 },
+  { id: 'SHCC-1246', customer: 'Vedanta Aluminium', product: 'Indonesian Coal (4200 GAR)', quantity: 3000, unit: 'MT', amount: 19500000, status: 'shipped', date: '2026-06-07', updatedDate: '2026-06-10', salesperson: 'Vikram Singh', port: 'Mundra Port', baseAmount: 16500000, freight: 1200000, gst: 1575000, tcs: 225000, portAdminRemarks: 'Dispatched via 2 vessels.', dispatchDetails: [{ date: '2026-06-09', quantity: 1500, unit: 'MT', vehicleNo: 'MV-SEABIRD', remark: 'Vessel 1' }, { date: '2026-06-10', quantity: 1500, unit: 'MT', vehicleNo: 'MV-OCEAN-STAR', remark: 'Vessel 2' }] },
+  { id: 'SHCC-1245', customer: 'NTPC Ltd', product: 'US Coal (6800 NAR)', quantity: 5000, unit: 'MT', amount: 35000000, status: 'delivered', date: '2026-06-05', updatedDate: '2026-06-09', salesperson: 'Rahul Verma', port: 'Mundra Port', baseAmount: 29500000, freight: 2750000, gst: 3150000, tcs: 350000, portAdminRemarks: 'Completed on schedule.' },
 ];
 
 export default function PortAdminOrders() {
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [infoOrder, setInfoOrder] = useState<Order | null>(null);
 
   const filtered = orders.filter(o =>
     o.customer.toLowerCase().includes(search.toLowerCase()) ||
@@ -78,12 +80,25 @@ export default function PortAdminOrders() {
                       </span>
                     </td>
                     <td className="table-cell text-right">
-                      <button
-                        onClick={() => setSelectedOrder(o)}
-                        className="text-orange-500 hover:text-orange-600 p-1.5 hover:bg-orange-50 rounded-lg transition-all"
-                      >
-                        <Eye size={15} className="text-orange-500" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        {/* Info button */}
+                        <button
+                          onClick={() => setInfoOrder(o)}
+                          className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-all"
+                          title="View Order Details"
+                          aria-label={`View details for ${o.id}`}
+                        >
+                          <Info size={15} />
+                        </button>
+                        {/* Dispatch button */}
+                        <button
+                          onClick={() => setSelectedOrder(o)}
+                          className="text-orange-500 hover:text-orange-600 p-1.5 hover:bg-orange-50 rounded-lg transition-all"
+                          title="Log Dispatch"
+                        >
+                          <Eye size={15} className="text-orange-500" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -159,6 +174,8 @@ export default function PortAdminOrders() {
           </div>
         </div>
       )}
+      {/* Order Info Modal */}
+      <OrderInfoModal order={infoOrder} onClose={() => setInfoOrder(null)} />
     </div>
   );
 }

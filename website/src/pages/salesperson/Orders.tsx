@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import Topbar from '../../components/layout/Topbar';
-import { Search, Eye, Filter, Check, Clock, Truck, X } from 'lucide-react';
+import { Search, Eye, Filter, Check, Clock, Truck, X, Info } from 'lucide-react';
 import type { Order } from '../../types';
+import OrderInfoModal from '../../components/ui/OrderInfoModal';
 
 const MY_ORDERS: Order[] = [
-  { id: 'SHCC-1248', customer: 'Adani Power Ltd', product: 'Indonesian Coal (5500 GAR)', quantity: 2500, unit: 'MT', amount: 13750000, status: 'delivered', date: '2026-06-10' },
-  { id: 'SHCC-1247', customer: 'Tata Power Company', product: 'South African Coal (6000 NAR)', quantity: 1800, unit: 'MT', amount: 11700000, status: 'shipped', date: '2026-06-09' },
-  { id: 'SHCC-1244', customer: 'Ultratech Cement', product: 'Indonesian Coal (3800 GAR)', quantity: 4500, unit: 'MT', amount: 20250000, status: 'delivered', date: '2026-06-05' },
+  { id: 'SHCC-1248', customer: 'Adani Power Ltd', product: 'Indonesian Coal (5500 GAR)', quantity: 2500, unit: 'MT', amount: 13750000, status: 'delivered', date: '2026-06-10', updatedDate: '2026-06-14', port: 'Mundra Port', baseAmount: 11500000, freight: 875000, gst: 1237500, tcs: 137500, portAdminRemarks: 'Delivered in 3 batches.', dispatchDetails: [{ date: '2026-06-12', quantity: 1000, unit: 'MT', vehicleNo: 'GJ01-AB1234', remark: 'First batch' }, { date: '2026-06-13', quantity: 900, unit: 'MT', vehicleNo: 'GJ01-CD5678', remark: 'Second batch' }, { date: '2026-06-14', quantity: 600, unit: 'MT', vehicleNo: 'GJ02-EF9012', remark: 'Final batch' }] },
+  { id: 'SHCC-1247', customer: 'Tata Power Company', product: 'South African Coal (6000 NAR)', quantity: 1800, unit: 'MT', amount: 11700000, status: 'shipped', date: '2026-06-09', updatedDate: '2026-06-12', port: 'Kandla Port', baseAmount: 9800000, freight: 720000, gst: 1052400, tcs: 127600 },
+  { id: 'SHCC-1244', customer: 'Ultratech Cement', product: 'Indonesian Coal (3800 GAR)', quantity: 4500, unit: 'MT', amount: 20250000, status: 'delivered', date: '2026-06-05', updatedDate: '2026-06-11', port: 'Mundra Port', baseAmount: 17000000, freight: 1575000, gst: 1822500, tcs: 202500 },
 ];
 
 export default function SalespersonOrders() {
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [infoOrder, setInfoOrder] = useState<Order | null>(null);
 
   const filtered = MY_ORDERS.filter(o =>
     o.customer.toLowerCase().includes(search.toLowerCase()) ||
@@ -69,12 +71,25 @@ export default function SalespersonOrders() {
                     <td className="table-cell">{o.quantity.toLocaleString()} MT</td>
                     <td className="table-cell">{getStatusBadge(o.status)}</td>
                     <td className="table-cell text-right">
-                      <button
-                        onClick={() => setSelectedOrder(o)}
-                        className="text-orange-500 hover:text-orange-600 p-1.5 hover:bg-orange-50 rounded-lg transition-all"
-                      >
-                        <Eye size={15} />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        {/* Info button */}
+                        <button
+                          onClick={() => setInfoOrder(o)}
+                          className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-all"
+                          title="View Order Details"
+                          aria-label={`View details for ${o.id}`}
+                        >
+                          <Info size={15} />
+                        </button>
+                        {/* Simple quick-view button */}
+                        <button
+                          onClick={() => setSelectedOrder(o)}
+                          className="text-orange-500 hover:text-orange-600 p-1.5 hover:bg-orange-50 rounded-lg transition-all"
+                          title="Quick View"
+                        >
+                          <Eye size={15} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -135,6 +150,8 @@ export default function SalespersonOrders() {
           </div>
         </div>
       )}
+      {/* Order Info Modal */}
+      <OrderInfoModal order={infoOrder} onClose={() => setInfoOrder(null)} />
     </div>
   );
 }
