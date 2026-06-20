@@ -32,7 +32,7 @@ import FinanceProfile from './pages/finance/Profile';
 // Salesperson
 import SalespersonDashboard from './pages/salesperson/Dashboard';
 import SalespersonOrders from './pages/salesperson/Orders';
-import SalespersonSalesAnalysis from './pages/salesperson/SalesAnalysis';
+import SalespersonReports from './pages/salesperson/Reports';
 import SalespersonCustomers from './pages/salesperson/Customers';
 import SalespersonProfile from './pages/salesperson/Profile';
 import SalespersonNotifications from './pages/salesperson/Notifications';
@@ -43,6 +43,7 @@ import PortAdminOrders from './pages/port_admin/Orders';
 import PortAdminReports from './pages/port_admin/Reports';
 import PortAdminNotifications from './pages/port_admin/Notifications';
 import PortAdminProfile from './pages/port_admin/Profile';
+import PortAdminStockAnalysis from './pages/port_admin/StockAnalysis';
 
 function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; allowedRole: Role }) {
   const { user, isAuthenticated } = useAuth();
@@ -109,7 +110,7 @@ function AppRoutes() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<SalespersonDashboard />} />
         <Route path="orders" element={<SalespersonOrders />} />
-        <Route path="sales-analysis" element={<SalespersonSalesAnalysis />} />
+        <Route path="reports" element={<SalespersonReports />} />
         <Route path="customers" element={<SalespersonCustomers />} />
         <Route path="profile" element={<SalespersonProfile />} />
         <Route path="notifications" element={<SalespersonNotifications />} />
@@ -121,6 +122,7 @@ function AppRoutes() {
         <Route path="dashboard" element={<PortAdminDashboard />} />
         <Route path="orders" element={<PortAdminOrders />} />
         <Route path="reports" element={<PortAdminReports />} />
+        <Route path="stock-analysis" element={<PortAdminStockAnalysis />} />
         <Route path="notifications" element={<PortAdminNotifications />} />
         <Route path="profile" element={<PortAdminProfile />} />
       </Route>

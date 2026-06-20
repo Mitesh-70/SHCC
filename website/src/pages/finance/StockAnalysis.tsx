@@ -58,6 +58,7 @@ export default function FinanceStockAnalysis() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-gray-100">
+                  <th className="table-header py-3 px-4">Sr no</th>
                   <th className="table-header py-3 px-4">Coal Specification</th>
                   <th className="table-header py-3 px-4">Category</th>
                   <th className="table-header py-3 px-4">Quantity On Hand</th>
@@ -68,6 +69,7 @@ export default function FinanceStockAnalysis() {
               <tbody className="divide-y divide-gray-50">
                 {STOCK_ITEMS.map((item, idx) => (
                   <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="table-cell font-semibold text-gray-900">{idx + 1}</td>
                     <td className="table-cell font-semibold text-gray-900">{item.name}</td>
                     <td className="table-cell text-gray-500">{item.type}</td>
                     <td className="table-cell font-bold text-gray-900">{item.quantity.toLocaleString()} MT</td>

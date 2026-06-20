@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import {
-  ShoppingCart, Package, ArrowUpRight, ArrowDownRight, Download, Truck, AlertTriangle, FileText, ChevronRight, Weight
+  ShoppingCart, Package, ArrowUpRight, ArrowDownRight, Download, Truck, AlertTriangle, FileText, ChevronRight, Weight, Search, CheckCircle2
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
@@ -52,7 +52,7 @@ const CHART_DATA_BY_TIMEFRAME: Record<'Day' | 'Week' | 'Month' | 'Year', Array<{
 
 const ALERTS = [
   { icon: <Truck size={16} className="text-orange-500" />, title: '12 Deliveries pending', desc: 'Expected within next 2 days', bg: 'bg-orange-50' },
-  { icon: <AlertTriangle size={16} className="text-orange-500" />, title: 'Low stock alert', desc: 'Hazira port is low on stock', bg: 'bg-orange-50' },
+  { icon: <AlertTriangle size={16} className="text-orange-500" />, title: 'Low stock alert', desc: 'Russian Coal (6000 GAR) is low on stock', bg: 'bg-orange-50' },
   { icon: <FileText size={16} className="text-orange-500" />, title: '8 Orders awaiting approval', desc: 'Requires your attention', bg: 'bg-orange-50' },
 ];
 
@@ -119,6 +119,41 @@ const PORT_DATA: Record<string, any> = {
   }
 };
 
+const STATUS_STYLES: Record<string, { label: string; cls: string }> = {
+  completed: { label: 'Completed', cls: 'bg-green-50 text-green-700 border-green-200' },
+  pending: { label: 'Pending', cls: 'bg-gray-100 text-gray-600 border-gray-200' },
+  on_hold: { label: 'On Hold', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+};
+
+const PORT_REPORTS_DATA: Record<string, any> = {
+  Mundra: {
+    orders: [
+      { id: 'ORD-2241', customer: 'Tata Steel Ltd', product: 'Indonesian Coal 5000 GAR', qty: 5000, status: 'completed' },
+      { id: 'ORD-2230', customer: 'NTPC Ltd', product: 'Indonesian Coal 5000 GAR', qty: 2500, status: 'completed' },
+      { id: 'ORD-2212', customer: 'Adani Power', product: 'South African Coal 6000', qty: 6000, status: 'completed' },
+      { id: 'ORD-2208', customer: 'JSW Energy', product: 'US Coal 6800 NAR', qty: 4500, status: 'completed' },
+      { id: 'ORD-2195', customer: 'Vedanta Resources', product: 'Indonesian Coal 4200 GAR', qty: 8000, status: 'completed' },
+      { id: 'ORD-2182', customer: 'Tata Steel Ltd', product: 'South African Coal 5500', qty: 4000, status: 'pending' },
+    ]
+  },
+  Kandla: {
+    orders: [
+      { id: 'ORD-2238', customer: 'JSW Energy', product: 'South African Coal 6000', qty: 3000, status: 'on_hold' },
+      { id: 'ORD-2225', customer: 'Vedanta Resources', product: 'South African Coal 5500', qty: 4000, status: 'completed' },
+      { id: 'ORD-2210', customer: 'Tata Steel Ltd', product: 'Russian Coal 6000 NAR', qty: 4500, status: 'completed' },
+      { id: 'ORD-2201', customer: 'Adani Power', product: 'Indonesian Coal 4200 GAR', qty: 3500, status: 'completed' },
+      { id: 'ORD-2188', customer: 'NTPC Ltd', product: 'US Coal 6800 NAR', qty: 5000, status: 'completed' },
+    ]
+  },
+  Hazira: {
+    orders: [
+      { id: 'ORD-2235', customer: 'Adani Power', product: 'Indonesian Coal 4200 GAR', qty: 8000, status: 'completed' },
+      { id: 'ORD-2218', customer: 'Ultratech Cement', product: 'US Coal 6800 NAR', qty: 2000, status: 'completed' },
+      { id: 'ORD-2204', customer: 'JSW Energy', product: 'South African Coal 6000', qty: 1500, status: 'completed' },
+    ]
+  }
+};
+
 // ─── Sub-components ────────────────────────────────────────────────────────
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -164,8 +199,31 @@ export default function PortAdminDashboard() {
   const { user } = useAuth();
   const [selectedPort, setSelectedPort] = useState('All Ports');
   const [timeframe, setTimeframe] = useState<'Day' | 'Week' | 'Month' | 'Year'>('Week');
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [portsData, setPortsData] = useState<Record<string, any>>(PORT_REPORTS_DATA);
 
   const data = PORT_DATA[selectedPort];
+  const reportData = selectedPort === 'All Ports' ? portsData['Mundra'] : (portsData[selectedPort] || portsData['Mundra']);
+
+  const markAsCompleted = (orderId: string) => {
+    const portKey = selectedPort === 'All Ports' ? 'Mundra' : selectedPort;
+    setPortsData(prev => {
+      const updatedPortData = { ...prev[portKey] };
+      updatedPortData.orders = updatedPortData.orders.map((o: any) => {
+        if (o.id === orderId) {
+          return { ...o, status: 'completed' };
+        }
+        return o;
+      });
+      return {
+        ...prev,
+        [portKey]: updatedPortData
+      };
+    });
+    setSelectedOrder(selectedOrder ? { ...selectedOrder, status: 'completed' } : null);
+  };
 
   const getVal = (valStr: string) => {
     const numeric = parseInt(valStr.replace(/,/g, ''), 10);
@@ -179,17 +237,14 @@ export default function PortAdminDashboard() {
     return Math.round(numeric * multipliers[timeframe]).toLocaleString();
   };
 
-  const [selectedPeriod, setSelectedPeriod] = useState<'This Month' | 'Last Month'>('This Month');
-
   // Scale chart data based on port and selected timeframe
   const chartDataBase = CHART_DATA_BY_TIMEFRAME[timeframe];
   const chartData = chartDataBase.map((d, index) => {
-    const variation = selectedPeriod === 'This Month' ? 1.0 : (0.8 + 0.1 * Math.sin(index));
     return {
       month: d.month,
-      qty: Math.round(d.qty * data.scale * variation),
-      orders: Math.round(d.orders * data.scale * (selectedPeriod === 'This Month' ? 1.0 : 0.85)),
-      revenue: Math.round(d.revenue * data.scale * (selectedPeriod === 'This Month' ? 1.0 : 0.78) * 10) / 10
+      qty: Math.round(d.qty * data.scale),
+      orders: Math.round(d.orders * data.scale),
+      revenue: Math.round(d.revenue * data.scale * 10) / 10
     };
   });
 
@@ -209,10 +264,6 @@ export default function PortAdminDashboard() {
             Here's what's happening with your port operations today.
           </p>
         </div>
-        <button className="flex items-center gap-2 bg-[#1e293b] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
-          <Download size={16} />
-          Export Report
-        </button>
       </div>
 
       {/* ── Title & Toggles ── */}
@@ -335,16 +386,6 @@ export default function PortAdminDashboard() {
             <h3 className="font-bold text-gray-800">
               {timeframe === 'Day' ? 'Daily' : timeframe === 'Week' ? 'Weekly' : timeframe === 'Month' ? 'Monthly' : 'Yearly'} Dispatch Performance
             </h3>
-            <div className="flex items-center gap-2">
-              <select 
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value as any)}
-                className="text-xs border border-gray-200 rounded-md px-2 py-1 text-gray-600 outline-none bg-white cursor-pointer"
-              >
-                <option value="This Month">This Month</option>
-                <option value="Last Month">Last Month</option>
-              </select>
-            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4 mb-8">
@@ -540,6 +581,149 @@ export default function PortAdminDashboard() {
         </div>
 
       </div>
+
+      {/* ── Transactions Table ── */}
+      <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-6 flex flex-col gap-4 overflow-hidden mt-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+            <span>Recent Dispatches Log</span>
+            <span className="text-xs text-gray-400 font-normal border-l pl-2 border-gray-200">{selectedPort === 'All Ports' ? 'Mundra (Default)' : selectedPort} Port Only</span>
+          </h3>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+            <input
+              type="text"
+              placeholder="Search ID, Customer, Product..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-xs w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-sm"
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase">
+                <th className="py-3 px-3">Sr no</th>
+                <th className="py-3 px-3">Order ID</th>
+                <th className="py-3 px-3">Customer</th>
+                <th className="py-3 px-3">Product</th>
+                <th className="py-3 px-3 text-right">Quantity</th>
+                <th className="py-3 px-3 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50 text-xs">
+              {reportData.orders
+                .filter((o: any) => {
+                  if (!searchTerm) return true;
+                  const lower = searchTerm.toLowerCase();
+                  return o.id.toLowerCase().includes(lower) || 
+                         o.customer.toLowerCase().includes(lower) || 
+                         o.product.toLowerCase().includes(lower);
+                })
+                .sort((a: any, b: any) => {
+                  const getPriority = (status: string) => {
+                    if (status === 'pending') return 1;
+                    if (status === 'on_hold') return 2;
+                    if (status === 'completed') return 3;
+                    return 4;
+                  };
+                  return getPriority(a.status) - getPriority(b.status);
+                })
+                .map((o: any, idx: number) => {
+                const style = STATUS_STYLES[o.status] || STATUS_STYLES.pending;
+                return (
+                  <tr 
+                    key={o.id} 
+                    onClick={() => setSelectedOrder(o)}
+                    className="hover:bg-orange-50/20 transition-colors cursor-pointer"
+                  >
+                    <td className="py-3 px-3 font-semibold text-gray-900">{idx + 1}</td>
+                    <td className="py-3 px-3 font-semibold text-gray-900">{o.id}</td>
+                    <td className="py-3 px-3 text-gray-700">{o.customer}</td>
+                    <td className="py-3 px-3 text-gray-500">{o.product}</td>
+                    <td className="py-3 px-3 text-right font-medium text-gray-800">{o.qty.toLocaleString()} MT</td>
+                    <td className="py-3 px-3 text-center">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full border text-[10px] font-semibold capitalize ${style.cls}`}>
+                        {style.label}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Order Details Modal ── */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border border-gray-100 overflow-hidden transform transition-all">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Order {selectedOrder.id} Details</h3>
+                <p className="text-[10px] text-gray-400 mt-0.5">Port Operations Log</p>
+              </div>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors text-sm font-semibold p-1 hover:bg-gray-100 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="col-span-2">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Customer</span>
+                  <span className="text-gray-700 font-semibold text-sm mt-0.5 block">{selectedOrder.customer}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Product</span>
+                  <span className="text-gray-700 font-semibold text-sm mt-0.5 block">{selectedOrder.product}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Cargo Quantity</span>
+                  <span className="text-gray-700 font-bold text-sm mt-0.5 block">{selectedOrder.qty.toLocaleString()} MT</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Status</span>
+                  <span className="mt-1 block">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full border text-[10px] font-semibold capitalize ${
+                      STATUS_STYLES[selectedOrder.status]?.cls || STATUS_STYLES.pending.cls
+                    }`}>
+                      {STATUS_STYLES[selectedOrder.status]?.label || selectedOrder.status}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-50 bg-gray-50/50 flex justify-end gap-3">
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="px-4 py-2 border border-gray-200 text-gray-500 rounded-lg text-xs font-semibold hover:bg-gray-100 transition-colors"
+              >
+                Close
+              </button>
+              {selectedOrder.status === 'pending' && (
+                <button
+                  onClick={() => markAsCompleted(selectedOrder.id)}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+                >
+                  <CheckCircle2 size={14} />
+                  Mark as Completed
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

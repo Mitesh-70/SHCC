@@ -1,14 +1,13 @@
 import { useState } from 'react';
+import Topbar from '../../components/layout/Topbar';
 import { FileText, Download, Play } from 'lucide-react';
 
 const RECENT_REPORTS = [
-  { id: 'REP-7721', name: 'FY 2026 GST Return Summary', type: 'GST Report', generatedAt: '2026-06-11 14:30', size: '1.2 MB', format: 'PDF' },
-  { id: 'REP-7720', name: 'May 2026 Consolidated Sales Report', type: 'Sales Report', generatedAt: '2026-06-10 11:15', size: '4.8 MB', format: 'Excel' },
-  { id: 'REP-7719', name: 'Warehouse Stock Valuation Ledger', type: 'Inventory Report', generatedAt: '2026-06-08 16:45', size: '2.5 MB', format: 'PDF' },
-  { id: 'REP-7718', name: 'Q1 Outstanding Payments Analysis', type: 'Financial Report', generatedAt: '2026-06-05 09:00', size: '890 KB', format: 'Excel' },
+  { id: 'REP-7731', name: 'Sales Pipeline (May)', type: 'Sales Data', generatedAt: '2026-06-11 10:15', size: '1.2 MB', format: 'PDF' },
+  { id: 'REP-7730', name: 'Q1 Key Accounts Overview', type: 'Client Data', generatedAt: '2026-06-08 14:20', size: '2.4 MB', format: 'Excel' },
 ];
 
-export default function PortAdminReports() {
+export default function SalespersonReports() {
   const [reportType, setReportType] = useState('sales');
   const [dateRange, setDateRange] = useState('this-month');
   const [format, setFormat] = useState('pdf');
@@ -20,12 +19,13 @@ export default function PortAdminReports() {
     setGenerating(true);
     setTimeout(() => {
       setGenerating(false);
+      const typeLabel = reportType === 'sales' ? 'Sales Data' : 'Client Data';
       const newReport = {
         id: `REP-${Math.floor(1000 + Math.random() * 9000)}`,
-        name: `Generated ${reportType.charAt(0).toUpperCase() + reportType.slice(reportType.length > 3 ? 1 : 0)} Report (${dateRange.replace('-', ' ')})`,
-        type: `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`,
+        name: `Generated ${typeLabel} Report (${dateRange.replace('-', ' ')})`,
+        type: typeLabel,
         generatedAt: new Date().toISOString().replace('T', ' ').slice(0, 16),
-        size: `${(Math.random() * 5 + 0.5).toFixed(1)} MB`,
+        size: `${(Math.random() * 3 + 0.5).toFixed(1)} MB`,
         format: format.toUpperCase(),
       };
       setGeneratedList(prev => [newReport, ...prev]);
@@ -33,20 +33,12 @@ export default function PortAdminReports() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen p-6">
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Report Generation Center</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Generate, schedule, export and view analytical reports.
-          </p>
-        </div>
-      </div>
+    <div className="bg-gray-50 min-h-screen pb-10">
+      <Topbar title="My Sales Reports" subtitle="Generate, schedule, export and view analytical reports for clients and sales data." />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="px-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Report configuration form */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 h-fit">
+        <div className="bg-white rounded-xl shadow-card border border-gray-100 p-5 h-fit">
           <h3 className="text-sm font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">Generate Custom Report</h3>
           <form onSubmit={handleGenerate} className="space-y-4">
             <div>
@@ -58,9 +50,8 @@ export default function PortAdminReports() {
                 onChange={e => setReportType(e.target.value)}
                 className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-gray-700 outline-none"
               >
-                <option value="dispatch">Dispatch & Operations</option>
-                <option value="inventory">Inventory & Stock Movement</option>
-                <option value="orders">Orders Lifecycle Metrics</option>
+                <option value="sales">Sales & Revenue Data</option>
+                <option value="clients">Client Data & Accounts</option>
               </select>
             </div>
 
@@ -111,7 +102,7 @@ export default function PortAdminReports() {
               {generating ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Generating Ledger...</span>
+                  <span>Generating Report...</span>
                 </>
               ) : (
                 <>
@@ -124,7 +115,7 @@ export default function PortAdminReports() {
         </div>
 
         {/* Generated report logs list */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-card border border-gray-100 p-5">
           <h3 className="text-sm font-bold text-gray-800 mb-4">Export History & Archives</h3>
           <div className="divide-y divide-gray-50">
             {generatedList.map(rep => (

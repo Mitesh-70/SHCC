@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Topbar from '../../components/layout/Topbar';
-import { Key, ToggleLeft, ToggleRight, Check, X, Shield, Plus } from 'lucide-react';
+import { Key, ToggleLeft, ToggleRight, Check, X, Shield, Plus, AlertTriangle } from 'lucide-react';
 
 const INITIAL_USERS = [
   { id: 'usr-101', name: 'Mitesh Patel', email: 'admin@shcc.co.in', role: 'admin', status: 'active', permissions: ['all'] },
@@ -23,8 +23,27 @@ export default function AdminUserPermissions() {
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState<'admin' | 'finance' | 'salesperson'>('salesperson');
 
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmUserId, setConfirmUserId] = useState<string | null>(null);
+
   const toggleStatus = (id: string) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u));
+    const user = users.find(u => u.id === id);
+    if (user && user.status === 'active') {
+      // Going active → inactive: show confirmation first
+      setConfirmUserId(id);
+      setShowConfirm(true);
+    } else {
+      // Reactivating: no confirmation needed
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, status: 'active' } : u));
+    }
+  };
+
+  const confirmDeactivate = () => {
+    if (confirmUserId) {
+      setUsers(prev => prev.map(u => u.id === confirmUserId ? { ...u, status: 'inactive' } : u));
+    }
+    setShowConfirm(false);
+    setConfirmUserId(null);
   };
 
   const handleApprove = (reqId: string, action: 'approve' | 'reject') => {
@@ -69,7 +88,8 @@ export default function AdminUserPermissions() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-10">
+    <>
+      <div className="bg-gray-50 min-h-screen pb-10">
       <Topbar title="User & Permission Management" subtitle="Manage accounts, allocate access modules, reset credentials, and oversee sign-up approvals." />
 
       <div className="px-6 space-y-6">
@@ -139,6 +159,7 @@ export default function AdminUserPermissions() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100">
+                    <th className="table-header py-3 px-4">Sr no</th>
                     <th className="table-header py-3 px-4">User</th>
                     <th className="table-header py-3 px-4">Portal Role</th>
                     <th className="table-header py-3 px-4">Active Modules</th>
@@ -147,8 +168,9 @@ export default function AdminUserPermissions() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {users.map(u => (
+                  {users.map((u, idx) => (
                     <tr key={u.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="table-cell font-semibold text-gray-900">{idx + 1}</td>
                       <td className="table-cell">
                         <span className="font-semibold text-gray-900 block">{u.name}</span>
                         <span className="text-[10px] text-gray-400 block mt-0.5">{u.email}</span>
@@ -264,5 +286,46 @@ export default function AdminUserPermissions() {
         </div>
       </div>
     </div>
+
+      {/* Deactivation Confirmation Modal */}
+      {showConfirm && (() => {
+        const targetUser = users.find(u => u.id === confirmUserId);
+        return (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+              <div className="p-5 border-b border-gray-100 flex items-center gap-3 bg-amber-50/50">
+                <div className="p-2 bg-amber-100 rounded-xl text-amber-600"><AlertTriangle size={18} /></div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base">Deactivate Account?</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">This will revoke portal access immediately.</p>
+                </div>
+              </div>
+              <div className="p-5">
+                <p className="text-sm text-gray-700">
+                  Are you sure you want to deactivate <strong>{targetUser?.name}</strong>'s account?
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {targetUser?.email} · Role: <span className="capitalize font-medium">{targetUser?.role}</span>
+                </p>
+              </div>
+              <div className="p-5 border-t border-gray-100 flex justify-end gap-3">
+                <button
+                  onClick={() => { setShowConfirm(false); setConfirmUserId(null); }}
+                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeactivate}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                >
+                  <X size={13} /> Yes, Deactivate
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+    </>
   );
 }

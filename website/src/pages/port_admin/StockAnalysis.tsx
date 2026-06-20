@@ -23,15 +23,18 @@ const COAL_TYPES = ['Thermal Coal', 'Steam Coal', 'Coking Coal'];
 
 const emptyForm = { name: '', type: 'Thermal Coal', quantity: 0, location: WAREHOUSES[0] };
 
-export default function AdminStockAnalysis() {
+export default function PortAdminStockAnalysis() {
   const [stock, setStock] = useState<StockItem[]>(INITIAL_STOCK);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<StockItem | null>(null);
   const [form, setForm] = useState<{ name: string; type: string; quantity: number; location: string }>(emptyForm);
 
-  const deriveStatus = (qty: number): StockItem['status'] => {
-    if (qty <= 500) return 'critical';
-    if (qty <= 1500) return 'low';
+  const [limits, setLimits] = useState<Record<string, { low: number, critical: number }>>({});
+
+  const deriveStatus = (qty: number, name: string): StockItem['status'] => {
+    const lim = limits[name] || { low: 1500, critical: 500 };
+    if (qty <= lim.critical) return 'critical';
+    if (qty <= lim.low) return 'low';
     return 'healthy';
   };
 
@@ -52,7 +55,7 @@ export default function AdminStockAnalysis() {
     if (editingItem) {
       setStock(prev => prev.map(s =>
         s.id === editingItem.id
-          ? { ...s, name: form.name, type: form.type, quantity: Number(form.quantity), location: form.location, status: deriveStatus(Number(form.quantity)), lastUpdated: now }
+          ? { ...s, name: form.name, type: form.type, quantity: Number(form.quantity), location: form.location, status: deriveStatus(Number(form.quantity), form.name), lastUpdated: now }
           : s
       ));
     } else {
@@ -65,7 +68,7 @@ export default function AdminStockAnalysis() {
         unit: 'MT',
         location: form.location,
         lastUpdated: now,
-        status: deriveStatus(Number(form.quantity)),
+        status: deriveStatus(Number(form.quantity), form.name),
       }]);
     }
     setShowModal(false);
@@ -80,7 +83,8 @@ export default function AdminStockAnalysis() {
   };
 
   const totalStock = stock.reduce((s, i) => s + i.quantity, 0);
-  const alertCount = stock.filter(i => i.status !== 'healthy').length;
+  const alertCount = stock.filter(i => deriveStatus(i.quantity, i.name) !== 'healthy').length;
+  const uniqueCoalNames = Array.from(new Set(stock.map(s => s.name)));
 
   return (
     <div className="bg-gray-50 min-h-screen pb-10">
@@ -112,6 +116,7 @@ export default function AdminStockAnalysis() {
           </div>
         </div>
 
+
         {/* Stock Status Table */}
         <div className="bg-white rounded-xl shadow-card border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-5">
@@ -136,17 +141,19 @@ export default function AdminStockAnalysis() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {stock.map((item, idx) => (
+                {stock.map((item, idx) => {
+                  const currentStatus = deriveStatus(item.quantity, item.name);
+                  return (
                   <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="table-cell font-semibold text-gray-900">{idx + 1}</td>
                     <td className="table-cell font-semibold text-gray-900">{item.name}</td>
                     <td className="table-cell text-gray-500">{item.type}</td>
-                    <td className={`table-cell font-bold ${item.status === 'critical' ? 'text-red-600' : item.status === 'low' ? 'text-orange-600' : 'text-gray-900'}`}>
+                    <td className={`table-cell font-bold ${currentStatus === 'critical' ? 'text-red-600' : currentStatus === 'low' ? 'text-orange-600' : 'text-gray-900'}`}>
                       {item.quantity.toLocaleString()} MT
                     </td>
                     <td className="table-cell">{item.location}</td>
                     <td className="table-cell text-xs text-gray-400">{item.lastUpdated}</td>
-                    <td className="table-cell">{getStatusBadge(item.status)}</td>
+                    <td className="table-cell">{getStatusBadge(currentStatus)}</td>
                     <td className="table-cell text-right">
                       <button
                         onClick={() => openEdit(item)}
@@ -157,7 +164,7 @@ export default function AdminStockAnalysis() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
@@ -209,6 +216,36 @@ export default function AdminStockAnalysis() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Coal Name Alert Limits */}
+        <div className="bg-white rounded-xl shadow-card border border-gray-100 p-5">
+          <h3 className="text-sm font-bold text-gray-800 mb-4">Alert Settings by Coal Name</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {uniqueCoalNames.map(name => (
+              <div key={name} className="border border-gray-100 rounded-lg p-3 bg-gray-50/50">
+                <span className="text-xs font-bold text-gray-700 block mb-2">{name}</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <label className="text-[10px] font-semibold text-gray-500 w-12">Low:</label>
+                  <input 
+                    type="number" 
+                    value={limits[name]?.low || 1500} 
+                    onChange={e => setLimits(prev => ({ ...prev, [name]: { ...prev[name], low: Number(e.target.value) } }))}
+                    className="text-xs border border-gray-200 rounded px-2 py-1 w-full outline-none focus:border-orange-300"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] font-semibold text-gray-500 w-12">Critical:</label>
+                  <input 
+                    type="number" 
+                    value={limits[name]?.critical || 500} 
+                    onChange={e => setLimits(prev => ({ ...prev, [name]: { ...prev[name], critical: Number(e.target.value) } }))}
+                    className="text-xs border border-gray-200 rounded px-2 py-1 w-full outline-none focus:border-orange-300"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

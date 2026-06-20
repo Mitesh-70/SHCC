@@ -4,13 +4,27 @@ import StatCard from '../../components/ui/StatCard';
 import SalesLineChart from '../../components/charts/SalesLineChart';
 import {
   ShoppingCart, FileText, AlertTriangle, Truck, CheckCircle2,
-  Package, UserCheck, ChevronRight
+  Package, UserCheck, ChevronRight, Landmark
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'year'>('week');
   const [selectedYear, setSelectedYear] = useState<'This Year' | 'Last Year'>('This Year');
+
+  const TIMEFRAME_LABELS = {
+    day: 'from yesterday',
+    week: 'from last week',
+    month: 'from last month',
+    year: 'from last year',
+  };
+
+  const TIMEFRAME_CHANGES = {
+    day: { c1: 3.2, c2: 1.8, c3: -2.4, c4: 5.1 },
+    week: { c1: 18.2, c2: 25.4, c3: 14.7, c4: 8.7 },
+    month: { c1: 42.6, c2: -6.3, c3: 31.2, c4: -12.4 },
+    year: { c1: 124.0, c2: 87.5, c3: 96.3, c4: -18.7 }
+  };
 
   const getVal = (valStr: string) => {
     const cleanStr = valStr.replace(/₹|Cr|MT| |,/g, '');
@@ -35,9 +49,9 @@ export default function AdminDashboard() {
     }
   };
 
-  const totalRevenue = selectedYear === 'This Year' ? '48.21' : (48.21 * 0.82).toFixed(2);
-  const totalOrders = selectedYear === 'This Year' ? '1,248' : Math.round(1248 * 0.85).toLocaleString();
-  const salesGrowth = selectedYear === 'This Year' ? '18.4%' : '15.1%';
+  const totalRevenue = getVal('₹ 48.21 Cr');
+  const totalOrders = getVal('1,248');
+  const salesGrowth = timeframe === 'day' ? '3.2%' : timeframe === 'week' ? '18.4%' : timeframe === 'month' ? '42.6%' : '124%';
 
   const spark1 = [10, 15, 8, 20, 18, 25, 30];
   const spark2 = [5, 12, 10, 15, 20, 22, 28];
@@ -75,14 +89,16 @@ export default function AdminDashboard() {
             icon={<ShoppingCart size={20} className="text-orange-500" />}
             label="Total Orders"
             value={getVal("1,248")}
-            change={18.2}
+            change={TIMEFRAME_CHANGES[timeframe].c1}
+            changeLabel={TIMEFRAME_LABELS[timeframe]}
             sparkData={spark1}
           />
           <StatCard
-            icon={<span className="text-orange-600 font-bold text-lg leading-none">₹</span>}
+            icon={<Landmark size={20} className="text-orange-600" />}
             label="Total Revenue"
             value={getVal("₹ 4.82 Cr")}
-            change={25.4}
+            change={TIMEFRAME_CHANGES[timeframe].c2}
+            changeLabel={TIMEFRAME_LABELS[timeframe]}
             sparkData={spark2}
           />
           <StatCard
@@ -90,7 +106,8 @@ export default function AdminDashboard() {
             iconBg="bg-gray-100"
             label="Coal Sold (MT)"
             value={getVal("8,745 MT")}
-            change={14.7}
+            change={TIMEFRAME_CHANGES[timeframe].c3}
+            changeLabel={TIMEFRAME_LABELS[timeframe]}
             sparkData={spark3}
             sparkColor="#374151"
           />
@@ -98,7 +115,8 @@ export default function AdminDashboard() {
             icon={<UserCheck size={20} className="text-orange-500" />}
             label="Active Customers"
             value={getVal("356")}
-            change={8.7}
+            change={TIMEFRAME_CHANGES[timeframe].c4}
+            changeLabel={TIMEFRAME_LABELS[timeframe]}
             sparkData={spark4}
           />
         </div>
@@ -108,33 +126,31 @@ export default function AdminDashboard() {
           {/* Main Chart Card */}
           <div className="lg:col-span-2 bg-white rounded-xl p-5 shadow-card border border-gray-100 flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-800">Monthly Sales Performance</h3>
-              <select 
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value as any)}
-                className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 font-medium text-gray-600 outline-none cursor-pointer"
-              >
-                <option value="This Year">This Year</option>
-                <option value="Last Year">Last Year</option>
-              </select>
+              <h3 className="text-sm font-bold text-gray-800">
+                {timeframe === 'day' ? 'Daily' : timeframe === 'week' ? 'Weekly' : timeframe === 'month' ? 'Monthly' : 'Yearly'} Sales Performance
+              </h3>
             </div>
 
             {/* Performance Mini-Stats */}
             <div className="grid grid-cols-3 gap-4 border-b border-gray-100 pb-4">
               <div>
                 <span className="text-[10px] font-semibold text-gray-400 uppercase block">Total Revenue</span>
-                <span className="text-lg font-bold text-gray-900">₹ {totalRevenue} Cr</span>
-                <span className="text-[10px] text-green-600 font-medium block mt-0.5">↑ 18.4% vs last year</span>
+                <span className="text-lg font-bold text-gray-900">{totalRevenue}</span>
+                <span className={`text-[10px] font-medium block mt-0.5 ${TIMEFRAME_CHANGES[timeframe].c2 >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                  {TIMEFRAME_CHANGES[timeframe].c2 >= 0 ? '↑' : '↓'} {Math.abs(TIMEFRAME_CHANGES[timeframe].c2)}% {TIMEFRAME_LABELS[timeframe]}
+                </span>
               </div>
               <div>
                 <span className="text-[10px] font-semibold text-gray-400 uppercase block">Orders</span>
                 <span className="text-lg font-bold text-gray-900">{totalOrders}</span>
-                <span className="text-[10px] text-green-600 font-medium block mt-0.5">↑ 16.2% vs last year</span>
+                <span className={`text-[10px] font-medium block mt-0.5 ${TIMEFRAME_CHANGES[timeframe].c1 >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                  {TIMEFRAME_CHANGES[timeframe].c1 >= 0 ? '↑' : '↓'} {Math.abs(TIMEFRAME_CHANGES[timeframe].c1)}% {TIMEFRAME_LABELS[timeframe]}
+                </span>
               </div>
               <div>
                 <span className="text-[10px] font-semibold text-gray-400 uppercase block">Sales Growth</span>
                 <span className="text-lg font-bold text-gray-900">{salesGrowth}</span>
-                <span className="text-[10px] text-green-600 font-medium block mt-0.5">↑ 2.6% vs last year</span>
+                <span className="text-[10px] text-green-600 font-medium block mt-0.5">↑ {TIMEFRAME_LABELS[timeframe]}</span>
               </div>
             </div>
 

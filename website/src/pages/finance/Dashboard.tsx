@@ -8,6 +8,20 @@ import { Link } from 'react-router-dom';
 export default function FinanceDashboard() {
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'year'>('week');
 
+  const TIMEFRAME_LABELS = {
+    day: 'from yesterday',
+    week: 'from last week',
+    month: 'from last month',
+    year: 'from last year',
+  };
+
+  const TIMEFRAME_CHANGES = {
+    day: { c1: 2.1, c2: 1.5, c3: -1.2, c4: 2.4 },
+    week: { c1: 25.4, c2: 18.2, c3: -4.5, c4: 8.7 },
+    month: { c1: 34.2, c2: 28.5, c3: -12.4, c4: 15.6 },
+    year: { c1: 145.0, c2: 112.5, c3: -25.4, c4: 42.1 }
+  };
+
   const spark1 = [10, 15, 8, 20, 18, 25, 30];
   const spark2 = [5, 12, 10, 15, 20, 22, 28];
   const spark3 = [20, 25, 18, 30, 28, 32, 40];
@@ -64,14 +78,16 @@ export default function FinanceDashboard() {
             icon={<Landmark size={20} className="text-orange-500" />}
             label="Total Revenue"
             value={getVal("₹ 4.82 Cr")}
-            change={25.4}
+            change={TIMEFRAME_CHANGES[timeframe].c1}
+            changeLabel={TIMEFRAME_LABELS[timeframe]}
             sparkData={spark2}
           />
           <StatCard
             icon={<CreditCard size={20} className="text-orange-500" />}
             label="Payments Received"
             value={getVal("₹ 3.62 Cr")}
-            change={18.2}
+            change={TIMEFRAME_CHANGES[timeframe].c2}
+            changeLabel={TIMEFRAME_LABELS[timeframe]}
             sparkData={spark1}
           />
           <StatCard
@@ -79,7 +95,8 @@ export default function FinanceDashboard() {
             iconBg="bg-red-50"
             label="Pending Invoices"
             value={getVal("₹ 1.20 Cr")}
-            change={-4.5}
+            change={TIMEFRAME_CHANGES[timeframe].c3}
+            changeLabel={TIMEFRAME_LABELS[timeframe]}
             sparkData={spark3}
             sparkColor="#ef4444"
           />
@@ -87,7 +104,8 @@ export default function FinanceDashboard() {
             icon={<ShoppingCart size={20} className="text-orange-500" />}
             label="Active Orders"
             value={getVal("1,248")}
-            change={8.7}
+            change={TIMEFRAME_CHANGES[timeframe].c4}
+            changeLabel={TIMEFRAME_LABELS[timeframe]}
             sparkData={spark4}
           />
         </div>
@@ -97,20 +115,25 @@ export default function FinanceDashboard() {
           {/* Revenue and sales Line chart */}
           <div className="lg:col-span-2 bg-white rounded-xl p-5 shadow-card border border-gray-100 flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-800">Consolidated Revenue & Billing</h3>
+              <h3 className="text-sm font-bold text-gray-800">
+                {timeframe === 'day' ? 'Daily' : timeframe === 'week' ? 'Weekly' : timeframe === 'month' ? 'Monthly' : 'Yearly'} Revenue & Billing
+              </h3>
             </div>
              <div className="grid grid-cols-3 gap-4 border-b border-gray-100 pb-4">
               <div>
                 <span className="text-[10px] font-semibold text-gray-400 uppercase block">Total Billing</span>
                 <span className="text-lg font-bold text-gray-900">{getVal("₹ 48.21 Cr")}</span>
+                <span className="text-[10px] text-green-600 font-medium block mt-0.5">↑ {TIMEFRAME_CHANGES[timeframe].c1}% vs {TIMEFRAME_LABELS[timeframe].replace('from ', '')}</span>
               </div>
               <div>
                 <span className="text-[10px] font-semibold text-gray-400 uppercase block">Total Profit Margin</span>
                 <span className="text-lg font-bold text-gray-900">{getVal("₹ 9.64 Cr")} (20%)</span>
+                <span className="text-[10px] text-green-600 font-medium block mt-0.5">↑ {TIMEFRAME_CHANGES[timeframe].c2}% {TIMEFRAME_LABELS[timeframe]}</span>
               </div>
               <div>
                 <span className="text-[10px] font-semibold text-gray-400 uppercase block">Receivables Ratio</span>
                 <span className="text-lg font-bold text-green-600">75.1% Cleared</span>
+                <span className="text-[10px] text-gray-400 font-medium block mt-0.5">Of outstanding invoices</span>
               </div>
             </div>
             <div className="w-full flex-1 min-h-[220px]">

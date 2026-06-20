@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Topbar from '../../components/layout/Topbar';
-import { Search, Building, CreditCard, Mail, Phone, Eye } from 'lucide-react';
+import { Search, Building, CreditCard, Mail, Phone, Eye, X } from 'lucide-react';
 import type { Customer } from '../../types';
 
 const INITIAL_CUSTOMERS: Customer[] = [
@@ -15,11 +15,28 @@ export default function FinanceCustomers() {
   const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS);
   const [search, setSearch] = useState('');
   const [selectedCust, setSelectedCust] = useState<Customer | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
 
   const filtered = customers.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.company.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handlePayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = Number(paymentAmount);
+    if (!amount || amount <= 0 || !selectedCust) return;
+
+    setCustomers(prev => prev.map(c => 
+      c.id === selectedCust.id 
+        ? { ...c, outstandingBalance: Math.max(0, c.outstandingBalance - amount) } 
+        : c
+    ));
+    
+    // Update selectedCust's view
+    setSelectedCust(prev => prev ? { ...prev, outstandingBalance: Math.max(0, prev.outstandingBalance - amount) } : null);
+    setPaymentAmount('');
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen pb-10">
@@ -42,6 +59,7 @@ export default function FinanceCustomers() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-gray-100">
+                  <th className="table-header py-3 px-4">Sr no</th>
                   <th className="table-header py-3 px-4">Client Firm</th>
                   <th className="table-header py-3 px-4">Credit Limit</th>
                   <th className="table-header py-3 px-4">Net Revenue</th>
@@ -50,8 +68,9 @@ export default function FinanceCustomers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map(c => (
+                {filtered.map((c, idx) => (
                   <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="table-cell font-semibold text-gray-900">{idx + 1}</td>
                     <td className="table-cell">
                       <span className="font-semibold text-gray-900 block">{c.company}</span>
                       <span className="text-[10px] text-gray-400 block mt-0.5">{c.name}</span>
@@ -61,13 +80,16 @@ export default function FinanceCustomers() {
                     <td className={`table-cell font-bold ${c.outstandingBalance > 0 ? 'text-red-500 animate-pulse' : 'text-green-600'}`}>
                       {c.outstandingBalance > 0 ? `₹${(c.outstandingBalance / 10000000).toFixed(2)} Cr` : 'Clear'}
                     </td>
-                    <td className="table-cell text-right">
-                      <button
-                        onClick={() => setSelectedCust(c)}
-                        className="text-orange-500 hover:text-orange-600 p-1.5 hover:bg-orange-50 rounded-lg transition-all"
-                      >
-                        <Eye size={15} />
-                      </button>
+                    <td className="table-cell">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => setSelectedCust(c)}
+                          title="View Profile"
+                          className="text-orange-500 hover:text-orange-600 p-1.5 hover:bg-orange-50 rounded-lg transition-all"
+                        >
+                          <Eye size={15} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -122,6 +144,33 @@ export default function FinanceCustomers() {
                   </div>
                 </div>
               </div>
+
+              {selectedCust.outstandingBalance > 0 && (
+                <div className="border-t border-gray-50 pt-4">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase block mb-3">Record Residual Payment</span>
+                  <form onSubmit={handlePayment} className="space-y-3">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">₹</span>
+                      </div>
+                      <input
+                        type="number"
+                        required
+                        value={paymentAmount}
+                        onChange={e => setPaymentAmount(e.target.value)}
+                        className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:border-orange-500 transition-colors"
+                        placeholder="Amount received..."
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors"
+                    >
+                      Deduct from Balance
+                    </button>
+                  </form>
+                </div>
+              )}
 
               <div className="border-t border-gray-50 pt-4 space-y-2">
                 <span className="text-[10px] font-semibold text-gray-400 uppercase block">Pending Settlement Bills</span>

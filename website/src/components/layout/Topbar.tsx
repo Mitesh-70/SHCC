@@ -1,4 +1,3 @@
-import { Download } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 interface TopbarProps {
@@ -8,8 +7,6 @@ interface TopbarProps {
 
 export default function Topbar({ title, subtitle }: TopbarProps) {
   const { user } = useAuth();
-
-  // Date range removed per request
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -26,13 +23,6 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{displayTitle}</h1>
         <p className="text-sm text-gray-500 mt-0.5">{displaySub}</p>
-      </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
-        {/* Export */}
-        <button className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors shadow-sm">
-          <Download size={15} />
-          Export Report
-        </button>
       </div>
     </header>
   );

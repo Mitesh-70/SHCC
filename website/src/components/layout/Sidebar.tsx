@@ -6,7 +6,7 @@ import {
   ChevronRight, Bell,
   Search, Shield, TrendingUp, ChevronDown,
   ChevronsLeft, ChevronsRight,
-  Mail, Building2, Phone, MapPin, Calendar, LogOut, X
+  Mail, LogOut, X
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -26,9 +26,9 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard',        path: 'dashboard',        icon: <LayoutDashboard size={18} />, roles: ['admin', 'finance', 'salesperson', 'port_admin'] },
   { label: 'Orders',           path: 'orders',           icon: <ShoppingCart size={18} />,    roles: ['admin', 'finance', 'salesperson', 'port_admin'] },
-  { label: 'Sales Analysis',   path: 'sales-analysis',   icon: <TrendingUp size={18} />,      roles: ['admin', 'finance', 'salesperson'] },
-  { label: 'Stock Analysis',   path: 'stock-analysis',   icon: <Package size={18} />,         roles: ['admin', 'finance'] },
-  { label: 'Reports',          path: 'reports',          icon: <FileText size={18} />,        roles: ['admin', 'finance', 'port_admin'] },
+  { label: 'Sales Analysis',   path: 'sales-analysis',   icon: <TrendingUp size={18} />,      roles: ['admin', 'finance'] },
+  { label: 'Stock Analysis',   path: 'stock-analysis',   icon: <Package size={18} />,         roles: ['admin', 'finance', 'port_admin'] },
+  { label: 'Reports',          path: 'reports',          icon: <FileText size={18} />,        roles: ['admin', 'finance', 'salesperson', 'port_admin'] },
   { label: 'User Permissions', path: 'user-permissions', icon: <Shield size={18} />,         roles: ['admin'] },
   { label: 'Notifications',    path: 'notifications',    icon: <Bell size={18} />,            roles: ['admin', 'salesperson', 'port_admin'] },
 ];
@@ -56,21 +56,12 @@ const USER_AVATARS: Record<string, string> = {
   'portadmin@shcc.co.in':   'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=100&h=100&q=80',
 };
 
-// Port Admin static profile details
-const PORT_ADMIN_META = {
-  phone:    '+91 98765 43210',
-  location: 'Gujarat, India',
-  joined:   'Jan 2024',
-  userId:   'USR-0004',
-  ports:    ['Mundra', 'Kandla', 'Hazira'],
-};
 
 export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const location = useLocation();
   const [unreadNotifications, setUnreadNotifications] = useState(role === 'admin' ? 2 : 3);
 
@@ -97,10 +88,8 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
     setUserMenuOpen(false);
     if (role === 'admin') {
       navigate(`${base}/settings`);
-    } else if (role === 'salesperson') {
+    } else if (role === 'salesperson' || role === 'port_admin') {
       navigate(`${base}/profile`);
-    } else if (role === 'port_admin') {
-      setShowProfileModal(true);
     } else {
       navigate(`${base}/dashboard`);
     }
@@ -108,10 +97,8 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
 
   const handleProfile = () => {
     setUserMenuOpen(false);
-    if (role === 'admin' || role === 'finance' || role === 'salesperson') {
+    if (role === 'admin' || role === 'finance' || role === 'salesperson' || role === 'port_admin') {
       navigate(`${base}/profile`);
-    } else if (role === 'port_admin') {
-      setShowProfileModal(true);
     } else {
       navigate(`${base}/dashboard`);
     }
@@ -121,81 +108,7 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
     ? USER_AVATARS[user.email.toLowerCase()] || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&h=100&q=80'
     : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&h=100&q=80';
 
-  // ── Profile Modal for Port Admin ──────────────────────────────────────────
-  const ProfileModal = () => {
-    if (!showProfileModal) return null;
-    return (
-      <div 
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        onClick={() => setShowProfileModal(false)}
-      >
-        <div 
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative"
-          onClick={(e) => e.stopPropagation()}
-        >
-          
-          {/* Avatar + name header */}
-          <div className="bg-gradient-to-br from-orange-500 to-orange-700 px-6 py-8">
-            <div className="flex flex-col items-center gap-3">
-              <img
-                src={avatarUrl}
-                alt={user?.name ?? 'Port Admin'}
-                className="w-20 h-20 rounded-2xl object-cover border-4 border-white/30 flex-shrink-0 shadow-lg"
-              />
-              <div className="text-center">
-                <div className="text-xl font-bold text-white">{user?.name ?? 'Port Admin'}</div>
-                <span className="inline-block mt-1 bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                  Port Admin
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Info rows */}
-          <div className="px-6 py-6 space-y-4 border-b border-gray-100">
-            <div className="grid grid-cols-2 gap-y-4 gap-x-2">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center pr-1 scale-125"><Mail size={14} className="text-gray-500" /></div>
-                <div className="text-xs text-gray-700 truncate">{user?.email ?? 'portadmin@shcc.co.in'}</div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center pr-1 scale-125"><Building2 size={14} className="text-gray-500" /></div>
-                <div className="text-xs text-gray-700 truncate">{user?.department ?? 'Port Operations'}</div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center pr-1 scale-125"><Phone size={14} className="text-gray-500" /></div>
-                <div className="text-xs text-gray-700 truncate">{PORT_ADMIN_META.phone}</div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center pr-1 scale-125"><MapPin size={14} className="text-gray-500" /></div>
-                <div className="text-xs text-gray-700 truncate">{PORT_ADMIN_META.location}</div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center pr-1 scale-125"><Calendar size={14} className="text-gray-500" /></div>
-                <div className="text-xs text-gray-700 truncate">Joined {PORT_ADMIN_META.joined}</div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center pr-1 scale-125"><Shield size={14} className="text-gray-500" /></div>
-                <div className="text-xs text-gray-700 truncate">ID: {PORT_ADMIN_META.userId}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Assigned ports */}
-          <div className="px-6 py-5 bg-gray-50">
-            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Assigned Ports</div>
-            <div className="flex gap-2 flex-wrap">
-              {PORT_ADMIN_META.ports.map(p => (
-                <span key={p} className="text-xs font-bold text-orange-700 bg-white border border-orange-200 px-3 py-1.5 rounded-full shadow-sm">
-                  {p}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // ProfileModal code removed, port_admin uses standard profile page
 
   // ── Standard popup (All Roles) ───────────────────────────────────────────
   const StandardPopup = () => (
@@ -238,7 +151,6 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
 
   return (
     <>
-      <ProfileModal />
       <aside
         className={`flex flex-col bg-white border-r border-gray-100 transition-all duration-300 ease-in-out ${
           collapsed ? 'w-[72px]' : 'w-[240px]'
@@ -274,18 +186,7 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
           )}
         </div>
 
-        {/* Role Badge */}
-        {!collapsed && (
-          <div className="px-3 mt-3 mb-1">
-            <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm text-gray-700 cursor-pointer hover:bg-gray-50 transition-colors">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                <span className="text-xs font-bold text-gray-800">{ROLE_LABELS[role]}</span>
-              </div>
-              <ChevronDown size={12} className="text-gray-400" />
-            </div>
-          </div>
-        )}
+        {/* Role Badge Removed */}
 
         {/* Search */}
         {!collapsed && (

@@ -141,6 +141,7 @@ export default function FinanceSalesAnalysis() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-gray-100">
+                  <th className="table-header py-3 px-4">Sr no</th>
                   <th className="table-header py-3 px-4">Salesperson</th>
                   <th className="table-header py-3 px-4">Revenue Contribution</th>
                   <th className="table-header py-3 px-4">Orders Completed</th>
@@ -150,6 +151,7 @@ export default function FinanceSalesAnalysis() {
               <tbody className="divide-y divide-gray-50">
                 {SALESPERSON_PERFORMANCE.map((sp, idx) => (
                   <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="table-cell font-semibold text-gray-900">{idx + 1}</td>
                     <td className="table-cell font-semibold text-gray-900">{sp.name}</td>
                     <td className="table-cell font-medium text-orange-600">₹{sp.sales} Cr</td>
                     <td className="table-cell">{sp.orders}</td>

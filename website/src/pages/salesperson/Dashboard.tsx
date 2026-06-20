@@ -8,6 +8,20 @@ import { Link } from 'react-router-dom';
 export default function SalespersonDashboard() {
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'year'>('week');
 
+  const TIMEFRAME_LABELS = {
+    day: 'from yesterday',
+    week: 'from last week',
+    month: 'from last month',
+    year: 'from last year',
+  };
+
+  const TIMEFRAME_CHANGES = {
+    day: { c1: 2.5, c2: 1.2, c3: 0.5 },
+    week: { c1: 12.5, c2: 24.8, c3: 5.2 },
+    month: { c1: 32.6, c2: 16.3, c3: 11.2 },
+    year: { c1: 84.0, c2: 67.5, c3: 46.3 }
+  };
+
   const spark1 = [2, 5, 4, 8, 7, 10, 12];
   const spark2 = [10, 15, 12, 20, 18, 24, 30];
   const spark3 = [80, 82, 85, 88, 90, 92, 95];
@@ -30,11 +44,11 @@ export default function SalespersonDashboard() {
     const scaledVal = numeric * multipliers[timeframe];
     
     if (valStr.includes('Cr')) {
-      return `₹ ${scaledVal.toFixed(2)} Cr`;
+      return `${scaledVal.toFixed(2)} Cr`;
     } else if (valStr.includes('MT')) {
       return `${Math.round(scaledVal).toLocaleString()} MT`;
     } else if (valStr.includes('₹')) {
-      return `₹ ${scaledVal.toFixed(2)} Cr`;
+      return `${scaledVal.toFixed(2)} Cr`;
     } else {
       return Math.round(scaledVal).toLocaleString();
     }
@@ -68,21 +82,24 @@ export default function SalespersonDashboard() {
             icon={<ShoppingCart size={20} className="text-orange-500" />}
             label="My Orders"
             value={getVal("42")}
-            change={12.5}
+            change={TIMEFRAME_CHANGES[timeframe].c1}
+            changeLabel={TIMEFRAME_LABELS[timeframe]}
             sparkData={spark1}
           />
           <StatCard
             icon={<span className="text-orange-600 font-bold text-lg leading-none">₹</span>}
             label="Revenue Generated"
             value={getVal("₹ 1.85 Cr")}
-            change={24.8}
+            change={TIMEFRAME_CHANGES[timeframe].c2}
+            changeLabel={TIMEFRAME_LABELS[timeframe]}
             sparkData={spark2}
           />
           <StatCard
             icon={<Award size={20} className="text-orange-500" />}
             label="Quota Progress"
             value={getVal("92.5%")}
-            change={5.2}
+            change={TIMEFRAME_CHANGES[timeframe].c3}
+            changeLabel={TIMEFRAME_LABELS[timeframe]}
             sparkData={spark3}
           />
         </div>

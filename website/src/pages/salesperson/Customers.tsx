@@ -39,6 +39,7 @@ export default function SalespersonCustomers() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-gray-100">
+                  <th className="table-header py-3 px-4">Sr no</th>
                   <th className="table-header py-3 px-4">Client Firm</th>
                   <th className="table-header py-3 px-4">Contact Representative</th>
                   <th className="table-header py-3 px-4">Total Orders</th>
@@ -47,8 +48,9 @@ export default function SalespersonCustomers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map(c => (
+                {filtered.map((c, idx) => (
                   <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="table-cell font-semibold text-gray-900">{idx + 1}</td>
                     <td className="table-cell">
                       <span className="font-semibold text-gray-900 block">{c.company}</span>
                       <span className="text-[10px] text-gray-400 block mt-0.5">{c.id}</span>

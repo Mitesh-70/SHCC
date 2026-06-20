@@ -3,7 +3,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, PieChart, Pie, Cell
 } from 'recharts';
-import { DollarSign, Percent, TrendingUp, Users } from 'lucide-react';
+import { DollarSign, TrendingUp, Anchor, BarChart2 } from 'lucide-react';
 
 const MONTHLY_COMPARISON = [
   { month: 'Jan', current: 22, previous: 18 },
@@ -42,7 +42,7 @@ export default function AdminSalesAnalysis() {
               <span className="text-xl font-bold text-gray-900 mt-1 block">₹ 48.21 Cr</span>
               <span className="text-[10px] text-green-600 font-medium block mt-1">↑ 18.4% YoY Growth</span>
             </div>
-            <div className="p-3 bg-orange-50 rounded-xl text-orange-600"><DollarSign size={20} /></div>
+            <div className="text-orange-500"><DollarSign size={22} /></div>
           </div>
 
           <div className="bg-white rounded-xl p-5 shadow-card border border-gray-100 flex items-center justify-between">
@@ -51,25 +51,27 @@ export default function AdminSalesAnalysis() {
               <span className="text-xl font-bold text-gray-900 mt-1 block">₹ 3.86 L</span>
               <span className="text-[10px] text-green-600 font-medium block mt-1">↑ 4.2% from last month</span>
             </div>
-            <div className="p-3 bg-orange-50 rounded-xl text-orange-600"><TrendingUp size={20} /></div>
+            <div className="text-orange-500"><TrendingUp size={22} /></div>
           </div>
 
           <div className="bg-white rounded-xl p-5 shadow-card border border-gray-100 flex items-center justify-between">
             <div>
-              <span className="text-xs text-gray-500 font-medium block">Active Accounts</span>
-              <span className="text-xl font-bold text-gray-900 mt-1 block">356</span>
-              <span className="text-[10px] text-green-600 font-medium block mt-1">↑ 12 New this month</span>
+              <span className="text-xs text-gray-500 font-medium block">Top Port — Weight Delivered</span>
+              <span className="text-sm font-semibold text-gray-400 mt-0.5 block">Mundra Port</span>
+              <span className="text-xl font-bold text-gray-900 mt-0.5 block">86,400 MT</span>
+              <span className="text-[10px] text-green-600 font-medium block mt-1">↑ 12.4% from last month</span>
             </div>
-            <div className="p-3 bg-orange-50 rounded-xl text-orange-600"><Users size={20} /></div>
+            <div className="text-orange-500"><Anchor size={22} /></div>
           </div>
 
           <div className="bg-white rounded-xl p-5 shadow-card border border-gray-100 flex items-center justify-between">
             <div>
-              <span className="text-xs text-gray-500 font-medium block">Conversion Rate</span>
-              <span className="text-xl font-bold text-gray-900 mt-1 block">18.4%</span>
-              <span className="text-[10px] text-green-600 font-medium block mt-1">↑ 1.5% improvement</span>
+              <span className="text-xs text-gray-500 font-medium block">Top Port — Revenue Generated</span>
+              <span className="text-sm font-semibold text-gray-400 mt-0.5 block">Mundra Port</span>
+              <span className="text-xl font-bold text-gray-900 mt-0.5 block">₹ 22.8 Cr</span>
+              <span className="text-[10px] text-green-600 font-medium block mt-1">↑ 9.8% from last month</span>
             </div>
-            <div className="p-3 bg-orange-50 rounded-xl text-orange-600"><Percent size={20} /></div>
+            <div className="text-orange-500"><BarChart2 size={22} /></div>
           </div>
         </div>
 
@@ -141,6 +143,7 @@ export default function AdminSalesAnalysis() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-gray-100">
+                  <th className="table-header py-3 px-4">Sr no</th>
                   <th className="table-header py-3 px-4">Salesperson</th>
                   <th className="table-header py-3 px-4">Revenue Contribution</th>
                   <th className="table-header py-3 px-4">Orders Completed</th>
@@ -151,6 +154,7 @@ export default function AdminSalesAnalysis() {
               <tbody className="divide-y divide-gray-50">
                 {SALESPERSON_PERFORMANCE.map((sp, idx) => (
                   <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="table-cell font-semibold text-gray-900">{idx + 1}</td>
                     <td className="table-cell font-semibold text-gray-900">{sp.name}</td>
                     <td className="table-cell font-medium text-orange-600">₹{sp.sales} Cr</td>
                     <td className="table-cell">{sp.orders}</td>
