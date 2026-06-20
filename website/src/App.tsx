@@ -16,6 +16,8 @@ import AdminReports from './pages/admin/Reports';
 import AdminUserPermissions from './pages/admin/UserPermissions';
 import AdminCustomers from './pages/admin/Customers';
 import AdminSettings from './pages/admin/Settings';
+import AdminProfile from './pages/admin/Profile';
+import AdminNotifications from './pages/admin/Notifications';
 
 // Finance
 import FinanceLayout from './components/layout/AdminLayout';
@@ -25,6 +27,7 @@ import FinanceSalesAnalysis from './pages/finance/SalesAnalysis';
 import FinanceStockAnalysis from './pages/finance/StockAnalysis';
 import FinanceReports from './pages/finance/Reports';
 import FinanceCustomers from './pages/finance/Customers';
+import FinanceProfile from './pages/finance/Profile';
 
 // Salesperson
 import SalespersonDashboard from './pages/salesperson/Dashboard';
@@ -85,6 +88,8 @@ function AppRoutes() {
         <Route path="user-permissions" element={<AdminUserPermissions />} />
         <Route path="customers" element={<AdminCustomers />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="profile" element={<AdminProfile />} />
+        <Route path="notifications" element={<AdminNotifications />} />
       </Route>
 
       {/* Finance Routes */}
@@ -96,6 +101,7 @@ function AppRoutes() {
         <Route path="stock-analysis" element={<FinanceStockAnalysis />} />
         <Route path="reports" element={<FinanceReports />} />
         <Route path="customers" element={<FinanceCustomers />} />
+        <Route path="profile" element={<FinanceProfile />} />
       </Route>
 
       {/* Salesperson Routes */}

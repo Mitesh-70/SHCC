@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import type { Role } from '../../types';
 import {
@@ -8,7 +8,7 @@ import {
   ChevronsLeft, ChevronsRight,
   Mail, Building2, Phone, MapPin, Calendar, LogOut, X
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SidebarProps {
   role: Role;
@@ -30,7 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Stock Analysis',   path: 'stock-analysis',   icon: <Package size={18} />,         roles: ['admin', 'finance'] },
   { label: 'Reports',          path: 'reports',          icon: <FileText size={18} />,        roles: ['admin', 'finance', 'port_admin'] },
   { label: 'User Permissions', path: 'user-permissions', icon: <Shield size={18} />,         roles: ['admin'] },
-  { label: 'Notifications',    path: 'notifications',    icon: <Bell size={18} />,            roles: ['salesperson', 'port_admin'] },
+  { label: 'Notifications',    path: 'notifications',    icon: <Bell size={18} />,            roles: ['admin', 'salesperson', 'port_admin'] },
 ];
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -71,6 +71,14 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
   const [search, setSearch] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const location = useLocation();
+  const [unreadNotifications, setUnreadNotifications] = useState(role === 'admin' ? 2 : 3);
+
+  useEffect(() => {
+    if (location.pathname.includes('/notifications')) {
+      setUnreadNotifications(0);
+    }
+  }, [location.pathname]);
 
   const base = ROLE_BASE[role];
 
@@ -98,6 +106,17 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
     }
   };
 
+  const handleProfile = () => {
+    setUserMenuOpen(false);
+    if (role === 'admin' || role === 'finance' || role === 'salesperson') {
+      navigate(`${base}/profile`);
+    } else if (role === 'port_admin') {
+      setShowProfileModal(true);
+    } else {
+      navigate(`${base}/dashboard`);
+    }
+  };
+
   const avatarUrl = user?.email
     ? USER_AVATARS[user.email.toLowerCase()] || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&h=100&q=80'
     : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&h=100&q=80';
@@ -106,14 +125,14 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
   const ProfileModal = () => {
     if (!showProfileModal) return null;
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative">
-          <button 
-            onClick={() => setShowProfileModal(false)}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-white/50 rounded-full p-1 z-10"
-          >
-            <X size={20} />
-          </button>
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        onClick={() => setShowProfileModal(false)}
+      >
+        <div 
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative"
+          onClick={(e) => e.stopPropagation()}
+        >
           
           {/* Avatar + name header */}
           <div className="bg-gradient-to-br from-orange-500 to-orange-700 px-6 py-8">
@@ -136,27 +155,27 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
           <div className="px-6 py-6 space-y-4 border-b border-gray-100">
             <div className="grid grid-cols-2 gap-y-4 gap-x-2">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Mail size={14} className="text-gray-500" /></div>
+                <div className="flex items-center justify-center pr-1 scale-125"><Mail size={14} className="text-gray-500" /></div>
                 <div className="text-xs text-gray-700 truncate">{user?.email ?? 'portadmin@shcc.co.in'}</div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Building2 size={14} className="text-gray-500" /></div>
+                <div className="flex items-center justify-center pr-1 scale-125"><Building2 size={14} className="text-gray-500" /></div>
                 <div className="text-xs text-gray-700 truncate">{user?.department ?? 'Port Operations'}</div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Phone size={14} className="text-gray-500" /></div>
+                <div className="flex items-center justify-center pr-1 scale-125"><Phone size={14} className="text-gray-500" /></div>
                 <div className="text-xs text-gray-700 truncate">{PORT_ADMIN_META.phone}</div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><MapPin size={14} className="text-gray-500" /></div>
+                <div className="flex items-center justify-center pr-1 scale-125"><MapPin size={14} className="text-gray-500" /></div>
                 <div className="text-xs text-gray-700 truncate">{PORT_ADMIN_META.location}</div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Calendar size={14} className="text-gray-500" /></div>
+                <div className="flex items-center justify-center pr-1 scale-125"><Calendar size={14} className="text-gray-500" /></div>
                 <div className="text-xs text-gray-700 truncate">Joined {PORT_ADMIN_META.joined}</div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Shield size={14} className="text-gray-500" /></div>
+                <div className="flex items-center justify-center pr-1 scale-125"><Shield size={14} className="text-gray-500" /></div>
                 <div className="text-xs text-gray-700 truncate">ID: {PORT_ADMIN_META.userId}</div>
               </div>
             </div>
@@ -180,14 +199,33 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
 
   // ── Standard popup (All Roles) ───────────────────────────────────────────
   const StandardPopup = () => (
-    <div className="absolute left-3 right-3 bottom-[72px] z-20 rounded-2xl border border-gray-200 bg-white shadow-xl p-2">
-      <button
-        type="button"
-        onClick={handleSettings}
-        className="w-full text-left rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-      >
-        {role === 'admin' ? 'Settings' : 'Profile'}
-      </button>
+    <div className="absolute left-3 right-3 bottom-[72px] z-20 rounded-2xl border border-gray-200 bg-white shadow-xl p-2 space-y-0.5">
+      {role === 'admin' ? (
+        <>
+          <button
+            type="button"
+            onClick={handleProfile}
+            className="w-full text-left rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Profile
+          </button>
+          <button
+            type="button"
+            onClick={handleSettings}
+            className="w-full text-left rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Settings
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={handleProfile}
+          className="w-full text-left rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          Profile
+        </button>
+      )}
       <button
         type="button"
         onClick={handleLogout}
@@ -287,8 +325,10 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
                     <>
                       <span className="flex-shrink-0">{item.icon}</span>
                       {!collapsed && <span className="truncate">{item.label}</span>}
-                      {!collapsed && item.path === 'notifications' && (
-                        <span className="ml-auto text-[10px] bg-orange-500 text-white rounded-full px-1.5 py-0.5 font-bold">3</span>
+                      {!collapsed && item.path === 'notifications' && unreadNotifications > 0 && (
+                        <span className="ml-auto text-[10px] bg-orange-500 text-white rounded-full px-1.5 py-0.5 font-bold">
+                          {unreadNotifications}
+                        </span>
                       )}
                       {!collapsed && ['orders', 'sales-analysis', 'stock-analysis', 'reports', 'user-permissions'].includes(item.path) && (
                         <ChevronRight size={14} className={`ml-auto flex-shrink-0 ${isActive ? 'text-orange-600' : 'text-gray-400'}`} />

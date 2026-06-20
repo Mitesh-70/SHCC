@@ -99,7 +99,15 @@ export default function AdminOrders() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filteredOrders.map(o => (
-                  <tr key={o.id} className="hover:bg-gray-50/50 transition-colors">
+                  <tr
+                    key={o.id}
+                    onClick={() => setSelectedOrder(o)}
+                    className={`transition-colors cursor-pointer ${
+                      selectedOrder?.id === o.id
+                        ? 'bg-orange-50/50 hover:bg-orange-50/70'
+                        : 'hover:bg-gray-50/50'
+                    }`}
+                  >
                     <td className="table-cell font-semibold text-gray-900">{o.id}</td>
                     <td className="table-cell">{o.customer}</td>
                     <td className="table-cell">{o.product}</td>
@@ -108,7 +116,10 @@ export default function AdminOrders() {
                     <td className="table-cell">{getStatusBadge(o.status)}</td>
                     <td className="table-cell text-right">
                       <button
-                        onClick={() => setSelectedOrder(o)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOrder(o);
+                        }}
                         className="text-orange-500 hover:text-orange-600 p-1.5 hover:bg-orange-50 rounded-lg transition-all"
                         title="View Details"
                       >

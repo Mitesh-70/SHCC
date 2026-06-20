@@ -10,6 +10,34 @@ import { Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'year'>('week');
+  const [selectedYear, setSelectedYear] = useState<'This Year' | 'Last Year'>('This Year');
+
+  const getVal = (valStr: string) => {
+    const cleanStr = valStr.replace(/₹|Cr|MT| |,/g, '');
+    const numeric = parseFloat(cleanStr);
+    if (isNaN(numeric)) return valStr;
+    const multipliers = {
+      day: 0.15,
+      week: 1.0,
+      month: 4.2,
+      year: 52.0,
+    };
+    const scaledVal = numeric * multipliers[timeframe];
+    
+    if (valStr.includes('Cr')) {
+      return `₹ ${scaledVal.toFixed(2)} Cr`;
+    } else if (valStr.includes('MT')) {
+      return `${Math.round(scaledVal).toLocaleString()} MT`;
+    } else if (valStr.includes('₹')) {
+      return `₹ ${scaledVal.toFixed(2)} Cr`;
+    } else {
+      return Math.round(scaledVal).toLocaleString();
+    }
+  };
+
+  const totalRevenue = selectedYear === 'This Year' ? '48.21' : (48.21 * 0.82).toFixed(2);
+  const totalOrders = selectedYear === 'This Year' ? '1,248' : Math.round(1248 * 0.85).toLocaleString();
+  const salesGrowth = selectedYear === 'This Year' ? '18.4%' : '15.1%';
 
   const spark1 = [10, 15, 8, 20, 18, 25, 30];
   const spark2 = [5, 12, 10, 15, 20, 22, 28];
@@ -46,14 +74,14 @@ export default function AdminDashboard() {
           <StatCard
             icon={<ShoppingCart size={20} className="text-orange-500" />}
             label="Total Orders"
-            value="1,248"
+            value={getVal("1,248")}
             change={18.2}
             sparkData={spark1}
           />
           <StatCard
             icon={<span className="text-orange-600 font-bold text-lg leading-none">₹</span>}
             label="Total Revenue"
-            value="₹ 4.82 Cr"
+            value={getVal("₹ 4.82 Cr")}
             change={25.4}
             sparkData={spark2}
           />
@@ -61,7 +89,7 @@ export default function AdminDashboard() {
             icon={<Package size={20} className="text-gray-700" />}
             iconBg="bg-gray-100"
             label="Coal Sold (MT)"
-            value="8,745 MT"
+            value={getVal("8,745 MT")}
             change={14.7}
             sparkData={spark3}
             sparkColor="#374151"
@@ -69,7 +97,7 @@ export default function AdminDashboard() {
           <StatCard
             icon={<UserCheck size={20} className="text-orange-500" />}
             label="Active Customers"
-            value="356"
+            value={getVal("356")}
             change={8.7}
             sparkData={spark4}
           />
@@ -81,9 +109,13 @@ export default function AdminDashboard() {
           <div className="lg:col-span-2 bg-white rounded-xl p-5 shadow-card border border-gray-100 flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-gray-800">Monthly Sales Performance</h3>
-              <select className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 font-medium text-gray-600 outline-none">
-                <option>This Year</option>
-                <option>Last Year</option>
+              <select 
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value as any)}
+                className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 font-medium text-gray-600 outline-none cursor-pointer"
+              >
+                <option value="This Year">This Year</option>
+                <option value="Last Year">Last Year</option>
               </select>
             </div>
 
@@ -91,23 +123,23 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-3 gap-4 border-b border-gray-100 pb-4">
               <div>
                 <span className="text-[10px] font-semibold text-gray-400 uppercase block">Total Revenue</span>
-                <span className="text-lg font-bold text-gray-900">₹ 48.21 Cr</span>
+                <span className="text-lg font-bold text-gray-900">₹ {totalRevenue} Cr</span>
                 <span className="text-[10px] text-green-600 font-medium block mt-0.5">↑ 18.4% vs last year</span>
               </div>
               <div>
                 <span className="text-[10px] font-semibold text-gray-400 uppercase block">Orders</span>
-                <span className="text-lg font-bold text-gray-900">1,248</span>
+                <span className="text-lg font-bold text-gray-900">{totalOrders}</span>
                 <span className="text-[10px] text-green-600 font-medium block mt-0.5">↑ 16.2% vs last year</span>
               </div>
               <div>
                 <span className="text-[10px] font-semibold text-gray-400 uppercase block">Sales Growth</span>
-                <span className="text-lg font-bold text-gray-900">18.4%</span>
+                <span className="text-lg font-bold text-gray-900">{salesGrowth}</span>
                 <span className="text-[10px] text-green-600 font-medium block mt-0.5">↑ 2.6% vs last year</span>
               </div>
             </div>
 
-            <div className="w-full h-[220px]">
-              <SalesLineChart />
+            <div className="w-full flex-1 min-h-[220px]">
+              <SalesLineChart timeframe={timeframe} year={selectedYear} />
             </div>
           </div>
 
@@ -192,7 +224,7 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-xl p-4 shadow-card border border-gray-100">
               <div className="flex items-center justify-between border-b border-gray-50 pb-2.5 mb-3">
                 <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Recent Activities</h3>
-                <Link to="/admin/settings" className="text-[10px] font-bold text-orange-600 hover:underline flex items-center">
+                <Link to="/admin/notifications" className="text-[10px] font-bold text-orange-600 hover:underline flex items-center">
                   See All <ChevronRight size={10} />
                 </Link>
               </div>

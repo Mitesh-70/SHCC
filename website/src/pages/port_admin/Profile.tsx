@@ -68,8 +68,8 @@ export default function PortAdminProfile() {
         {/* Profile Info */}
         <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
           <div className="flex items-start gap-5">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-md">
-              <User size={32} className="text-white" />
+            <div className="flex items-center justify-center flex-shrink-0 scale-150 pt-2 pr-2 text-teal-600">
+              <User size={40} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
@@ -137,7 +137,7 @@ export default function PortAdminProfile() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {STATS.map(s => (
           <div key={s.label} className={`bg-white border ${s.border} rounded-2xl p-4 shadow-sm flex flex-col gap-3`}>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${s.bg} ${s.text}`}>
+            <div className={`flex items-center justify-center flex-shrink-0 scale-125 pt-1 pr-1 ${s.text}`}>
               {s.icon}
             </div>
             <div>
@@ -210,7 +210,7 @@ export default function PortAdminProfile() {
               <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
               <Tooltip
                 contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 12 }}
-                formatter={(v: number) => [`${v.toLocaleString()} MT`, 'Dispatched']}
+                formatter={(v: any) => [`${Number(v).toLocaleString()} MT`, 'Dispatched']}
               />
               <Bar dataKey="qty" fill="#14b8a6" radius={[6, 6, 0, 0]} />
             </BarChart>

@@ -1,148 +1,147 @@
-import { useState } from 'react';
-import { Search, Filter, Eye, Truck, PauseCircle, CheckCircle2, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import Topbar from '../../components/layout/Topbar';
+import { Search, Eye, DollarSign, Download, Check, AlertCircle } from 'lucide-react';
+import type { Order } from '../../types';
 
-type OrderStatus = 'approved' | 'on_hold' | 'dispatched' | 'completed';
-
-interface PortOrder {
-  id: string;
-  customer: string;
-  port: string;
-  product: string;
-  quantity: number;
-  status: OrderStatus;
-  date: string;
-  dispatchedQty: number;
-}
-
-const MOCK_ORDERS: PortOrder[] = [
-  { id: 'ORD-2241', customer: 'Tata Steel Ltd',       port: 'Mundra',  product: 'Indonesian Coal 5000 GAR', quantity: 5000, status: 'approved',   date: '2026-06-18', dispatchedQty: 0    },
-  { id: 'ORD-2238', customer: 'JSW Energy',            port: 'Kandla',  product: 'South African Coal 6000',  quantity: 3000, status: 'on_hold',    date: '2026-06-17', dispatchedQty: 500  },
-  { id: 'ORD-2235', customer: 'Adani Power',           port: 'Hazira',  product: 'Indonesian Coal 4200 GAR', quantity: 8000, status: 'dispatched', date: '2026-06-15', dispatchedQty: 4000 },
-  { id: 'ORD-2230', customer: 'NTPC Ltd',              port: 'Mundra',  product: 'Indonesian Coal 5000 GAR', quantity: 2500, status: 'approved',   date: '2026-06-14', dispatchedQty: 0    },
-  { id: 'ORD-2225', customer: 'Vedanta Resources',     port: 'Kandla',  product: 'South African Coal 5500',  quantity: 4000, status: 'completed',  date: '2026-06-10', dispatchedQty: 4000 },
-  { id: 'ORD-2220', customer: 'Hindalco Industries',   port: 'Hazira',  product: 'Indonesian Coal 5000 GAR', quantity: 6000, status: 'dispatched', date: '2026-06-08', dispatchedQty: 3500 },
+const INITIAL_ORDERS: Order[] = [
+  { id: 'SHCC-1248', customer: 'Adani Power Ltd', product: 'Indonesian Coal (5500 GAR)', quantity: 2500, unit: 'MT', amount: 13750000, status: 'delivered', date: '2026-06-10' },
+  { id: 'SHCC-1247', customer: 'Tata Power Company', product: 'South African Coal (6000 NAR)', quantity: 1800, unit: 'MT', amount: 11700000, status: 'shipped', date: '2026-06-09' },
+  { id: 'SHCC-1246', customer: 'Jindal Steel & Power', product: 'US Coal (6800 NAR)', quantity: 1200, unit: 'MT', amount: 9600000, status: 'processing', date: '2026-06-08' },
+  { id: 'SHCC-1245', customer: 'Vedanta Aluminium', product: 'Russian Coal (6000 NAR)', quantity: 3000, unit: 'MT', amount: 19500000, status: 'pending', date: '2026-06-07' },
 ];
 
-const STATUS_CONFIG: Record<OrderStatus, { label: string; className: string; icon: React.ReactNode }> = {
-  approved:   { label: 'Approved',   className: 'bg-green-50 text-green-700 border-green-200',  icon: <CheckCircle2 size={11} /> },
-  on_hold:    { label: 'On Hold',    className: 'bg-amber-50 text-amber-700 border-amber-200',  icon: <PauseCircle size={11} /> },
-  dispatched: { label: 'Dispatched', className: 'bg-blue-50 text-blue-700 border-blue-200',    icon: <Truck size={11} /> },
-  completed:  { label: 'Completed',  className: 'bg-teal-50 text-teal-700 border-teal-200',    icon: <CheckCircle2 size={11} /> },
-};
-
 export default function PortAdminOrders() {
+  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus>('all');
-
-  const filtered = MOCK_ORDERS.filter(o => {
-    const matchesSearch = (
-      o.id.toLowerCase().includes(search.toLowerCase()) ||
-      o.customer.toLowerCase().includes(search.toLowerCase()) ||
-      o.port.toLowerCase().includes(search.toLowerCase())
-    );
-    const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<Record<string, 'paid' | 'unpaid'>>({
+    'SHCC-1248': 'paid',
+    'SHCC-1247': 'unpaid',
+    'SHCC-1246': 'unpaid',
+    'SHCC-1245': 'unpaid',
   });
 
+  const filtered = orders.filter(o =>
+    o.customer.toLowerCase().includes(search.toLowerCase()) ||
+    o.id.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const confirmPayment = (id: string) => {
+    setPaymentStatus(prev => ({ ...prev, [id]: 'paid' }));
+  };
+
   return (
-    <div className="p-6 space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Port Orders</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Orders from your assigned ports — Mundra, Kandla, Hazira</p>
-      </div>
+    <div className="bg-gray-50 min-h-screen pb-10">
+      <Topbar title="Finance Order Billings & Payments" subtitle="Verify transactions, track customer deposits, and manage invoices." />
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 flex-1 min-w-[200px]">
-          <Search size={14} className="text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by order, customer or port..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="text-sm text-gray-700 outline-none bg-transparent w-full placeholder-gray-400"
-          />
-        </div>
-        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
-          <Filter size={14} className="text-gray-400" />
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="text-sm text-gray-700 outline-none bg-transparent"
-          >
-            <option value="all">All Status</option>
-            <option value="approved">Approved</option>
-            <option value="on_hold">On Hold</option>
-            <option value="dispatched">Dispatched</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
-      </div>
+      <div className="px-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 bg-white rounded-xl shadow-card border border-gray-100 p-5">
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 max-w-xs mb-5">
+            <Search size={16} className="text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search sales..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="bg-transparent text-sm text-gray-700 outline-none w-full placeholder-gray-400"
+            />
+          </div>
 
-      {/* Table */}
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/60">
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Order ID</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Customer</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Port</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Product</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Qty (MT)</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Dispatched</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Status</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Date</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="text-center py-12 text-gray-400 text-sm">No orders found.</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="table-header py-3 px-4">Sales Order</th>
+                  <th className="table-header py-3 px-4">Client</th>
+                  <th className="table-header py-3 px-4">Quantity</th>
+                  <th className="table-header py-3 px-4">Invoiced Amount</th>
+                  <th className="table-header py-3 px-4">Receipt Status</th>
+                  <th className="table-header py-3 px-4 text-right">Actions</th>
                 </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map(o => (
+                  <tr key={o.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="table-cell font-semibold text-gray-900">{o.id}</td>
+                    <td className="table-cell">{o.customer}</td>
+                    <td className="table-cell">{o.quantity.toLocaleString()} MT</td>
+                    <td className="table-cell font-medium">₹{(o.amount / 10000000).toFixed(2)} Cr</td>
+                    <td className="table-cell">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-block ${
+                        paymentStatus[o.id] === 'paid' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700 animate-pulse'
+                      }`}>
+                        {paymentStatus[o.id] === 'paid' ? 'Paid & Audited' : 'Awaiting Settlement'}
+                      </span>
+                    </td>
+                    <td className="table-cell text-right">
+                      <button
+                        onClick={() => setSelectedOrder(o)}
+                        className="text-orange-500 hover:text-orange-600 p-1.5 hover:bg-orange-50 rounded-lg transition-all"
+                      >
+                        <Eye size={15} className="text-orange-500" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Action Panel */}
+        <div className="bg-white rounded-xl shadow-card border border-gray-100 p-5 h-fit">
+          {selectedOrder ? (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                <div>
+                  <h3 className="font-bold text-gray-800 text-sm">Receipt for {selectedOrder.id}</h3>
+                  <span className="text-[10px] text-gray-400 block mt-0.5">Customer Invoice</span>
+                </div>
+                <button className="p-1.5 border border-gray-200 hover:border-orange-200 text-gray-500 hover:text-orange-600 rounded-lg transition-all">
+                  <Download size={13} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase block">Client</span>
+                  <span className="text-sm font-semibold text-gray-800 block mt-0.5">{selectedOrder.customer}</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-[10px] font-semibold text-gray-400 uppercase block">Total Billing</span>
+                    <span className="text-sm font-bold text-orange-600 block mt-0.5">₹{(selectedOrder.amount / 10000000).toFixed(2)} Cr</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-semibold text-gray-400 uppercase block">GST (18%)</span>
+                    <span className="text-sm font-medium text-gray-700 block mt-0.5">₹{(selectedOrder.amount * 0.18 / 10000000).toFixed(2)} Cr</span>
+                  </div>
+                </div>
+              </div>
+
+              {paymentStatus[selectedOrder.id] === 'unpaid' ? (
+                <div className="border-t border-gray-100 pt-5 space-y-3">
+                  <div className="bg-amber-50/50 border border-amber-100 p-3 rounded-lg flex gap-2 text-xs text-amber-700">
+                    <AlertCircle size={15} className="flex-shrink-0 mt-0.5" />
+                    <span>Payment receipt check pending for this transaction.</span>
+                  </div>
+                </div>
               ) : (
-                filtered.map(order => {
-                  const cfg = STATUS_CONFIG[order.status];
-                  const pct = order.quantity > 0 ? Math.round((order.dispatchedQty / order.quantity) * 100) : 0;
-                  return (
-                    <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-700">{order.id}</td>
-                      <td className="px-4 py-3 font-medium text-gray-800">{order.customer}</td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 text-orange-700 bg-orange-50 border border-orange-100 text-xs font-semibold px-2 py-0.5 rounded-full">
-                          {order.port}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 text-xs">{order.product}</td>
-                      <td className="px-4 py-3 text-gray-700 font-semibold">{order.quantity.toLocaleString()}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-orange-500 rounded-full" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="text-xs text-gray-500">{pct}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 border text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.className}`}>
-                          {cfg.icon}
-                          {cfg.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{order.date}</td>
-                      <td className="px-4 py-3">
-                        <button className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-orange-600 font-medium transition-colors">
-                          <Eye size={13} />
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
+                <div className="border-t border-gray-100 pt-5">
+                  <div className="bg-green-50/50 border border-green-100 p-3 rounded-lg flex gap-2 text-xs text-green-700">
+                    <Check size={15} className="flex-shrink-0 mt-0.5" />
+                    <span>Invoice payment confirmed and archived in ledger.</span>
+                  </div>
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center py-16 text-gray-400">
+              <DollarSign size={40} className="stroke-1 text-gray-300 mb-3" />
+              <span className="text-sm font-medium">Select a transaction to inspect outstanding credits and verify payments.</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -28,8 +28,8 @@ export default function PortAdminNotifications() {
               n.read ? 'bg-white border-gray-100' : 'bg-orange-50/40 border-orange-200'
             }`}
           >
-            <div className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-              n.read ? 'bg-gray-100 text-gray-400' : 'bg-orange-100 text-orange-600'
+            <div className={`mt-0.5 flex items-center justify-center flex-shrink-0 scale-125 pt-1 pr-1 ${
+              n.read ? 'text-gray-400' : 'text-orange-600'
             }`}>
               <Bell size={14} />
             </div>
