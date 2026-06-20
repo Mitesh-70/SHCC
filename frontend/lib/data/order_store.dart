@@ -1,5 +1,7 @@
 import '../core/constants/app_constants.dart';
+import '../core/session/app_session.dart';
 import 'models/order_model.dart';
+import 'stock_store.dart';
 
 /// Single source of truth for all in-memory orders across the app.
 class OrderStore {
@@ -282,8 +284,18 @@ class OrderStore {
       List.unmodifiable(_dispatchCache[orderId] ??= []);
 
   static void addDispatchEntry(String orderId, DeliveryEntry entry) {
-    _dispatchCache.putIfAbsent(orderId, () => []).add(entry);
     final order = getOrderById(orderId);
+    if (order != null) {
+      final coalType = order['product_type'] as String? ?? '';
+      StockStore.reduceStock(
+        entry.port,
+        coalType,
+        entry.quantity,
+        remark: 'Dispatch for $orderId',
+        operator: AppSession.isLoggedIn ? AppSession.instance.name : 'System',
+      );
+    }
+    _dispatchCache.putIfAbsent(orderId, () => []).add(entry);
     if (order != null && order['status'] == AppConstants.statusApproved) {
       updateOrderStatus(orderId, AppConstants.statusDispatched);
     }
@@ -292,6 +304,18 @@ class OrderStore {
   static void removeDispatchEntry(String orderId, int index) {
     final list = _dispatchCache[orderId];
     if (list != null && index >= 0 && index < list.length) {
+      final entry = list[index];
+      final order = getOrderById(orderId);
+      if (order != null) {
+        final coalType = order['product_type'] as String? ?? '';
+        StockStore.increaseStock(
+          entry.port,
+          coalType,
+          entry.quantity,
+          remark: 'Dispatch removal for $orderId',
+          operator: AppSession.isLoggedIn ? AppSession.instance.name : 'System',
+        );
+      }
       list.removeAt(index);
     }
   }

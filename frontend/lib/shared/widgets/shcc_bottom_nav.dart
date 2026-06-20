@@ -100,6 +100,8 @@ class ShccBottomNav extends StatelessWidget {
       activeIcon: Icons.grid_view_rounded, label: 'Home'),
     _BottomNavData(icon: Icons.search_rounded,
       activeIcon: Icons.search_rounded, label: 'Search'),
+    _BottomNavData(icon: Icons.inventory_2_outlined,
+      activeIcon: Icons.inventory_2_rounded, label: 'Stock'),
     _BottomNavData(icon: Icons.person_outline_rounded,
       activeIcon: Icons.person_rounded, label: 'Profile'),
   ];

@@ -6,6 +6,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/session/app_session.dart';
 import '../../data/models/order_model.dart';
 import '../../data/order_store.dart';
+import '../../data/stock_store.dart';
 import '../../shared/widgets/shcc_app_bar.dart';
 import '../notifications/notifications_screen.dart';
 
@@ -653,6 +654,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   if (_dateCtrl.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Please select a delivery date.')),
+                    );
+                    return;
+                  }
+                  final coalType = widget.order['product_type'] as String? ?? '';
+                  final availableStock = StockStore.getStock(_selectedPort!, coalType);
+                  if (q > availableStock) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Insufficient stock at $_selectedPort. Available: ${availableStock.toStringAsFixed(0)} MT.'),
+                        backgroundColor: AppColors.error,
+                      ),
                     );
                     return;
                   }

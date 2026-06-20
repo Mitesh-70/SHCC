@@ -11,6 +11,7 @@ import '../../search/screens/search_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../notifications/notifications_screen.dart';
 import 'port_admin_order_detail_screen.dart';
+import 'stock_management_screen.dart';
 
 class PortAdminDashboardScreen extends StatefulWidget {
   const PortAdminDashboardScreen({super.key});
@@ -70,9 +71,9 @@ class _PortAdminDashboardScreenState extends State<PortAdminDashboardScreen> {
       case NotifType.catalogueUpdated:
         setState(() {
           _highlightOrder = null;
-          _navIndex = 2;
+          _navIndex = 3;
         });
-        _pageCtrl.animateToPage(2,
+        _pageCtrl.animateToPage(3,
             duration: const Duration(milliseconds: 280),
             curve: Curves.easeInOut);
         break;
@@ -99,6 +100,7 @@ class _PortAdminDashboardScreenState extends State<PortAdminDashboardScreen> {
         assignedPorts: session.assignedPorts,
         highlightOrderId: _highlightOrder,
       ),
+      const StockManagementScreen(),
       ProfileScreen(
         isPortAdmin: true,
         fromTab: true,

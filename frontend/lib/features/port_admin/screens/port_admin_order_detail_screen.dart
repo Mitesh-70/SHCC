@@ -6,6 +6,7 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/session/app_session.dart';
 import '../../../data/models/order_model.dart';
 import '../../../data/order_store.dart';
+import '../../../data/stock_store.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../notifications/notifications_screen.dart';
@@ -202,6 +203,17 @@ class _PortAdminOrderDetailScreenState
       return;
     }
     final id = _order['id'] as String;
+    final coalType = _order['product_type'] as String? ?? '';
+    final availableStock = StockStore.getStock(_selectedPort!, coalType);
+    if (q > availableStock) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Insufficient stock at $_selectedPort. Available: ${availableStock.toStringAsFixed(0)} MT.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
     final isFirstDispatch = OrderStore.getDispatchEntries(id).isEmpty;
     OrderStore.addDispatchEntry(
       id,
