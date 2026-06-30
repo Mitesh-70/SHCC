@@ -402,34 +402,6 @@ class _GroupedListState extends State<_GroupedList> {
   }
 }
 
-class _SmallBadge extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _SmallBadge({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: color.withValues(alpha: 0.35)),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 10, color: color),
-        const SizedBox(width: 3),
-        Text(label, style: AppTextStyles.badge.copyWith(color: color)),
-      ],
-    ),
-  );
-}
 
 class _OrderCard extends StatelessWidget {
   final Map<String, dynamic> order;
@@ -538,17 +510,6 @@ class _OrderCard extends StatelessWidget {
                 Row(
                   children: [
                     StatusBadge.fromString(order['status'] as String),
-                    if (_isRejected) ...[
-                      const SizedBox(width: 6),
-                      _SmallBadge(
-                        icon: Icons.error_outline_rounded,
-                        label: 'REJECTED',
-                        color: AppColors.error,
-                      ),
-                    ],
-                    if (isHighlighted) ...[
-                      // Highlighted badge removed to prevent overflow
-                    ],
                   ],
                 ),
               ],

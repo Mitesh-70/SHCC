@@ -348,9 +348,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
-        children: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+            children: [
 
           // ── Header ───────────────────────────────────────────────
           Text('Sales Reports', style: AppTextStyles.heading1),
@@ -536,38 +539,113 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ..._portStats.entries.map((e) {
               final orders = e.value['orders'] as int;
               final completed = e.value['completed'] as int;
+              final dispatched = e.value['dispatched'] as int;
               final rate = orders == 0 ? 0.0 : completed / orders;
               return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.only(bottom: 14),
                 child: Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.bgCard,
-                    borderRadius: BorderRadius.circular(14),
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.border),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(e.key, style: AppTextStyles.bodyMedium),
-                      const SizedBox(height: 8),
-                      Text('Orders: $orders  ·  Revenue: ${_fmt(e.value['revenue'] as double)}',
-                          style: AppTextStyles.caption),
-                      Text('Dispatched: ${e.value['dispatched']}  ·  Completed: $completed',
-                          style: AppTextStyles.caption),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: rate,
-                          minHeight: 6,
-                          backgroundColor: AppColors.border,
-                          valueColor: const AlwaysStoppedAnimation(AppColors.success),
+                      Text(e.key, style: AppTextStyles.heading3),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.receipt_long_rounded, size: 15, color: AppColors.textSecondary),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text('$orders Orders', style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.local_shipping_rounded, size: 15, color: AppColors.textSecondary),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text('$dispatched Dispatched', style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle_outline_rounded, size: 15, color: AppColors.textSecondary),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text('$completed Completed', style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.currency_rupee_rounded, size: 15, color: AppColors.textSecondary),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text('${_fmtNoSymbol(e.value['revenue'] as double)} Revenue', style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Completion Rate', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                                Text(
+                                  '${(rate * 100).toStringAsFixed(0)}%',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: rate,
+                                minHeight: 4,
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                                valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text('Completion Rate: ${(rate * 100).toStringAsFixed(0)}%',
-                          style: AppTextStyles.caption),
                     ],
                   ),
                 ),
@@ -592,6 +670,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: _InvoiceCard(order: o, total: _total(o), fmt: _fmt),
             )),
         ],
+      ),
+      ),
       ),
     );
   }

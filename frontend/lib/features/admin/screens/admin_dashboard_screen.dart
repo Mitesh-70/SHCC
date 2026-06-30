@@ -597,7 +597,6 @@ class _ApprovalCardState extends State<_ApprovalCard> {
           Row(
             children: [
               Expanded(
-                flex: 3,
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Row(
@@ -621,7 +620,6 @@ class _ApprovalCardState extends State<_ApprovalCard> {
                 ),
               ),
               Expanded(
-                flex: 2,
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Row(
@@ -645,7 +643,6 @@ class _ApprovalCardState extends State<_ApprovalCard> {
                 ),
               ),
               Expanded(
-                flex: 2,
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Row(
@@ -674,7 +671,6 @@ class _ApprovalCardState extends State<_ApprovalCard> {
           Row(
             children: [
               Expanded(
-                flex: 3,
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Row(
@@ -698,7 +694,6 @@ class _ApprovalCardState extends State<_ApprovalCard> {
                 ),
               ),
               Expanded(
-                flex: 2,
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Row(
@@ -722,7 +717,6 @@ class _ApprovalCardState extends State<_ApprovalCard> {
                 ),
               ),
               Expanded(
-                flex: 2,
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Row(

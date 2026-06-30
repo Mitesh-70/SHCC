@@ -25,9 +25,6 @@ class _StockManagementScreenState extends State<StockManagementScreen>
   // Manual Adjustments Form controllers
   final _qtyCtrl = TextEditingController();
   final _remarkCtrl = TextEditingController();
-  String _adjustmentType = 'add'; // 'add' or 'subtract'
-  String? _formSelectedPort;
-  String? _formSelectedCoal;
 
   @override
   void initState() {
@@ -116,15 +113,16 @@ class _StockManagementScreenState extends State<StockManagementScreen>
   void _showAdjustStockSheet(BuildContext context, {String? preselectedPort, String? preselectedCoal}) {
     if (widget.isAdminView) return; // Admin has read-only visibility
 
-    setState(() {
-      _formSelectedPort = preselectedPort ?? (_myPorts.isNotEmpty ? _myPorts.first : null);
-      _formSelectedCoal = preselectedCoal ?? (AppConstants.productTypes.isNotEmpty ? AppConstants.productTypes.first : null);
-      _qtyCtrl.clear();
-      _remarkCtrl.clear();
-      _adjustmentType = 'add';
-    });
-
+    final scaffoldMsg = ScaffoldMessenger.of(context);
     final theme = Theme.of(context);
+
+    // Local form state — lives entirely inside the bottom sheet
+    String? localPort = preselectedPort ?? (_myPorts.isNotEmpty ? _myPorts.first : null);
+    String? localCoal = preselectedCoal ?? (AppConstants.productTypes.isNotEmpty ? AppConstants.productTypes.first : null);
+    String localAdjustmentType = 'add';
+    final localQtyCtrl = TextEditingController();
+    final localRemarkCtrl = TextEditingController();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -137,10 +135,11 @@ class _StockManagementScreenState extends State<StockManagementScreen>
           padding: EdgeInsets.fromLTRB(
             24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 32,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Center(
                 child: Container(
                   width: 36,
@@ -152,34 +151,33 @@ class _StockManagementScreenState extends State<StockManagementScreen>
                   ),
                 ),
               ),
-              Text(
-                'Manual Stock Entry',
-                style: AppTextStyles.heading2.copyWith(color: AppColors.primary),
-              ),
-              const SizedBox(height: 16),
+              Text('Manual Stock Entry', style: AppTextStyles.heading2.copyWith(color: AppColors.primary)),
+              const SizedBox(height: 20),
 
-              // Port and Coal Selection
+              // Port + Coal dropdowns
               Row(
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _formSelectedPort,
+                      isExpanded: true,
+                      initialValue: localPort,
                       decoration: const InputDecoration(labelText: 'Port', isDense: true),
                       items: _myPorts
                           .map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 14))))
                           .toList(),
-                      onChanged: (v) => setModalState(() => _formSelectedPort = v),
+                      onChanged: (v) => setModalState(() => localPort = v),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _formSelectedCoal,
+                      isExpanded: true,
+                      initialValue: localCoal,
                       decoration: const InputDecoration(labelText: 'Coal Type', isDense: true),
                       items: AppConstants.productTypes
                           .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 14))))
                           .toList(),
-                      onChanged: (v) => setModalState(() => _formSelectedCoal = v),
+                      onChanged: (v) => setModalState(() => localCoal = v),
                     ),
                   ),
                 ],
@@ -191,46 +189,60 @@ class _StockManagementScreenState extends State<StockManagementScreen>
                 children: [
                   Expanded(
                     child: ChoiceChip(
-                      label: const Center(
-                        child: Text(
-                          'Add / Increase Stock (+)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      showCheckmark: false,
+                      padding: EdgeInsets.zero,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      label: const SizedBox(
+                        width: double.infinity,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Add Stock (+)',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
                         ),
                       ),
-                      selected: _adjustmentType == 'add',
+                      selected: localAdjustmentType == 'add',
                       selectedColor: AppColors.success.withValues(alpha: 0.15),
-                      checkmarkColor: AppColors.success,
                       labelStyle: TextStyle(
-                        color: _adjustmentType == 'add' ? AppColors.success : AppColors.textSecondary,
+                        color: localAdjustmentType == 'add' ? AppColors.success : AppColors.textSecondary,
                       ),
                       side: BorderSide(
-                        color: _adjustmentType == 'add' ? AppColors.success : AppColors.border,
+                        color: localAdjustmentType == 'add' ? AppColors.success : AppColors.border,
                       ),
                       onSelected: (val) {
-                        if (val) setModalState(() => _adjustmentType = 'add');
+                        if (val) setModalState(() => localAdjustmentType = 'add');
                       },
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: ChoiceChip(
-                      label: const Center(
-                        child: Text(
-                          'Reduce Stock (-)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      showCheckmark: false,
+                      padding: EdgeInsets.zero,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      label: const SizedBox(
+                        width: double.infinity,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Reduce Stock (-)',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
                         ),
                       ),
-                      selected: _adjustmentType == 'subtract',
+                      selected: localAdjustmentType == 'subtract',
                       selectedColor: AppColors.error.withValues(alpha: 0.15),
-                      checkmarkColor: AppColors.error,
                       labelStyle: TextStyle(
-                        color: _adjustmentType == 'subtract' ? AppColors.error : AppColors.textSecondary,
+                        color: localAdjustmentType == 'subtract' ? AppColors.error : AppColors.textSecondary,
                       ),
                       side: BorderSide(
-                        color: _adjustmentType == 'subtract' ? AppColors.error : AppColors.border,
+                        color: localAdjustmentType == 'subtract' ? AppColors.error : AppColors.border,
                       ),
                       onSelected: (val) {
-                        if (val) setModalState(() => _adjustmentType = 'subtract');
+                        if (val) setModalState(() => localAdjustmentType = 'subtract');
                       },
                     ),
                   ),
@@ -240,7 +252,7 @@ class _StockManagementScreenState extends State<StockManagementScreen>
 
               // Quantity Field
               TextField(
-                controller: _qtyCtrl,
+                controller: localQtyCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(
                   labelText: 'Quantity (MT)',
@@ -251,7 +263,7 @@ class _StockManagementScreenState extends State<StockManagementScreen>
 
               // Remark Field
               TextField(
-                controller: _remarkCtrl,
+                controller: localRemarkCtrl,
                 maxLines: 2,
                 decoration: const InputDecoration(
                   labelText: 'Remarks / Reason (Required)',
@@ -266,37 +278,37 @@ class _StockManagementScreenState extends State<StockManagementScreen>
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _adjustmentType == 'add' ? AppColors.success : AppColors.error,
+                    backgroundColor: localAdjustmentType == 'add' ? AppColors.success : AppColors.error,
                     foregroundColor: Colors.white,
                   ),
                   onPressed: () {
-                    final qty = double.tryParse(_qtyCtrl.text) ?? 0.0;
-                    final remark = _remarkCtrl.text.trim();
+                    final qty = double.tryParse(localQtyCtrl.text) ?? 0.0;
+                    final remark = localRemarkCtrl.text.trim();
                     if (qty <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMsg.showSnackBar(
                         const SnackBar(content: Text('Please enter a valid quantity.')),
                       );
                       return;
                     }
                     if (remark.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMsg.showSnackBar(
                         const SnackBar(content: Text('Remarks are required for audit trail.')),
                       );
                       return;
                     }
-                    if (_formSelectedPort == null || _formSelectedCoal == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                    if (localPort == null || localCoal == null) {
+                      scaffoldMsg.showSnackBar(
                         const SnackBar(content: Text('Please select Port and Coal Type.')),
                       );
                       return;
                     }
 
                     try {
-                      final finalQty = _adjustmentType == 'add' ? qty : -qty;
-                      if (_adjustmentType == 'subtract') {
-                        final current = StockStore.getStock(_formSelectedPort!, _formSelectedCoal!);
+                      final finalQty = localAdjustmentType == 'add' ? qty : -qty;
+                      if (localAdjustmentType == 'subtract') {
+                        final current = StockStore.getStock(localPort!, localCoal!);
                         if (current < qty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          scaffoldMsg.showSnackBar(
                             SnackBar(
                               content: Text(
                                 'Cannot reduce stock below 0. Available: ${current.toStringAsFixed(0)} MT.',
@@ -308,21 +320,26 @@ class _StockManagementScreenState extends State<StockManagementScreen>
                       }
 
                       StockStore.adjustStockManual(
-                        _formSelectedPort!,
-                        _formSelectedCoal!,
+                        localPort!,
+                        localCoal!,
                         finalQty,
                         remark,
                         AppSession.instance.name,
                       );
 
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMsg.showSnackBar(
                         SnackBar(
                           content: Row(
                             children: [
                               const Icon(Icons.check_circle, color: Colors.white),
                               const SizedBox(width: 8),
-                              Text('Stock updated successfully for $_formSelectedPort!'),
+                              Expanded(
+                                child: Text(
+                                  'Stock updated successfully for $localPort!',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                           backgroundColor: AppColors.success,
@@ -330,7 +347,7 @@ class _StockManagementScreenState extends State<StockManagementScreen>
                       );
                       setState(() {});
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMsg.showSnackBar(
                         SnackBar(content: Text(e.toString())),
                       );
                     }
@@ -340,6 +357,7 @@ class _StockManagementScreenState extends State<StockManagementScreen>
               ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -384,9 +402,12 @@ class _StockManagementScreenState extends State<StockManagementScreen>
               icon: const Icon(Icons.add, color: Colors.white),
               label: const Text('Update Stock', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // ── Header & TabBar ────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
@@ -414,6 +435,7 @@ class _StockManagementScreenState extends State<StockManagementScreen>
                   child: TabBar(
                     controller: _tabCtrl,
                     indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
                     indicator: BoxDecoration(
                       color: AppColors.primary,
                       borderRadius: BorderRadius.circular(8),
@@ -422,8 +444,8 @@ class _StockManagementScreenState extends State<StockManagementScreen>
                     unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                     labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                     tabs: const [
-                      Tab(text: 'Current Stock'),
-                      Tab(text: 'Audit Trail'),
+                      Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Current Stock'))),
+                      Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Audit Trail'))),
                     ],
                   ),
                 ),
@@ -486,8 +508,10 @@ class _StockManagementScreenState extends State<StockManagementScreen>
                 ),
               ],
             ),
-          ),
-        ],
+            ),
+          ],
+        ),
+      ),
       ),
     );
   }
@@ -500,7 +524,8 @@ class _StockManagementScreenState extends State<StockManagementScreen>
           // Port Filter
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _selectedPortFilter,
+              isExpanded: true,
+              initialValue: _selectedPortFilter,
               decoration: const InputDecoration(
                 labelText: 'Filter Port',
                 isDense: true,
@@ -517,7 +542,8 @@ class _StockManagementScreenState extends State<StockManagementScreen>
           // Coal Filter
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _selectedCoalFilter,
+              isExpanded: true,
+              initialValue: _selectedCoalFilter,
               decoration: const InputDecoration(
                 labelText: 'Filter Coal',
                 isDense: true,
@@ -537,81 +563,105 @@ class _StockManagementScreenState extends State<StockManagementScreen>
   }
 
   Widget _buildKpiWidgets(bool isDark) {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: isDark ? 0.08 : 0.05),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.warehouse_rounded, color: AppColors.primary, size: 20),
-                const SizedBox(height: 8),
-                Text(
-                  '${_totalStock.toStringAsFixed(0)} MT',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: isDark ? 0.08 : 0.05),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.warehouse_rounded, color: AppColors.primary, size: 20),
+                  const SizedBox(height: 8),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '${_totalStock.toStringAsFixed(0)} MT',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Total Managed Stock',
-                  style: AppTextStyles.caption.copyWith(fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _lowStockCount > 0
-                  ? AppColors.error.withValues(alpha: isDark ? 0.08 : 0.05)
-                  : AppColors.success.withValues(alpha: isDark ? 0.08 : 0.05),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: _lowStockCount > 0
-                    ? AppColors.error.withValues(alpha: 0.25)
-                    : AppColors.success.withValues(alpha: 0.25),
+                  const SizedBox(height: 4),
+                  Expanded(
+                    child: Text(
+                      'Total Managed Stock',
+                      style: AppTextStyles.caption.copyWith(fontSize: 11),
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  _lowStockCount > 0 ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded,
-                  color: _lowStockCount > 0 ? AppColors.error : AppColors.success,
-                  size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _lowStockCount > 0
+                    ? AppColors.error.withValues(alpha: isDark ? 0.08 : 0.05)
+                    : AppColors.success.withValues(alpha: isDark ? 0.08 : 0.05),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _lowStockCount > 0
+                      ? AppColors.error.withValues(alpha: 0.25)
+                      : AppColors.success.withValues(alpha: 0.25),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '$_lowStockCount Items',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    _lowStockCount > 0 ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded,
                     color: _lowStockCount > 0 ? AppColors.error : AppColors.success,
+                    size: 20,
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Low Stock Alerts',
-                  style: AppTextStyles.caption.copyWith(fontSize: 11),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '$_lowStockCount Items',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: _lowStockCount > 0 ? AppColors.error : AppColors.success,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Expanded(
+                    child: Text(
+                      'Low Stock Alerts',
+                      style: AppTextStyles.caption.copyWith(fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  Map<String, dynamic> _getCoalStyle(String coalType) {
+    return {
+      'icon': Icons.local_fire_department_rounded,
+      'color': const Color(0xFFF97316),
+      'bgColor': const Color(0xFFF97316).withValues(alpha: 0.08),
+      'borderColor': const Color(0xFFF97316).withValues(alpha: 0.18),
+    };
   }
 
   Widget _buildBreakdownSection(Map<String, double> breakdown, bool isDark) {
@@ -625,38 +675,88 @@ class _StockManagementScreenState extends State<StockManagementScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Stock Breakdown by Coal Type', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Stock Breakdown by Coal Type',
+            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           if (breakdown.isEmpty)
             Text('No stock metrics to display.', style: AppTextStyles.caption)
           else
             ...breakdown.entries.map((e) {
+              final index = breakdown.keys.toList().indexOf(e.key);
               final pct = _totalStock == 0 ? 0.0 : e.value / _totalStock;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(e.key, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
-                        Text('${e.value.toStringAsFixed(0)} MT (${(pct * 100).toStringAsFixed(0)}%)',
-                            style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold)),
-                      ],
+              final style = _getCoalStyle(e.key);
+
+              return Column(
+                children: [
+                  if (index > 0)
+                    Divider(
+                      height: 24,
+                      thickness: 1,
+                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                     ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: pct,
-                        minHeight: 6,
-                        backgroundColor: isDark ? AppColors.darkBgBase : AppColors.lightBgBase,
-                        valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.local_fire_department_rounded,
+                        color: style['color'],
+                        size: 28,
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    e.key,
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${e.value.toStringAsFixed(0)} MT',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Text(
+                                  '${(pct * 100).toStringAsFixed(0)}%',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: pct,
+                                minHeight: 6,
+                                backgroundColor: isDark ? const Color(0xFF161616) : const Color(0xFFEAECF0),
+                                valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               );
             }),
         ],
@@ -667,7 +767,6 @@ class _StockManagementScreenState extends State<StockManagementScreen>
   Widget _buildStockTile(Map<String, dynamic> s, bool isDark) {
     final qty = s['quantity'] as double;
     final isLow = qty < StockStore.lowStockThreshold;
-    final theme = Theme.of(context);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -679,30 +778,35 @@ class _StockManagementScreenState extends State<StockManagementScreen>
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isLow ? AppColors.error.withValues(alpha: 0.1) : AppColors.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.local_fire_department_rounded,
-              color: isLow ? AppColors.error : AppColors.primary,
-              size: 20,
-            ),
+          Icon(
+            Icons.local_fire_department_rounded,
+            color: isLow ? AppColors.error : AppColors.primary,
+            size: 28,
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(s['coalType'] as String, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  s['coalType'] as String,
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
                     Icon(Icons.anchor_rounded, size: 12, color: AppColors.textMuted),
                     const SizedBox(width: 4),
-                    Text(s['port'] as String, style: AppTextStyles.caption),
+                    Expanded(
+                      child: Text(
+                        s['port'] as String,
+                        style: AppTextStyles.caption,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -803,11 +907,15 @@ class _StockManagementScreenState extends State<StockManagementScreen>
             children: [
               Icon(icon, color: color, size: 18),
               const SizedBox(width: 8),
-              Text(
-                typeLabel,
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color),
+              Expanded(
+                child: Text(
+                  typeLabel,
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 '$sign${tx.quantity.toStringAsFixed(0)} MT',
                 style: TextStyle(
@@ -832,12 +940,16 @@ class _StockManagementScreenState extends State<StockManagementScreen>
           ],
           const Divider(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'By: ${tx.operator}',
-                style: AppTextStyles.caption.copyWith(fontSize: 11),
+              Expanded(
+                child: Text(
+                  'By: ${tx.operator}',
+                  style: AppTextStyles.caption.copyWith(fontSize: 11),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '${tx.date}  ·  ${tx.time}',
                 style: AppTextStyles.caption.copyWith(fontSize: 11),

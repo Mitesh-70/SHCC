@@ -508,7 +508,7 @@ class _AppDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<T>(
-      value: selectedValue,
+      initialValue: selectedValue,
       validator: validator,
       dropdownColor: AppColors.bgCard,
       style: AppTextStyles.body,

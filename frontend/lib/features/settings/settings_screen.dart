@@ -203,7 +203,7 @@ class _ToggleRow extends StatelessWidget {
       )),
       CupertinoSwitch(
         value: value,
-        activeColor: iconColor,
+        activeTrackColor: iconColor,
         onChanged: onChanged,
       ),
     ]),

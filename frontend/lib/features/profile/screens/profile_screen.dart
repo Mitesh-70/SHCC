@@ -411,7 +411,7 @@ class _TargetManagementScreenState extends State<TargetManagementScreen> {
             ),
             child: Column(children: [
               DropdownButtonFormField<String>(
-                value: _selected,
+                initialValue: _selected,
                 dropdownColor: card,
                 style: AppTextStyles.body,
                 hint: Text('Select sales person',
@@ -611,7 +611,7 @@ class ProfileScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(50),
                       child: Image.network(
                         _imageUrl, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (_, _, _) => Container(
                           color: AppColors.primaryMuted,
                           child: Center(child: Text(_initials,
                             style: const TextStyle(color: AppColors.primary,

@@ -559,7 +559,7 @@ class _PortAdminOrderDetailScreenState
               const SizedBox(width: 10),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedPort,
+                  initialValue: _selectedPort,
                   decoration: const InputDecoration(
                     labelText: 'Port',
                     isDense: true,

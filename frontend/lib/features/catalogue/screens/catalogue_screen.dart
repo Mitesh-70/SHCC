@@ -4,7 +4,6 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/stock_store.dart';
 import '../../../shared/widgets/shcc_app_bar.dart';
-import '../../port_admin/screens/stock_management_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 
 class CatalogueScreen extends StatefulWidget {
@@ -41,41 +40,34 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
             ))),
         userInitials: widget.isAdmin ? 'AD' : 'RS',
       ),
-      body: ListView(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Product Catalogue',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700, letterSpacing: -0.3)),
-                  const SizedBox(height: 4),
-                  Text('${_products.length} products  ·  $available available',
-                    style: theme.textTheme.bodySmall),
-                ],
-              ),
-              if (widget.isAdmin)
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary, width: 1),
-                    elevation: 0,
-                  ),
-                  icon: const Icon(Icons.warehouse_rounded, size: 16),
-                  label: const Text('Port Stocks', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const StockManagementScreen(isAdminView: true),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Product Catalogue',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700, letterSpacing: -0.3),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
+                    const SizedBox(height: 4),
+                    Text('${_products.length} products  ·  $available available',
+                      style: theme.textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -89,6 +81,8 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
             ),
           )),
         ],
+      ),
+      ),
       ),
     );
   }
@@ -133,7 +127,7 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
               Text('Available', style: theme.textTheme.bodyMedium),
               Switch(
                 value: available,
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
                 onChanged: (v) => setModal(() => available = v)),
             ]),
             const SizedBox(height: 24),
@@ -188,18 +182,13 @@ class _ProductCard extends StatelessWidget {
     // Original fire icon
     const coalIcon = Icons.local_fire_department_rounded;
 
-    final iconBox = Container(
-      width: 46, height: 46,
-      decoration: BoxDecoration(
-        color: avail
-          ? AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.1)
-          : (isDark ? AppColors.bgBase : AppColors.lightBgBase),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(coalIcon,
-        color: avail ? AppColors.primary
+    final iconBox = Icon(
+      coalIcon,
+      color: avail
+          ? AppColors.primary
           : (isDark ? AppColors.textMuted : AppColors.lightTextMuted),
-        size: 22));
+      size: 28,
+    );
 
     final cardDecoration = BoxDecoration(
       color: cardBg,
@@ -220,68 +209,70 @@ class _ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
               iconBox,
-              const SizedBox(width: 14),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                Text(product['name'] as String,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600)),
-                const SizedBox(height: 3),
-                Row(children: [
-                  Text('₹${(product['price'] as double).toStringAsFixed(0)}/MT',
-                    style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w700,
-                      color: AppColors.primary)),
-                  const SizedBox(width: 10),
-                  _badge(avail),
-                ]),
-              ])),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product['name'] as String,
+                      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '₹${(product['price'] as double).toStringAsFixed(0)}/MT',
+                            style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w700,
+                              color: AppColors.primary),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              _badge(avail),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: onEdit,
-                child: Container(
-                  width: 34, height: 34,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.bgBase : AppColors.lightBgBase,
-                    borderRadius: BorderRadius.circular(9),
-                    border: Border.all(color: border)),
-                  child: Icon(Icons.edit_outlined, size: 16,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Icon(Icons.edit_outlined, size: 20,
                     color: isDark ? AppColors.textSecondary
-                      : AppColors.lightTextSecondary))),
+                      : AppColors.lightTextSecondary),
+                ),
+              ),
             ]),
             const Divider(height: 20),
             Text('Current Stock by Port:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: AppConstants.ports.map((port) {
-                final qty = StockStore.getStock(port, product['name'] as String);
-                final isLow = qty < StockStore.lowStockThreshold;
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkBgBase : AppColors.lightBgBase,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: isLow ? AppColors.error.withValues(alpha: 0.35) : border),
+            Column(
+              children: [
+                for (int i = 0; i < AppConstants.ports.length; i += 2)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(child: _buildPortStockItem(AppConstants.ports[i], product['name'] as String, isDark)),
+                        if (i + 1 < AppConstants.ports.length)
+                          Expanded(child: _buildPortStockItem(AppConstants.ports[i + 1], product['name'] as String, isDark))
+                        else
+                          const Expanded(child: SizedBox()),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('$port: ', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
-                      Text(
-                        '${qty.toStringAsFixed(0)} MT',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: isLow ? AppColors.error : AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
+              ],
             ),
           ],
         ),
@@ -297,23 +288,57 @@ class _ProductCard extends StatelessWidget {
         Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
           iconBox,
           const SizedBox(width: 14),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-            Text(product['name'] as String,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600)),
-            const SizedBox(height: 3),
-            Text('₹${(product['price'] as double).toStringAsFixed(0)}/MT',
-              style: const TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w700,
-                color: AppColors.primary)),
-          ])),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product['name'] as String,
+                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '₹${(product['price'] as double).toStringAsFixed(0)}/MT',
+                  style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w700,
+                    color: AppColors.primary),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 70), // reserve space for badge
         ]),
         // Badge pinned to top-right
         Positioned(
           top: 0, right: 0,
           child: _badge(avail)),
       ]),
+    );
+  }
+
+  Widget _buildPortStockItem(String port, String productName, bool isDark) {
+    final qty = StockStore.getStock(port, productName);
+    final isLow = qty < StockStore.lowStockThreshold;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.anchor_rounded, size: 14, color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text('$port: ', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis),
+        ),
+        Text(
+          '${qty.toStringAsFixed(0)} MT',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: isLow ? AppColors.error : AppColors.primary,
+          ),
+        ),
+      ],
     );
   }
 }

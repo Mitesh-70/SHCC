@@ -524,7 +524,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedPort,
+                  initialValue: _selectedPort,
                   dropdownColor: theme.cardColor,
                   style: theme.textTheme.bodyMedium,
                   decoration: InputDecoration(

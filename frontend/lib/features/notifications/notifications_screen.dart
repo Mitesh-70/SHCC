@@ -257,43 +257,60 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildCategoryFilters(bool isDark) {
-    final categories = ['All', 'Orders', 'Delivery', 'Targets', 'System Updates'];
+    final categories = [
+      {'label': 'All', 'value': 'All', 'icon': Icons.grid_view_rounded},
+      {'label': 'Orders', 'value': 'Orders', 'icon': Icons.shopping_bag_outlined},
+      {'label': 'Delivery', 'value': 'Delivery', 'icon': Icons.local_shipping_outlined},
+      {'label': 'Targets', 'value': 'Targets', 'icon': Icons.track_changes_rounded},
+      {'label': 'System', 'value': 'System Updates', 'icon': Icons.settings_outlined},
+    ];
     return Container(
-      height: 38,
-      margin: const EdgeInsets.symmetric(vertical: 10),
+      height: 42,
+      margin: const EdgeInsets.symmetric(vertical: 12),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: categories.length,
         itemBuilder: (context, index) {
           final cat = categories[index];
-          final isSelected = _selectedCategory == cat;
+          final isSelected = _selectedCategory == cat['value'];
           return GestureDetector(
-            onTap: () => setState(() => _selectedCategory = cat),
+            onTap: () => setState(() => _selectedCategory = cat['value'] as String),
             child: Container(
               margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primary
                     : (isDark ? AppColors.darkBgCard : AppColors.lightBgCard),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isSelected
                       ? AppColors.primary
                       : AppColors.border,
                 ),
               ),
-              child: Center(
-                child: Text(
-                  cat,
-                  style: AppTextStyles.caption.copyWith(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    cat['icon'] as IconData,
+                    size: 16,
                     color: isSelected
                         ? Colors.white
                         : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Text(
+                    cat['label'] as String,
+                    style: AppTextStyles.caption.copyWith(
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -320,14 +337,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
         actions: _totalUnread > 0
           ? [
-              TextButton(
+              TextButton.icon(
                 onPressed: () => setState(() =>
                   NotificationStore.markAllReadFor(
                     person: widget.person, role: widget.role)),
-                child: Text('Mark all read',
+                icon: const Icon(Icons.done_all_rounded, size: 18, color: AppColors.primary),
+                label: Text('Mark all read',
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.primary)),
+                    color: AppColors.primary, fontWeight: FontWeight.w600)),
               ),
+              const SizedBox(width: 8),
             ]
           : null,
       ),
@@ -346,7 +365,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
                     itemCount: notifs.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (_, i) {
                       final n = notifs[i];
                       // Section divider between unread and read
@@ -429,10 +448,10 @@ class _NotifCard extends StatelessWidget {
       case NotifType.orderOnHold:
       case NotifType.holdReleased:
       case NotifType.dispatchUpdated:
-        return '→ View Order';
+        return 'View Order';
       case NotifType.targetModified:
-      case NotifType.targetCompleted: return '→ View Profile';
-      case NotifType.catalogueUpdated:return '→ View Catalogue';
+      case NotifType.targetCompleted: return 'View Profile';
+      case NotifType.catalogueUpdated:return 'View Catalogue';
     }
   }
 
@@ -449,13 +468,13 @@ class _NotifCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isRead
             ? (isDark ? AppColors.darkBgCard : Colors.white)
-            : (isDark ? color.withValues(alpha: 0.1) : color.withValues(alpha: 0.05)),
-          borderRadius: BorderRadius.circular(14),
+            : (isDark ? const Color(0xFF131B2A) : color.withValues(alpha: 0.05)),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isRead
               ? AppColors.border
-              : color.withValues(alpha: 0.3),
-            width: isRead ? 1 : 1.5,
+              : color.withValues(alpha: 0.2),
+            width: 1,
           ),
           boxShadow: isRead
             ? null
@@ -464,7 +483,7 @@ class _NotifCard extends StatelessWidget {
                 blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -476,73 +495,79 @@ class _NotifCard extends StatelessWidget {
                   ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(16),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Icon
                         Container(
-                          width: 40, height: 40,
+                          width: 48, height: 48,
                           decoration: BoxDecoration(
                             color: color.withValues(alpha: isRead ? 0.08 : 0.15),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           child: Icon(_icon, color: isRead
-                            ? color.withValues(alpha: 0.6) : color, size: 20),
+                            ? color.withValues(alpha: 0.6) : color, size: 24),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
 
                         // Content
                         Expanded(child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: color.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  notif.category.toUpperCase(),
-                                  style: TextStyle(
-                                    color: color,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
+                            // Row 1: Tag and Unread Dot
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: color.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    notif.category.toUpperCase(),
+                                    style: TextStyle(
+                                      color: color,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(child: Text(notif.title,
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  fontWeight: isRead
-                                    ? FontWeight.w500 : FontWeight.w700,
+                                if (!isRead)
+                                  Container(
+                                    width: 8, height: 8,
+                                    decoration: BoxDecoration(
+                                      color: color, shape: BoxShape.circle),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Row 2: Title
+                            Text(notif.title,
+                                style: AppTextStyles.heading3.copyWith(
+                                  fontWeight: FontWeight.bold,
                                   color: isRead
-                                    ? (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                                    : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
-                                ))),
-                              if (!isRead)
-                                Container(
-                                  width: 8, height: 8, margin: const EdgeInsets.only(left: 6),
-                                  decoration: BoxDecoration(
-                                    color: color, shape: BoxShape.circle),
-                                ),
-                            ]),
+                                    ? (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary)
+                                    : (isDark ? Colors.white : AppColors.lightTextPrimary),
+                                )),
                             const SizedBox(height: 6),
+                            // Row 3: Description
                             Text(notif.description,
-                              style: AppTextStyles.bodySecondary.copyWith(
-                                color: isRead
-                                  ? AppColors.textMuted
-                                  : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis),
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: isRead
+                                    ? AppColors.textMuted
+                                    : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis),
 
                             // Catalogue sub-note
                             if (notif.catalogueNote != null) ...[
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
+                                  horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: AppColors.info.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(6),
@@ -554,20 +579,31 @@ class _NotifCard extends StatelessWidget {
                               ),
                             ],
 
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 16),
+                            // Row 4: Bottom row (time + nav hint)
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(notif.timestamp,
-                                  style: AppTextStyles.caption.copyWith(
-                                    color: AppColors.textMuted)),
-                                Text(_navHint,
-                                  style: AppTextStyles.caption.copyWith(
-                                    color: isRead
-                                      ? AppColors.textMuted
-                                      : color,
-                                    fontWeight: isRead
-                                      ? FontWeight.w400 : FontWeight.w600)),
+                                Row(
+                                  children: [
+                                    Icon(Icons.access_time, size: 14, color: AppColors.textMuted),
+                                    const SizedBox(width: 4),
+                                    Text(notif.timestamp,
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.textMuted)),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Text(_navHint,
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: isRead ? AppColors.textMuted : color,
+                                        fontWeight: FontWeight.bold)),
+                                    const SizedBox(width: 4),
+                                    Icon(Icons.arrow_forward_rounded, size: 14, 
+                                      color: isRead ? AppColors.textMuted : color),
+                                  ],
+                                ),
                               ],
                             ),
                           ],

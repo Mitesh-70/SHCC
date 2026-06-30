@@ -1,5 +1,3 @@
-import '../core/constants/app_constants.dart';
-
 class StockTransaction {
   final String id;
   final String port;
