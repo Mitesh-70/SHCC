@@ -88,6 +88,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           curve: Curves.easeInOut);
         break;
       case NotifType.catalogueUpdated:
+      case NotifType.portAssignment:
         setState(() { _highlightOrder = null; _navIndex = 3; });
         _pageCtrl.animateToPage(2,
           duration: const Duration(milliseconds: 280),

@@ -17,6 +17,7 @@ enum NotifType {
   targetModified,
   targetCompleted,
   catalogueUpdated,
+  portAssignment,
 }
 
 // ── Notification model ────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ class AppNotification {
       case NotifType.targetCompleted:
         return 'Targets';
       case NotifType.catalogueUpdated:
+      case NotifType.portAssignment:
         return 'System Updates';
     }
   }
@@ -420,6 +422,7 @@ class _NotifCard extends StatelessWidget {
       case NotifType.targetModified:  return Icons.track_changes_rounded;
       case NotifType.targetCompleted: return Icons.emoji_events_outlined;
       case NotifType.catalogueUpdated:return Icons.inventory_2_outlined;
+      case NotifType.portAssignment:  return Icons.anchor_rounded;
     }
   }
 
@@ -436,6 +439,7 @@ class _NotifCard extends StatelessWidget {
       case NotifType.targetModified:  return AppColors.primary;
       case NotifType.targetCompleted: return const Color(0xFFFFCC00);
       case NotifType.catalogueUpdated:return AppColors.info;
+      case NotifType.portAssignment:  return const Color(0xFF6366F1);
     }
   }
 
@@ -452,6 +456,7 @@ class _NotifCard extends StatelessWidget {
       case NotifType.targetModified:
       case NotifType.targetCompleted: return 'View Profile';
       case NotifType.catalogueUpdated:return 'View Catalogue';
+      case NotifType.portAssignment:  return 'View Assignments';
     }
   }
 

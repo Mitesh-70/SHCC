@@ -73,7 +73,7 @@ class _PortAdminManagementScreenState extends State<PortAdminManagementScreen> {
         roles: ['admin'],
         title: 'Port Assignment Changed',
         description: 'New Port Admin $name registered with ports: ${assigned.join(', ')}.',
-        type: NotifType.catalogueUpdated,
+        type: NotifType.portAssignment,
       );
 
       NotificationStore.add(
@@ -81,7 +81,7 @@ class _PortAdminManagementScreenState extends State<PortAdminManagementScreen> {
         roles: ['port_admin'],
         title: 'Port Reassignment Updates',
         description: 'Welcome! You have been assigned the following ports: ${assigned.join(', ')}.',
-        type: NotifType.catalogueUpdated,
+        type: NotifType.portAssignment,
       );
     }
   }
@@ -150,7 +150,7 @@ class _PortAdminCard extends StatelessWidget {
         roles: ['admin'],
         title: 'Port Assignment Changed',
         description: 'Ports reassigned for ${user.name}: ${selected.join(', ')}.',
-        type: NotifType.catalogueUpdated,
+        type: NotifType.portAssignment,
       );
 
       NotificationStore.add(
@@ -158,7 +158,7 @@ class _PortAdminCard extends StatelessWidget {
         roles: ['port_admin'],
         title: 'Port Reassignment Updates',
         description: 'Your managed ports have been updated to: ${selected.join(', ')}.',
-        type: NotifType.catalogueUpdated,
+        type: NotifType.portAssignment,
       );
     }
   }

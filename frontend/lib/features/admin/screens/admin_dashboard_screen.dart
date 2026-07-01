@@ -15,6 +15,7 @@ import '../../orders/screens/create_order_screen.dart';
 import '../../notifications/notifications_screen.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/order_store.dart';
+import 'port_admin_management_screen.dart';
 
 
 
@@ -89,6 +90,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         _pageCtrl.animateToPage(3,
             duration: const Duration(milliseconds: 280),
             curve: Curves.easeInOut);
+        break;
+      case NotifType.portAssignment:
+        setState(() {
+          _highlightOrder = null;
+          _navIndex = 4;
+        });
+        _pageCtrl.jumpToPage(4);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PortAdminManagementScreen()),
+        );
         break;
       case NotifType.targetModified:
       case NotifType.targetCompleted:

@@ -69,6 +69,7 @@ class _PortAdminDashboardScreenState extends State<PortAdminDashboardScreen> {
       case NotifType.targetModified:
       case NotifType.targetCompleted:
       case NotifType.catalogueUpdated:
+      case NotifType.portAssignment:
         setState(() {
           _highlightOrder = null;
           _navIndex = 3;

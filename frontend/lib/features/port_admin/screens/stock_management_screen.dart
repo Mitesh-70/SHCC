@@ -664,6 +664,41 @@ class _StockManagementScreenState extends State<StockManagementScreen>
     };
   }
 
+  Widget _buildBreakdownPortItem(String port, String coalType, bool isDark) {
+    final qty = StockStore.getStock(port, coalType);
+    final isLow = qty < StockStore.lowStockThreshold;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.anchor_rounded,
+          size: 13,
+          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+        ),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            '$port: ',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          '${qty.toStringAsFixed(0)} MT',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: isLow ? AppColors.error : AppColors.primary,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildBreakdownSection(Map<String, double> breakdown, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -687,6 +722,28 @@ class _StockManagementScreenState extends State<StockManagementScreen>
               final index = breakdown.keys.toList().indexOf(e.key);
               final pct = _totalStock == 0 ? 0.0 : e.value / _totalStock;
               final style = _getCoalStyle(e.key);
+
+              final portWidgets = <Widget>[];
+              for (int i = 0; i < _myPorts.length; i += 2) {
+                portWidgets.add(
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildBreakdownPortItem(_myPorts[i], e.key, isDark),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: i + 1 < _myPorts.length
+                              ? _buildBreakdownPortItem(_myPorts[i + 1], e.key, isDark)
+                              : const SizedBox(),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
 
               return Column(
                 children: [
@@ -751,6 +808,10 @@ class _StockManagementScreenState extends State<StockManagementScreen>
                                 valueColor: const AlwaysStoppedAnimation(AppColors.primary),
                               ),
                             ),
+                            if (portWidgets.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              ...portWidgets,
+                            ],
                           ],
                         ),
                       ),
