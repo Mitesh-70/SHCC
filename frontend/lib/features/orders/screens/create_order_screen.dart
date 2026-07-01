@@ -367,34 +367,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         final double totalValue = subtotal + freight + gstAmount + tcsAmount;
 
         final previousAchieved = TargetStore.achieved[salesmanName] ?? 0.0;
-        final target = TargetStore.targets[salesmanName] ?? 0.0;
-        final newAchieved = previousAchieved + totalValue;
-        TargetStore.achieved[salesmanName] = newAchieved;
-
-        NotificationStore.add(
-          person: 'Admin',
-          roles: ['admin'],
-          title: 'Order Approved Successfully',
-          description: 'Order ${order['id']} created and approved successfully.',
-          type: NotifType.orderApproved,
-          orderId: order['id'] as String,
-        );
-
-        if (previousAchieved < target && newAchieved >= target) {
-          NotificationStore.add(
-            person: salesmanName,
-            title: 'Target Completed!',
-            description: 'Congratulations! You have achieved your monthly target of ₹${target.toStringAsFixed(0)}.',
-            type: NotifType.targetCompleted,
-          );
-          NotificationStore.add(
-            person: 'Admin',
-            roles: ['admin'],
-            title: 'Target Completed',
-            description: 'Sales Person $salesmanName has achieved their monthly target of ₹${target.toStringAsFixed(0)}.',
-            type: NotifType.targetCompleted,
-          );
-        }
+        TargetStore.achieved[salesmanName] = previousAchieved + totalValue;
       } else {
         NotificationStore.add(
           person: 'Admin',
@@ -425,14 +398,22 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     }
 
     setState(() => _loading = false);
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Row(children: [
         const Icon(Icons.check_circle_outline,
           color: AppColors.success, size: 18),
         const SizedBox(width: 10),
-        Text(widget.prefill != null
-          ? 'Order updated' : 'Order submitted. Admin notified.',
-          style: AppTextStyles.body),
+        Expanded(
+          child: Text(
+            widget.isAdmin
+                ? 'Order created. Port admin notified.'
+                : (widget.prefill != null
+                    ? 'Order updated'
+                    : 'Order submitted. Admin notified.'),
+            style: AppTextStyles.body,
+          ),
+        ),
       ]),
       backgroundColor: AppColors.bgCard,
       behavior: SnackBarBehavior.floating,

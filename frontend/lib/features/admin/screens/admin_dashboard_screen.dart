@@ -512,6 +512,12 @@ class _ApprovalCardState extends State<_ApprovalCard> {
   final _commentCtrl = TextEditingController();
   bool _showComment = false;
 
+  @override
+  void dispose() {
+    _commentCtrl.dispose();
+    super.dispose();
+  }
+
   double get _total {
     final b =
         (widget.order['base_rate'] as num).toDouble() *
@@ -534,10 +540,127 @@ class _ApprovalCardState extends State<_ApprovalCard> {
     return '₹${v.toStringAsFixed(0)}';
   }
 
+  // ── helpers ──────────────────────────────────────────────────────────────
+
+  void _showDetail(BuildContext context) {
+    final o = widget.order;
+    final b = (o['base_rate'] as num).toDouble() *
+        (o['quantity'] as num).toDouble();
+    final f = ((o['freight'] ?? 0.0) as num).toDouble();
+    final gstAmt = b * ((o['gst'] as num) / 100);
+    final tcsAmt = b * ((o['tcs'] as num) / 100);
+    final total = b + f + gstAmt + tcsAmt;
+    String fmt(double v) {
+      if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
+      if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(2)} L';
+      return '₹${v.toStringAsFixed(2)}';
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.80,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (_, ctrl) => ListView(
+          controller: ctrl,
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Order Detail', style: AppTextStyles.heading2),
+                    Text(
+                      o['id'] as String,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                // Status badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Pending',
+                    style: AppTextStyles.label.copyWith(
+                      color: AppColors.warning,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _DashDetailSection('Order Info', [
+              ('Order ID', o['id'] as String),
+              ('Date', o['date'] as String? ?? o['time'] as String? ?? '—'),
+              ('Sales Person', o['salesman'] as String? ??
+                  o['sales_person_name'] as String? ?? '—'),
+            ]),
+            const SizedBox(height: 16),
+            _DashDetailSection('Product Details', [
+              ('Product', o['product_type'] as String? ?? '—'),
+              ('Quality', o['quality'] as String? ?? '—'),
+              ('Type of Sale', o['type_of_sale'] as String? ?? '—'),
+              ('Port', o['port_name'] as String? ?? '—'),
+              ('Quantity', '${o['quantity']} MT'),
+            ]),
+            const SizedBox(height: 16),
+            _DashDetailSection('Pricing', [
+              ('Base Rate', '₹${o['base_rate']}/MT'),
+              ('Base Amount', fmt(b)),
+              ('Freight', fmt(f)),
+              ('GST', '${o['gst']}%  →  ${fmt(gstAmt)}'),
+              ('TCS', '${o['tcs']}%  →  ${fmt(tcsAmt)}'),
+              ('Total Amount', fmt(total)),
+            ]),
+            const SizedBox(height: 16),
+            _DashDetailSection('Buyer Info', [
+              ('Customer', o['buyer_name'] as String? ?? '—'),
+              ('Payment Terms', o['payment_terms'] as String? ?? '—'),
+              if (o['remark'] != null &&
+                  (o['remark'] as String).isNotEmpty)
+                ('Remarks', o['remark'] as String),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final o = widget.order;
-    return Container(
+    return GestureDetector(
+      onTap: () => _showDetail(context),
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -816,7 +939,11 @@ class _ApprovalCardState extends State<_ApprovalCard> {
                             setState(() => _showComment = true);
                             return;
                           }
-                          widget.onReject(_commentCtrl.text.trim());
+                          // Submit rejection then clear state so next order starts fresh
+                          final comment = _commentCtrl.text.trim();
+                          _commentCtrl.clear();
+                          setState(() => _showComment = false);
+                          widget.onReject(comment);
                         },
                 ),
               ),
@@ -836,6 +963,73 @@ class _ApprovalCardState extends State<_ApprovalCard> {
           ),
         ],
       ),
+    ), // GestureDetector
+  );
+  }
+}
+
+// ── Dashboard order-detail section helper ─────────────────────────────────────
+
+class _DashDetailSection extends StatelessWidget {
+  final String title;
+  final List<(String, String)> rows;
+  const _DashDetailSection(this.title, this.rows);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: AppTextStyles.label.copyWith(letterSpacing: 0.8),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: rows
+                .asMap()
+                .entries
+                .map(
+                  (e) => Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 11,
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 114,
+                              child: Text(
+                                e.value.$1,
+                                style: AppTextStyles.caption,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                e.value.$2,
+                                style: AppTextStyles.bodyMedium,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (e.key < rows.length - 1)
+                        const Divider(height: 1, indent: 14, endIndent: 14),
+                    ],
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      ],
     );
   }
 }

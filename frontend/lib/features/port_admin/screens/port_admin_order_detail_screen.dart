@@ -71,6 +71,7 @@ class _PortAdminOrderDetailScreenState
   bool get _canDispatch =>
       _status == AppConstants.statusApproved ||
       _status == AppConstants.statusDispatched;
+  // Note: on_hold is intentionally excluded — dispatch is blocked while on hold.
 
   bool get _canHold => _status == AppConstants.statusApproved;
   bool get _canRelease => _status == AppConstants.statusOnHold;

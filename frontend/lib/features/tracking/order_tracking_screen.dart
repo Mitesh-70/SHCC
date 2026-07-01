@@ -59,7 +59,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   double get _delivered => _deliveries.fold(0, (s, d) => s + d.quantity);
   double get _remaining => (_ordered - _delivered).clamp(0, double.infinity);
   double get _pct       => _ordered == 0 ? 0 : (_delivered / _ordered).clamp(0, 1);
-  bool get _canAddDispatch => widget.isAdmin || widget.isPortAdmin;
+  // Dispatch is permitted for admin/portAdmin only when order is NOT on hold.
+  bool get _canAddDispatch =>
+      (_status == AppConstants.statusApproved ||
+          _status == AppConstants.statusDispatched) &&
+      (widget.isAdmin || widget.isPortAdmin);
   bool get _canDeleteDispatch => widget.isAdmin || widget.isPortAdmin;
 
   String get _status => widget.order['status'] as String? ?? '';
@@ -296,6 +300,47 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ]),
                 ),
                 const SizedBox(height: 16),
+
+                // ── On-Hold banner visible to both Admin and Port Admin ──────
+                if (_status == AppConstants.statusOnHold) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.pause_circle_outline,
+                            color: AppColors.warning, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Order On Hold — Dispatch Blocked',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                      color: AppColors.warning)),
+                              if ((widget.order['hold_reason'] as String?)
+                                      ?.isNotEmpty ==
+                                  true) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Reason: ${widget.order['hold_reason']}',
+                                  style: AppTextStyles.caption,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
 
                 if (widget.isPortAdmin) ...[
                   Wrap(

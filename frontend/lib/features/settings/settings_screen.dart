@@ -31,10 +31,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _isDark = prefs.getBool('dark_mode') ?? true;
       _notificationsEnabled = prefs.getBool('notifications') ?? true;
     });
-    themeNotifier.value = _isDark ? ThemeMode.dark : ThemeMode.light;
   }
 
   Future<void> _toggleTheme(bool val) async {
