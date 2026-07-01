@@ -19,8 +19,6 @@ class StockManagementScreen extends StatefulWidget {
 class _StockManagementScreenState extends State<StockManagementScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
-  String? _selectedPortFilter;
-  String? _selectedCoalFilter;
 
   // Manual Adjustments Form controllers
   final _qtyCtrl = TextEditingController();
@@ -44,39 +42,9 @@ class _StockManagementScreenState extends State<StockManagementScreen>
       ? AppConstants.ports
       : AppSession.instance.assignedPorts;
 
-  // Fetch stock levels filtered by port and coal
-  List<Map<String, dynamic>> get _filteredStock {
-    final list = <Map<String, dynamic>>[];
-    for (final port in _myPorts) {
-      if (_selectedPortFilter != null && _selectedPortFilter != port) continue;
-      final portStock = StockStore.getStockForPort(port);
-      portStock.forEach((coal, qty) {
-        if (_selectedCoalFilter != null && _selectedCoalFilter != coal) return;
-        list.add({
-          'port': port,
-          'coalType': coal,
-          'quantity': qty,
-        });
-      });
-    }
-    // Sort: port name first, then coal type
-    list.sort((a, b) {
-      final portComp = (a['port'] as String).compareTo(b['port'] as String);
-      if (portComp != 0) return portComp;
-      return (a['coalType'] as String).compareTo(b['coalType'] as String);
-    });
-    return list;
-  }
-
-  // Fetch transactions filtered
-  List<StockTransaction> get _filteredTransactions {
-    final txs = StockStore.getTransactionsForPorts(_myPorts);
-    return txs.where((tx) {
-      if (_selectedPortFilter != null && tx.port != _selectedPortFilter) return false;
-      if (_selectedCoalFilter != null && tx.coalType != _selectedCoalFilter) return false;
-      return true;
-    }).toList();
-  }
+  // Fetch transactions for the Audit Trail tab (all ports, no filter)
+  List<StockTransaction> get _filteredTransactions =>
+      StockStore.getTransactionsForPorts(_myPorts);
 
   // Dashboard Stats Calculations
   double get _totalStock {
@@ -106,6 +74,18 @@ class _StockManagementScreenState extends State<StockManagementScreen>
       portStock.forEach((coal, qty) {
         map[coal] = (map[coal] ?? 0.0) + qty;
       });
+    }
+    return map;
+  }
+
+  // Total stock per assigned port (sum across all coal types).
+  Map<String, double> get _portBreakdown {
+    final map = <String, double>{};
+    for (final port in _myPorts) {
+      final portStock = StockStore.getStockForPort(port);
+      double total = 0;
+      portStock.forEach((_, qty) => total += qty);
+      map[port] = total;
     }
     return map;
   }
@@ -367,9 +347,9 @@ class _StockManagementScreenState extends State<StockManagementScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final filteredStock = _filteredStock;
     final filteredTxs = _filteredTransactions;
     final breakdown = _breakdown;
+    final portBreakdown = _portBreakdown;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -453,9 +433,6 @@ class _StockManagementScreenState extends State<StockManagementScreen>
             ),
           ),
 
-          // ── Filter Bar ─────────────────────────────────────────────────────
-          _buildFilterBar(isDark),
-
           // ── Tab Views ──────────────────────────────────────────────────────
           Expanded(
             child: TabBarView(
@@ -471,17 +448,13 @@ class _StockManagementScreenState extends State<StockManagementScreen>
                       _buildKpiWidgets(isDark),
                       const SizedBox(height: 20),
 
-                      // Stock breakdown progress bars
+                      // Stock breakdown by Coal Type
                       _buildBreakdownSection(breakdown, isDark),
+                      const SizedBox(height: 16),
+
+                      // Stock breakdown by Port
+                      _buildPortBreakdownSection(portBreakdown, isDark),
                       const SizedBox(height: 24),
-
-                      Text('Stock Details', style: AppTextStyles.heading3),
-                      const SizedBox(height: 12),
-
-                      if (filteredStock.isEmpty)
-                        _buildEmptyState('No stock entries match the selected filters.')
-                      else
-                        ...filteredStock.map((s) => _buildStockTile(s, isDark)),
                     ],
                   ),
                 ),
@@ -516,51 +489,6 @@ class _StockManagementScreenState extends State<StockManagementScreen>
     );
   }
 
-  Widget _buildFilterBar(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          // Port Filter
-          Expanded(
-            child: DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: _selectedPortFilter,
-              decoration: const InputDecoration(
-                labelText: 'Filter Port',
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              items: [
-                const DropdownMenuItem<String>(value: null, child: Text('All Ports', style: TextStyle(fontSize: 13))),
-                ..._myPorts.map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 13)))),
-              ],
-              onChanged: (v) => setState(() => _selectedPortFilter = v),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Coal Filter
-          Expanded(
-            child: DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: _selectedCoalFilter,
-              decoration: const InputDecoration(
-                labelText: 'Filter Coal',
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              items: [
-                const DropdownMenuItem<String>(value: null, child: Text('All Coal Types', style: TextStyle(fontSize: 13))),
-                ...AppConstants.productTypes
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13)))),
-              ],
-              onChanged: (v) => setState(() => _selectedCoalFilter = v),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildKpiWidgets(bool isDark) {
     return IntrinsicHeight(
@@ -825,97 +753,193 @@ class _StockManagementScreenState extends State<StockManagementScreen>
     );
   }
 
-  Widget _buildStockTile(Map<String, dynamic> s, bool isDark) {
-    final qty = s['quantity'] as double;
-    final isLow = qty < StockStore.lowStockThreshold;
+  Widget _buildPortBreakdownSection(
+      Map<String, double> portBreakdown, bool isDark) {
+    final totalAcrossPorts =
+        portBreakdown.values.fold(0.0, (sum, v) => sum + v);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkBgCard : AppColors.lightBgCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isLow ? AppColors.error.withValues(alpha: 0.35) : AppColors.border),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.local_fire_department_rounded,
-            color: isLow ? AppColors.error : AppColors.primary,
-            size: 28,
+          Text(
+            'Stock Breakdown by Port',
+            style: AppTextStyles.bodyMedium
+                .copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  s['coalType'] as String,
-                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.anchor_rounded, size: 12, color: AppColors.textMuted),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        s['port'] as String,
-                        style: AppTextStyles.caption,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+          const SizedBox(height: 16),
+          if (portBreakdown.isEmpty)
+            Text('No stock metrics to display.',
+                style: AppTextStyles.caption)
+          else
+            ...portBreakdown.entries.toList().asMap().entries.map((entry) {
+              final index = entry.key;
+              final e = entry.value;
+              final portName = e.key;
+              final portTotal = e.value;
+              final pct = totalAcrossPorts == 0
+                  ? 0.0
+                  : portTotal / totalAcrossPorts;
+
+              // Per-coal-type rows for this port, displayed 2-per-row
+              final coalTypes = AppConstants.productTypes;
+              final coalWidgets = <Widget>[];
+              for (int i = 0; i < coalTypes.length; i += 2) {
+                coalWidgets.add(
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Row(
+                      children: [
+                        Expanded(
+                            child: _buildCoalItemForPort(
+                                portName, coalTypes[i], isDark)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: i + 1 < coalTypes.length
+                              ? _buildCoalItemForPort(
+                                  portName, coalTypes[i + 1], isDark)
+                              : const SizedBox(),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${qty.toStringAsFixed(0)} MT',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: isLow ? AppColors.error : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
-                ),
-              ),
-              const SizedBox(height: 4),
-              if (isLow)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Text(
-                    'Low Stock',
-                    style: TextStyle(color: AppColors.error, fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                )
-              else if (!widget.isAdminView)
-                GestureDetector(
-                  onTap: () => _showAdjustStockSheet(context, preselectedPort: s['port'], preselectedCoal: s['coalType']),
-                  child: Row(
+                );
+              }
+
+              return Column(
+                children: [
+                  if (index > 0)
+                    Divider(
+                      height: 24,
+                      thickness: 1,
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.black.withValues(alpha: 0.05),
+                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        'Adjust',
-                        style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                      const Icon(
+                        Icons.anchor_rounded,
+                        color: AppColors.primary,
+                        size: 28,
                       ),
-                      Icon(Icons.chevron_right, color: AppColors.primary, size: 14),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    portName,
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${portTotal.toStringAsFixed(0)} MT',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? Colors.white
+                                        : Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Text(
+                                  '${(pct * 100).toStringAsFixed(0)}%',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: pct,
+                                minHeight: 6,
+                                backgroundColor: isDark
+                                    ? const Color(0xFF161616)
+                                    : const Color(0xFFEAECF0),
+                                valueColor: const AlwaysStoppedAnimation(
+                                    AppColors.primary),
+                              ),
+                            ),
+                            if (coalWidgets.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              ...coalWidgets,
+                            ],
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
-            ],
-          ),
+                ],
+              );
+            }),
         ],
       ),
     );
   }
+
+  // Compact coal-type quantity cell used inside the port breakdown rows.
+  Widget _buildCoalItemForPort(
+      String port, String coalType, bool isDark) {
+    final qty = StockStore.getStock(port, coalType);
+    final isLow = qty < StockStore.lowStockThreshold;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.local_fire_department_rounded,
+          size: 13,
+          color: isDark
+              ? AppColors.darkTextSecondary
+              : AppColors.lightTextSecondary,
+        ),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            '${coalType.split(' ').first}: ',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          '${qty.toStringAsFixed(0)} MT',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: isLow ? AppColors.error : AppColors.primary,
+          ),
+        ),
+      ],
+    );
+  }
+
 
   Widget _buildTransactionTile(StockTransaction tx, bool isDark) {
     IconData icon;

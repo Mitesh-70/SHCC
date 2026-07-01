@@ -623,7 +623,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Completion Rate', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                                Text('Completion Rate', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
                                 Text(
                                   '${(rate * 100).toStringAsFixed(0)}%',
                                   style: AppTextStyles.bodyMedium.copyWith(

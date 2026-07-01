@@ -328,7 +328,7 @@ class _ProductCard extends StatelessWidget {
         Icon(Icons.anchor_rounded, size: 14, color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary),
         const SizedBox(width: 6),
         Flexible(
-          child: Text('$port: ', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis),
+          child: Text('$port: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary), overflow: TextOverflow.ellipsis),
         ),
         Text(
           '${qty.toStringAsFixed(0)} MT',
